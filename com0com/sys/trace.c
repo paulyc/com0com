@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2005/02/01 16:39:35  vfrolov
+ * Added AnsiStrCopyCommStatus()
+ *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
  *
@@ -55,6 +58,7 @@ static PDRIVER_OBJECT pDrvObj;
 static KSPIN_LOCK strOldLock;
 static KSPIN_LOCK bufsLock;
 static TRACE_BUFFER traceBufs[TRACE_BUFS_NUM];
+static LONG skippedTraces;
 /********************************************************************/
 #define TRACE_FILE_OK (traceFileName.Buffer != NULL)
 /********************************************************************/
@@ -186,7 +190,7 @@ PTRACE_BUFFER AllocTraceBuf()
   KeReleaseSpinLock(&bufsLock, oldIrql);
 
   if (!pBuf)
-    SysLog(pDrvObj, STATUS_INSUFFICIENT_RESOURCES, L"AllocTraceBuf traceBufs busy");
+    InterlockedIncrement(&skippedTraces);
 
   return pBuf;
 }
@@ -634,7 +638,6 @@ PCHAR AnsiStrCopyCommStatus(
       " AmountInInQueue=%lu",
       (long)pCommStatus->AmountInInQueue);
 }
-
 /********************************************************************/
 
 VOID GetTimeFields(PTIME_FIELDS pTimeFields)
@@ -672,15 +675,18 @@ PCHAR AnsiStrCopyTimeFields(
       (unsigned)pTimeFields->Second,
       (unsigned)pTimeFields->Milliseconds);
 }
+/********************************************************************/
 
 NTSTATUS TraceWrite(
     IN PVOID pIoObject,
     IN HANDLE handle,
-    IN PCHAR pStr,
-    IN USHORT len)
+    IN PCHAR pStr)
 {
   NTSTATUS status;
+  ANSI_STRING str;
   IO_STATUS_BLOCK ioStatusBlock;
+
+  RtlInitAnsiString(&str, pStr);
 
   status = ZwWriteFile(
       handle,
@@ -688,8 +694,8 @@ NTSTATUS TraceWrite(
       NULL,
       NULL,
       &ioStatusBlock,
-      pStr,
-      len,
+      str.Buffer,
+      str.Length,
       NULL,
       NULL);
 
@@ -766,46 +772,55 @@ VOID TraceOutput(
 
   if (NT_SUCCESS(status)) {
     PTRACE_BUFFER pBuf;
-    ANSI_STRING str;
-    PCHAR pDestStr;
-    SIZE_T size;
 
     pBuf = AllocTraceBuf();
-    if (!pBuf)
-      return;
-    size = TRACE_BUF_SIZE;
-    pDestStr = pBuf->buf;
 
-    while (InterlockedExchangeAdd(&strOldFreeInd, 0)) {
-      SIZE_T lenBuf;
-      KIRQL oldIrql;
+    if (pBuf) {
+      PCHAR pDestStr;
+      SIZE_T size;
+      LONG skipped;
 
-      KeAcquireSpinLock(&strOldLock, &oldIrql);
-      lenBuf = strOldFreeInd - strOldBusyInd;
-      if (lenBuf) {
-        if (lenBuf > size - 1)
-          lenBuf = size - 1;
-        RtlCopyMemory(pDestStr, &strOld[strOldBusyInd], lenBuf);
-        pDestStr[lenBuf] = 0;
-        strOldBusyInd += lenBuf;
-        ASSERT(strOldBusyInd <= strOldFreeInd);
-        if (strOldBusyInd == strOldFreeInd)
-          InterlockedExchange(&strOldFreeInd, strOldBusyInd = 0);
+      size = TRACE_BUF_SIZE;
+      pDestStr = pBuf->buf;
+
+      while (InterlockedExchangeAdd(&strOldFreeInd, 0)) {
+        SIZE_T lenBuf;
+        KIRQL oldIrql;
+
+        KeAcquireSpinLock(&strOldLock, &oldIrql);
+        lenBuf = strOldFreeInd - strOldBusyInd;
+        if (lenBuf) {
+          if (lenBuf > size - 1)
+            lenBuf = size - 1;
+          RtlCopyMemory(pDestStr, &strOld[strOldBusyInd], lenBuf);
+          pDestStr[lenBuf] = 0;
+          strOldBusyInd += lenBuf;
+          ASSERT(strOldBusyInd <= strOldFreeInd);
+          if (strOldBusyInd == strOldFreeInd)
+            InterlockedExchange(&strOldFreeInd, strOldBusyInd = 0);
+        }
+        KeReleaseSpinLock(&strOldLock, oldIrql);
+
+        if (lenBuf)
+          TraceWrite(pIoObject, handle, pBuf->buf);
       }
-      KeReleaseSpinLock(&strOldLock, oldIrql);
 
-      if (lenBuf) {
-        RtlInitAnsiString(&str, pBuf->buf);
-        TraceWrite(pIoObject, handle, str.Buffer, str.Length);
+      skipped = InterlockedExchange(&skippedTraces, 0);
+
+      if (skipped) {
+        SIZE_T tmp_size = size;
+
+        AnsiStrFormat(pDestStr, &tmp_size, "*** skipped %lu lines ***\r\n", skipped);
+        TraceWrite(pIoObject, handle, pBuf->buf);
       }
+
+      pDestStr = AnsiStrCopyTimeFields(pDestStr, &size, &timeFields);
+      pDestStr = AnsiStrFormat(pDestStr, &size, " %s\r\n", pStr);
+
+      TraceWrite(pIoObject, handle, pBuf->buf);
+
+      FreeTraceBuf(pBuf);
     }
-
-    pDestStr = AnsiStrCopyTimeFields(pDestStr, &size, &timeFields);
-    pDestStr = AnsiStrFormat(pDestStr, &size, " %s\r\n", pStr);
-
-    RtlInitAnsiString(&str, pBuf->buf);
-    TraceWrite(pIoObject, handle, str.Buffer, str.Length);
-    FreeTraceBuf(pBuf);
 
     status = ZwClose(handle);
 
@@ -854,6 +869,7 @@ VOID TraceOpen(
 
   KeInitializeSpinLock(&strOldLock);
   KeInitializeSpinLock(&bufsLock);
+  skippedTraces = 0;
   RtlZeroMemory(traceBufs, sizeof(traceBufs));
 
   RtlInitUnicodeString(&traceFileName, NULL);
