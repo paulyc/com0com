@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2005/02/01 08:37:55  vfrolov
+ * Changed SetModemStatus() to set multiple bits
+ *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
  *
@@ -60,9 +63,9 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
     readBufNew.pBase = NULL;
   }
 
-  readBufNew.pFree = readBufNew.pBusy = readBufNew.pBase;
   readBufNew.pEnd = readBufNew.pBase + size;
-  readBufNew.busy = 0;
+
+  C0C_BUFFER_PURGE(readBufNew);
 
   InitializeListHead(&queueToComplete);
 
