@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2005/02/01 08:37:55  vfrolov
+ * Changed SetModemStatus() to set multiple bits
+ *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
  *
@@ -74,6 +77,10 @@ typedef struct _C0C_BUFFER {
   PUCHAR                  pEnd;
   ULONG                   busy;
 } C0C_BUFFER, *PC0C_BUFFER;
+
+#define C0C_BUFFER_PURGE(buf) \
+  (buf).pFree = (buf).pBusy = (buf).pBase; \
+  (buf).busy = 0
 
 struct _C0C_FDOPORT_EXTENSION;
 
@@ -138,7 +145,6 @@ typedef struct _C0C_FDOPORT_EXTENSION {
 
   SERIAL_BAUD_RATE        baudRate;
   SERIAL_LINE_CONTROL     lineControl;
-  SERIAL_STATUS           commStatus;
   SERIAL_CHARS            specialChars;
   SERIAL_TIMEOUTS         timeouts;
   SERIAL_HANDFLOW         handFlow;
