@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2005/01/26 12:18:54  vfrolov
+ * Initial revision
+ *
  *
  */
 
@@ -242,7 +245,7 @@ NTSTATUS FdoPortIo(
 
 VOID SetModemStatus(
     IN PC0C_IO_PORT pIoPort,
-    IN ULONG bit,
+    IN ULONG bits,
     IN BOOLEAN set);
 
 VOID UpdateHandFlow(
