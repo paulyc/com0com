@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2005/02/01 16:47:57  vfrolov
+ * Implemented SERIAL_PURGE_RXCLEAR and IOCTL_SERIAL_GET_COMMSTATUS
+ *
  * Revision 1.2  2005/02/01 08:37:55  vfrolov
  * Changed SetModemStatus() to set multiple bits
  *
@@ -48,10 +51,12 @@
 #define C0C_DOTYPE_PP	    2
 #define C0C_DOTYPE_FP     3
 
+#define C0C_PORT_NAME_LEN 10
+
 #define COMMON_EXTENSION                \
   int                     doType;       \
   PDEVICE_OBJECT          pDevObj;      \
-  WCHAR                   portName[10]; \
+  WCHAR                   portName[C0C_PORT_NAME_LEN]; \
 
 #define FDO_EXTENSION                   \
   COMMON_EXTENSION                      \
@@ -162,6 +167,8 @@ typedef struct _C0C_FDOBUS_EXTENSION {
   KSPIN_LOCK              ioLock;
   C0C_CHILD               childs[2];
 } C0C_FDOBUS_EXTENSION, *PC0C_FDOBUS_EXTENSION;
+
+extern UNICODE_STRING c0cRegistryPath;
 
 VOID c0cUnload(IN PDRIVER_OBJECT pDrvObj);
 
