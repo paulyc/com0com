@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2005/02/01 08:36:27  vfrolov
+ * Changed SetModemStatus() to set multiple bits and set CD to DSR
+ *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
  *
@@ -77,10 +80,19 @@ NTSTATUS ReadBuffer(PIRP pIrp, PC0C_BUFFER pBuf)
   return status;
 }
 
-NTSTATUS WriteBuffer(PIRP pIrp, PC0C_BUFFER pBuf)
+VOID WaitCompleteRxChar(PC0C_IO_PORT pReadIoPort, PLIST_ENTRY pQueueToComplete)
+{
+  if (pReadIoPort->waitMask & SERIAL_EV_RXCHAR) {
+    pReadIoPort->eventMask |= SERIAL_EV_RXCHAR;
+    WaitComplete(pReadIoPort, pQueueToComplete);
+  }
+}
+
+NTSTATUS WriteBuffer(PIRP pIrp, PC0C_IO_PORT pReadIoPort, PLIST_ENTRY pQueueToComplete)
 {
   NTSTATUS status;
   PIO_STACK_LOCATION pIrpStack;
+  PC0C_BUFFER pBuf = &pReadIoPort->readBuf;
 
   if (!pBuf->pBase)
     return STATUS_PENDING;
@@ -118,6 +130,8 @@ NTSTATUS WriteBuffer(PIRP pIrp, PC0C_BUFFER pBuf)
       pBuf->pFree = pBuf->pBase;
 
     pIrp->IoStatus.Information += length;
+
+    WaitCompleteRxChar(pReadIoPort, pQueueToComplete);
   }
 
   return status;
@@ -127,12 +141,15 @@ VOID ReadWriteDirect(
     PIRP pIrpLocal,
     PIRP pIrpRemote,
     PNTSTATUS pStatusLocal,
-    PNTSTATUS pStatusRemote)
+    PNTSTATUS pStatusRemote,
+    PC0C_IO_PORT pIoPortLocal,
+    PLIST_ENTRY pQueueToComplete)
 {
   PIO_STACK_LOCATION pIrpStackLocal;
   PIO_STACK_LOCATION pIrpStackRemote;
   ULONG length, writeLength, readLength;
   PVOID pWriteBuf, pReadBuf;
+  PC0C_IO_PORT pReadIoPort;
 
   pIrpStackLocal = IoGetCurrentIrpStackLocation(pIrpLocal);
   pIrpStackRemote = IoGetCurrentIrpStackLocation(pIrpRemote);
@@ -142,6 +159,7 @@ VOID ReadWriteDirect(
     writeLength = pIrpStackLocal->Parameters.Write.Length - pIrpLocal->IoStatus.Information;
     pReadBuf = GET_REST_BUFFER(pIrpRemote);
     readLength = pIrpStackRemote->Parameters.Read.Length - pIrpRemote->IoStatus.Information;
+    pReadIoPort = pIoPortLocal->pDevExt->pIoPortRemote;
 
     if (writeLength <= readLength)
       *pStatusLocal = STATUS_SUCCESS;
@@ -152,6 +170,7 @@ VOID ReadWriteDirect(
     readLength = pIrpStackLocal->Parameters.Read.Length - pIrpLocal->IoStatus.Information;
     pWriteBuf = GET_REST_BUFFER(pIrpRemote);
     writeLength = pIrpStackRemote->Parameters.Write.Length - pIrpRemote->IoStatus.Information;
+    pReadIoPort = pIoPortLocal;
 
     if (readLength <= writeLength)
       *pStatusLocal = STATUS_SUCCESS;
@@ -161,11 +180,12 @@ VOID ReadWriteDirect(
 
   length = writeLength < readLength ? writeLength : readLength;
 
-  if (length)
+  if (length) {
     RtlCopyMemory(pReadBuf, pWriteBuf, length);
-
-  pIrpRemote->IoStatus.Information += length;
-  pIrpLocal->IoStatus.Information += length;
+    pIrpRemote->IoStatus.Information += length;
+    pIrpLocal->IoStatus.Information += length;
+    WaitCompleteRxChar(pReadIoPort, pQueueToComplete);
+  }
 }
 
 NTSTATUS FdoPortIo(
@@ -212,7 +232,7 @@ NTSTATUS FdoPortIo(
     case C0C_IO_TYPE_WRITE:
       ASSERT(pParam);
       if (status == STATUS_PENDING)
-        ReadWriteDirect((PIRP)pParam, pIrpCurrent, &status, &statusCurrent);
+        ReadWriteDirect((PIRP)pParam, pIrpCurrent, &status, &statusCurrent, pIoPort, pQueueToComplete);
       break;
     case C0C_IO_TYPE_WAIT_COMPLETE:
       ASSERT(pParam);
@@ -225,7 +245,7 @@ NTSTATUS FdoPortIo(
 
     if (IoGetCurrentIrpStackLocation(pIrpCurrent)->MajorFunction == IRP_MJ_WRITE &&
         statusCurrent == STATUS_PENDING)
-      statusCurrent = WriteBuffer(pIrpCurrent, &pIoPort->pDevExt->pIoPortRemote->readBuf);
+      statusCurrent = WriteBuffer(pIrpCurrent, pIoPort->pDevExt->pIoPortRemote, pQueueToComplete);
 
     if (statusCurrent == STATUS_PENDING) {
       if ((pStateCurrent->flags & C0C_IRP_FLAG_WAIT_ONE) != 0) {
@@ -270,7 +290,7 @@ NTSTATUS FdoPortIo(
 
   if (ioType == C0C_IO_TYPE_WRITE && status == STATUS_PENDING) {
     ASSERT(pParam);
-    status = WriteBuffer((PIRP)pParam, &pIoPort->readBuf);
+    status = WriteBuffer((PIRP)pParam, pIoPort, pQueueToComplete);
   }
 
   return status;
