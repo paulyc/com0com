@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.3  2005/02/28 12:10:08  vfrolov
+ * Log skipped lines to trace file (was to syslog)
+ * Fixed missing trace file close
+ *
  * Revision 1.2  2005/02/01 16:39:35  vfrolov
  * Added AnsiStrCopyCommStatus()
  *
@@ -1167,6 +1171,10 @@ VOID TraceIrp(
         case IOCTL_SERIAL_GET_COMMSTATUS:
           if ((flags & TRACE_FLAG_RESULTS) && inform >= sizeof(SERIAL_STATUS))
             pDestStr = AnsiStrCopyCommStatus(pDestStr, &size, (PSERIAL_STATUS)pSysBuf);
+          break;
+        case IOCTL_SERIAL_LSRMST_INSERT:
+          if ((flags & TRACE_FLAG_PARAMS) && inLength >= sizeof(UCHAR))
+            pDestStr = AnsiStrFormat(pDestStr, &size, " escapeChar=0x%02X", (int)(*(PUCHAR)pSysBuf & 0xFF));
           break;
       }
       break;

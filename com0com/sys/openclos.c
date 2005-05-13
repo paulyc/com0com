@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2005/02/01 16:51:51  vfrolov
+ * Used C0C_BUFFER_PURGE()
+ *
  * Revision 1.2  2005/02/01 08:37:55  vfrolov
  * Changed SetModemStatus() to set multiple bits
  *
@@ -75,6 +78,7 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   pDevExt->pIoPortLocal->waitMask = 0;
   pDevExt->pIoPortLocal->eventMask = 0;
+  pDevExt->pIoPortLocal->escapeChar = 0;
 
   UpdateHandFlow(pDevExt, &queueToComplete);
 
