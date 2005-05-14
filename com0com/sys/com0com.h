@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2005/05/13 16:58:03  vfrolov
+ * Implemented IOCTL_SERIAL_LSRMST_INSERT
+ *
  * Revision 1.4  2005/05/12 07:41:27  vfrolov
  * Added ability to change the port names
  *
@@ -78,6 +81,11 @@ typedef struct _C0C_IRP_QUEUE {
   LIST_ENTRY              queue;
 } C0C_IRP_QUEUE, *PC0C_IRP_QUEUE;
 
+typedef struct _C0C_RAW_DATA {
+  UCHAR                   size;
+  UCHAR                   data[7];
+} C0C_RAW_DATA, *PC0C_RAW_DATA;
+
 typedef struct _C0C_BUFFER {
   PUCHAR                  pBase;
   PUCHAR                  pBusy;
@@ -85,12 +93,14 @@ typedef struct _C0C_BUFFER {
   PUCHAR                  pEnd;
   ULONG                   busy;
   BOOLEAN                 escape;
+  C0C_RAW_DATA            insertData;
 } C0C_BUFFER, *PC0C_BUFFER;
 
 #define C0C_BUFFER_PURGE(buf) \
   (buf).pFree = (buf).pBusy = (buf).pBase; \
   (buf).busy = 0; \
-  (buf).escape = FALSE
+  (buf).escape = FALSE; \
+  (buf).insertData.size = 0
 
 struct _C0C_FDOPORT_EXTENSION;
 
@@ -254,6 +264,7 @@ PC0C_IRP_STATE GetIrpState(IN PIRP pIrp);
 #define C0C_IO_TYPE_READ               1
 #define C0C_IO_TYPE_WRITE              2
 #define C0C_IO_TYPE_WAIT_COMPLETE      3
+#define C0C_IO_TYPE_INSERT             4
 
 NTSTATUS FdoPortIo(
     int ioType,
@@ -265,7 +276,8 @@ NTSTATUS FdoPortIo(
 VOID SetModemStatus(
     IN PC0C_IO_PORT pIoPort,
     IN ULONG bits,
-    IN BOOLEAN set);
+    IN BOOLEAN set,
+    PLIST_ENTRY pQueueToComplete);
 
 VOID UpdateHandFlow(
     IN PC0C_FDOPORT_EXTENSION pDevExt,
