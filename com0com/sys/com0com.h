@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2005/05/14 17:07:02  vfrolov
+ * Implemented SERIAL_LSRMST_MST insertion
+ *
  * Revision 1.5  2005/05/13 16:58:03  vfrolov
  * Implemented IOCTL_SERIAL_LSRMST_INSERT
  *
@@ -91,7 +94,7 @@ typedef struct _C0C_BUFFER {
   PUCHAR                  pBusy;
   PUCHAR                  pFree;
   PUCHAR                  pEnd;
-  ULONG                   busy;
+  SIZE_T                  busy;
   BOOLEAN                 escape;
   C0C_RAW_DATA            insertData;
 } C0C_BUFFER, *PC0C_BUFFER;
