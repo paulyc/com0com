@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2005/05/19 08:23:40  vfrolov
+ * Fixed data types
+ *
  * Revision 1.6  2005/05/14 17:07:02  vfrolov
  * Implemented SERIAL_LSRMST_MST insertion
  *
@@ -60,7 +63,7 @@
 #define C0C_DOTYPE_PP	    2
 #define C0C_DOTYPE_FP     3
 
-#define C0C_PORT_NAME_LEN 10
+#define C0C_PORT_NAME_LEN 12
 
 #define COMMON_EXTENSION                \
   int                     doType;       \
@@ -185,6 +188,7 @@ typedef struct _C0C_FDOBUS_EXTENSION {
 
   KSPIN_LOCK              ioLock;
   C0C_CHILD               childs[2];
+  ULONG                   portNum;
 } C0C_FDOBUS_EXTENSION, *PC0C_FDOBUS_EXTENSION;
 
 extern UNICODE_STRING c0cRegistryPath;
