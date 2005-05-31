@@ -24,9 +24,9 @@
 # character to interpose another module into the current module.  This
 # can be useful for creating a module that consists of many directories
 # spread out over the entire source repository.
-#M	com0com	
+#M	com0com	Null-modem emulator
 com0com	com0com
-#M	com2tcp	
+#M	com2tcp	COM port to TCP redirector
 com2tcp	com2tcp
 #M	homepage	The homepage for com0com project
 homepage	homepage
