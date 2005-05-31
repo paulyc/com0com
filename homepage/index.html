@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=windows-1251"
+ http-equiv="content-type">
+  <title>Null-modem emulator (com0com)</title>
+</head>
+<body>
+<center>
+<h1> Null-modem emulator <br>
+(com0com) </h1>
+</center>
+<p>
+The null-modem emulator is a kernel-mode virtual serial port driver for
+Windows. You can create with it an unlimited number of virtual COM port
+pairs and use any pair to connect one application to another.
+Each COM port pair provides two COM ports with names starting
+at CNCA0 and CNCB0. The output to one port is the input from other
+port and vice versa.
+</p>
+<p>
+Usually one port of the pair is used by Windows application that
+requires a COM port to communicate with a device and other port is
+used by device emulation program.
+</p>
+<p>
+For example, to send/receive faxes over IP you can connect Windows
+Fax application to CNCA0 port and t38modem (part of the
+<a href="http://openh323.sourceforge.net/"> OpenH323 project</a>
+) to CNCB0 port.
+</p>
+<p>You can find more information on
+<a href="http://sourceforge.net/projects/com0com/">SourceForge Project
+page</a>
+and
+<a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/com0com/">SourceForge
+Web CVS</a>.
+</p>
+<br>
+<center>
+<a href="http://sourceforge.net"><img
+ src="http://sourceforge.net/sflogo.php?group_id=129551&amp;type=5"
+ alt="SourceForge.net Logo" border="0" height="62" width="210"></a></center>
+</body>
+</html>
