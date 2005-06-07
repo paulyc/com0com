@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2005/06/06 15:20:46  vfrolov
+ * Implemented --telnet option
+ *
  * Revision 1.2  2005/05/30 12:17:32  vfrolov
  * Fixed resolving problem
  *
@@ -477,11 +480,17 @@ static HANDLE OpenC0C(const char *pPath)
 ///////////////////////////////////////////////////////////////
 static SOCKET Connect(const char *pAddr, const char *pPort)
 {
+  const char *pProtoName = "tcp";
   struct sockaddr_in sn;
 
   memset(&sn, 0, sizeof(sn));
   sn.sin_family = AF_INET;
-  sn.sin_port = htons((u_short)atoi(pPort));
+
+  struct servent *pServEnt;
+
+  pServEnt = getservbyname(pPort, pProtoName);
+
+  sn.sin_port = pServEnt ? pServEnt->s_port : htons((u_short)atoi(pPort));
 
   sn.sin_addr.S_un.S_addr = inet_addr(pAddr);
 
@@ -498,10 +507,10 @@ static SOCKET Connect(const char *pAddr, const char *pPort)
 
   const struct protoent *pProtoEnt;
   
-  pProtoEnt = getprotobyname("tcp");
+  pProtoEnt = getprotobyname(pProtoName);
 
   if (!pProtoEnt) {
-    TraceLastError("Connect(): getprotobyname(\"tcp\")");
+    TraceLastError("Connect(): getprotobyname(\"%s\")", pProtoName);
     return INVALID_SOCKET;
   }
 
