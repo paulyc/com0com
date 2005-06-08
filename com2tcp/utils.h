@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2005/06/06 15:19:02  vfrolov
+ * Initial revision
+ *
  *
  */
 
@@ -64,7 +67,7 @@ class DataStream
 {
   public:
     DataStream(int _threshold = 0)
-      : threshold(_threshold), eof(FALSE) {}
+      : busy(0), threshold(_threshold), eof(FALSE) {}
     ~DataStream() { DataStream::Clean(); }
 
     int PutData(const void *pBuf, int count);
