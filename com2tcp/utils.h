@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2005/06/08 07:40:23  vfrolov
+ * Added missing DataStream::busy initialization
+ *
  * Revision 1.1  2005/06/06 15:19:02  vfrolov
  * Initial revision
  *
@@ -28,6 +31,8 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+///////////////////////////////////////////////////////////////
+typedef vector< BYTE, allocator<BYTE> > BYTE_vector;
 ///////////////////////////////////////////////////////////////
 class ChunkStream
 {
