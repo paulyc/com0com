@@ -19,13 +19,13 @@
  *
  *
  * $Log$
+ * Revision 1.1  2005/06/06 15:19:02  vfrolov
+ * Initial revision
+ *
  *
  */
 
-#include <winsock2.h>
-#include <windows.h>
-
-#include "utils.h"
+#include "precomp.h"
 
 ///////////////////////////////////////////////////////////////
 int ChunkStream::write(const void *pBuf, int count)
