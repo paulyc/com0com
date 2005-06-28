@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2005/05/20 12:06:05  vfrolov
+ * Improved port numbering
+ *
  * Revision 1.7  2005/05/19 08:23:40  vfrolov
  * Fixed data types
  *
@@ -148,6 +151,8 @@ typedef struct _C0C_IO_PORT {
 
 typedef struct _C0C_PDOPORT_EXTENSION {
   COMMON_EXTENSION
+
+  struct _C0C_FDOBUS_EXTENSION *pBusExt;
 
   PKSPIN_LOCK             pIoLock;
   PC0C_IO_PORT            pIoPortLocal;

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2005/05/20 12:06:05  vfrolov
+ * Improved port numbering
+ *
  * Revision 1.2  2005/05/12 07:41:27  vfrolov
  * Added ability to change the port names
  *
@@ -316,6 +319,7 @@ NTSTATUS AddPdoPort(
     goto clean;
   }
 
+  pDevExt->pBusExt = pBusExt;
   pDevExt->pIoLock = &pBusExt->ioLock;
   pDevExt->pIoPortLocal = pIoPortLocal;
   pDevExt->pIoPortRemote = pIoPortRemote;
