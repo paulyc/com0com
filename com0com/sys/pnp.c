@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2005/05/17 15:06:18  vfrolov
+ * Fixed type cast
+ *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
  *
@@ -27,6 +30,13 @@
 
 #include "precomp.h"
 #include "strutils.h"
+#include <initguid.h>
+
+/*
+ * {E74D3627-7582-48a6-8B0B-ED60CE908A51}
+ */
+DEFINE_GUID(GUID_C0C_BUS_TYPE,
+    0xe74d3627, 0x7582, 0x48a6, 0x8b, 0xb, 0xed, 0x60, 0xce, 0x90, 0x8a, 0x51);
 
 NTSTATUS FdoBusPnp(
     IN PC0C_FDOBUS_EXTENSION pDevExt,
@@ -145,12 +155,12 @@ NTSTATUS PdoPortQueryCaps(
   PDEVICE_CAPABILITIES pCaps = pIrpStack->Parameters.DeviceCapabilities.Capabilities;
 
   UNREFERENCED_PARAMETER(pDevExt);
+  UNREFERENCED_PARAMETER(pIrp);
 
   if (pCaps->Version != 1 || pCaps->Size < sizeof(DEVICE_CAPABILITIES))
-    return STATUS_UNSUCCESSFUL; 
+    return STATUS_UNSUCCESSFUL;
 
-
-  return pIrp->IoStatus.Status;
+  return STATUS_SUCCESS;
 }
 
 NTSTATUS PdoPortQueryDevText(
@@ -193,6 +203,26 @@ NTSTATUS PdoPortQueryDevText(
   return status;
 }
 
+NTSTATUS PdoPortBusInfo(
+    IN PC0C_PDOPORT_EXTENSION pDevExt,
+    IN PIRP                   pIrp)
+{
+  PPNP_BUS_INFORMATION pBusInfo;
+
+  pBusInfo = (PPNP_BUS_INFORMATION)ExAllocatePool(PagedPool, sizeof(PNP_BUS_INFORMATION));
+
+  if (!pBusInfo)
+    return STATUS_INSUFFICIENT_RESOURCES;
+
+  pBusInfo->BusTypeGuid = GUID_C0C_BUS_TYPE;
+  pBusInfo->LegacyBusType = PNPBus;
+  pBusInfo->BusNumber = pDevExt->pBusExt->portNum;
+
+  pIrp->IoStatus.Information = (ULONG_PTR)pBusInfo;
+
+  return STATUS_SUCCESS;
+}
+
 NTSTATUS PdoPortPnp(
     IN PC0C_PDOPORT_EXTENSION pDevExt,
     IN PIRP                   pIrp)
@@ -209,6 +239,9 @@ NTSTATUS PdoPortPnp(
     break;
   case IRP_MN_QUERY_DEVICE_TEXT:
     status = PdoPortQueryDevText(pDevExt, pIrp, pIrpStack);
+    break;
+  case IRP_MN_QUERY_BUS_INFORMATION:
+    status = PdoPortBusInfo(pDevExt, pIrp);
     break;
   case IRP_MN_QUERY_DEVICE_RELATIONS:
     switch (pIrpStack->Parameters.QueryDeviceRelations.Type) {
