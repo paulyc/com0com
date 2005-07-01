@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2005/05/19 08:23:41  vfrolov
+ * Fixed data types
+ *
  * Revision 1.4  2005/05/13 16:58:03  vfrolov
  * Implemented IOCTL_SERIAL_LSRMST_INSERT
  *
@@ -40,6 +43,8 @@
 #if DBG
 
 /********************************************************************/
+#include <stdarg.h>
+
 #include "trace.h"
 #include "strutils.h"
 /********************************************************************/
