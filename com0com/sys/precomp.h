@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2005/01/26 12:18:54  vfrolov
+ * Initial revision
+ *
  *
  */
 
@@ -32,9 +35,6 @@
 #include <ntddser.h>
 
 #pragma warning(pop)
-
-#include <stdio.h>
-#include <stdarg.h>
 
 #include "com0com.h"
 #include "trace.h"
