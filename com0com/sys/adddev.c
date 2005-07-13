@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2005/06/28 12:17:12  vfrolov
+ * Added pBusExt to C0C_PDOPORT_EXTENSION
+ *
  * Revision 1.3  2005/05/20 12:06:05  vfrolov
  * Improved port numbering
  *
@@ -120,7 +123,7 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
     RTL_QUERY_REGISTRY_TABLE queryTable[2];
 
     RtlInitUnicodeString(&portRegistryPath, NULL);
-    StrAppendStr(&status, &portRegistryPath, c0cRegistryPath.Buffer, c0cRegistryPath.Length);
+    StrAppendStr(&status, &portRegistryPath, c0cGlobal.registryPath.Buffer, c0cGlobal.registryPath.Length);
     StrAppendStr0(&status, &portRegistryPath, L"\\Parameters\\");
     StrAppendStr0(&status, &portRegistryPath, pPortName);
 

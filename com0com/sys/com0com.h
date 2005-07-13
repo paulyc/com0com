@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2005/06/28 12:17:12  vfrolov
+ * Added pBusExt to C0C_PDOPORT_EXTENSION
+ *
  * Revision 1.8  2005/05/20 12:06:05  vfrolov
  * Improved port numbering
  *
@@ -196,7 +199,12 @@ typedef struct _C0C_FDOBUS_EXTENSION {
   ULONG                   portNum;
 } C0C_FDOBUS_EXTENSION, *PC0C_FDOBUS_EXTENSION;
 
-extern UNICODE_STRING c0cRegistryPath;
+typedef struct _C0C_GLOBAL {
+  PDRIVER_OBJECT pDrvObj;
+  UNICODE_STRING registryPath;
+} C0C_GLOBAL;
+
+extern C0C_GLOBAL c0cGlobal;
 
 VOID c0cUnload(IN PDRIVER_OBJECT pDrvObj);
 
