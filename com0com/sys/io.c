@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2005/05/19 08:23:41  vfrolov
+ * Fixed data types
+ *
  * Revision 1.5  2005/05/14 17:07:02  vfrolov
  * Implemented SERIAL_LSRMST_MST insertion
  *
@@ -40,6 +43,11 @@
 #include "precomp.h"
 #include "timeout.h"
 
+/*
+ * FILE_ID used by HALT_UNLESS to put it on BSOD
+ */
+#define FILE_ID 1
+
 #define GET_REST_BUFFER(pIrp) \
     (((PUCHAR)(pIrp)->AssociatedIrp.SystemBuffer) + (pIrp)->IoStatus.Information)
 
@@ -49,7 +57,8 @@ VOID CompactRawData(PC0C_RAW_DATA pRawData, SIZE_T writeDone)
     pRawData->size = (UCHAR)(pRawData->size - writeDone);
 
     if (pRawData->size) {
-      ASSERT((pRawData->size + writeDone) <= sizeof(pRawData->data));
+      HALT_UNLESS3((pRawData->size + writeDone) <= sizeof(pRawData->data),
+          pRawData->size, writeDone, sizeof(pRawData->data));
 
       RtlMoveMemory(pRawData->data, pRawData->data + writeDone, pRawData->size);
     }
@@ -58,14 +67,17 @@ VOID CompactRawData(PC0C_RAW_DATA pRawData, SIZE_T writeDone)
 
 NTSTATUS MoveRawData(PC0C_RAW_DATA pDstRawData, PC0C_RAW_DATA pSrcRawData)
 {
-  int free;
+  SIZE_T free;
 
   if (!pSrcRawData->size)
     return STATUS_SUCCESS;
 
+  HALT_UNLESS2(pDstRawData->size <= sizeof(pDstRawData->data),
+      pDstRawData->size, sizeof(pDstRawData->data));
+
   free = sizeof(pDstRawData->data) - pDstRawData->size;
 
-  if (free > 0) {
+  if (free) {
     SIZE_T length;
 
     if (free > pSrcRawData->size)
@@ -73,7 +85,8 @@ NTSTATUS MoveRawData(PC0C_RAW_DATA pDstRawData, PC0C_RAW_DATA pSrcRawData)
     else
       length = free;
 
-    ASSERT((pDstRawData->size + length) <= sizeof(pDstRawData->data));
+    HALT_UNLESS3((pDstRawData->size + length) <= sizeof(pDstRawData->data),
+        pDstRawData->size, length, sizeof(pDstRawData->data));
 
     RtlCopyMemory(pDstRawData->data + pDstRawData->size, pSrcRawData->data, length);
     pDstRawData->size = (UCHAR)(pDstRawData->size + length);
@@ -117,6 +130,9 @@ NTSTATUS ReadBuffer(PIRP pIrp, PC0C_BUFFER pBuf)
       if (pBuf->insertData.size) {
         length = pBuf->insertData.size;
 
+        HALT_UNLESS2(length <= sizeof(pBuf->insertData.data),
+            length, sizeof(pBuf->insertData.data));
+
         if (length > readLength)
           length = readLength;
 
@@ -133,7 +149,7 @@ NTSTATUS ReadBuffer(PIRP pIrp, PC0C_BUFFER pBuf)
       break;
     }
 
-    ASSERT(pBuf->pBase);
+    HALT_UNLESS(pBuf->pBase);
 
     writeLength = pBuf->pFree <= pBuf->pBusy ?
         pBuf->pEnd - pBuf->pBusy : pBuf->busy;
@@ -185,6 +201,9 @@ VOID CopyCharsWithEscape(
   if (pBuf->insertData.size && readLength) {
     SIZE_T length = pBuf->insertData.size;
 
+    HALT_UNLESS2(length <= sizeof(pBuf->insertData.data),
+        length, sizeof(pBuf->insertData.data));
+
     if (length > readLength)
       length = readLength;
 
@@ -198,10 +217,10 @@ VOID CopyCharsWithEscape(
   if (!escapeChar) {
     writeDone = writeLength < readLength ? writeLength : readLength;
 
-    if (writeDone)
+    if (writeDone) {
       RtlCopyMemory(pReadBuf, pWriteBuf, writeDone);
-
-    readDone += writeDone;
+      readDone += writeDone;
+    }
   } else {
     writeDone = 0;
 
@@ -306,6 +325,9 @@ NTSTATUS InsertBuffer(PC0C_RAW_DATA pRawData, PC0C_BUFFER pBuf)
       break;
     }
 
+    HALT_UNLESS2(writeLength <= sizeof(pRawData->data),
+        writeLength, sizeof(pRawData->data));
+
     pWriteBuf = pRawData->data;
 
     if ((SIZE_T)(pBuf->pEnd - pBuf->pBase) <= pBuf->busy)
@@ -407,6 +429,9 @@ VOID InsertDirect(
   pWriteBuf = pRawData->data;
   writeLength = pRawData->size;
 
+  HALT_UNLESS2(writeLength <= sizeof(pRawData->data),
+      writeLength, sizeof(pRawData->data));
+
   CopyCharsWithEscape(
       pBuf, 0,
       pReadBuf, readLength,
@@ -433,7 +458,7 @@ NTSTATUS FdoPortIo(
   BOOLEAN first;
 
   if (ioType == C0C_IO_TYPE_READ) {
-    ASSERT(pParam);
+    HALT_UNLESS(pParam);
     status = ReadBuffer((PIRP)pParam, &pIoPort->pDevExt->pIoPortRemote->readBuf);
   } else {
     status = STATUS_PENDING;
@@ -450,7 +475,7 @@ NTSTATUS FdoPortIo(
     pIrpCurrent = pQueue->pCurrent;
 
     pStateCurrent = GetIrpState(pIrpCurrent);
-    ASSERT(pStateCurrent);
+    HALT_UNLESS(pStateCurrent);
 
     #pragma warning(push, 3)
     pCancelRoutineCurrent = IoSetCancelRoutine(pIrpCurrent, NULL);
@@ -464,19 +489,19 @@ NTSTATUS FdoPortIo(
     switch (ioType) {
     case C0C_IO_TYPE_READ:
     case C0C_IO_TYPE_WRITE:
-      ASSERT(pParam);
+      HALT_UNLESS(pParam);
       if (status == STATUS_PENDING)
         ReadWriteDirect((PIRP)pParam, pIrpCurrent, &status, &statusCurrent, pIoPort, pQueueToComplete);
       break;
     case C0C_IO_TYPE_WAIT_COMPLETE:
-      ASSERT(pParam);
+      HALT_UNLESS(pParam);
       *((PULONG)pIrpCurrent->AssociatedIrp.SystemBuffer) = *((PULONG)pParam);
       *((PULONG)pParam) = 0;
       pIrpCurrent->IoStatus.Information = sizeof(ULONG);
       statusCurrent = STATUS_SUCCESS;
       break;
     case C0C_IO_TYPE_INSERT:
-      ASSERT(pParam);
+      HALT_UNLESS(pParam);
       InsertDirect((PC0C_RAW_DATA)pParam, pIrpCurrent, &status, &statusCurrent, &pIoPort->readBuf);
       break;
     }
@@ -529,11 +554,11 @@ NTSTATUS FdoPortIo(
   if (status == STATUS_PENDING) {
     switch (ioType) {
     case C0C_IO_TYPE_WRITE:
-      ASSERT(pParam);
+      HALT_UNLESS(pParam);
       status = WriteBuffer((PIRP)pParam, pIoPort, pQueueToComplete);
       break;
     case C0C_IO_TYPE_INSERT:
-      ASSERT(pParam);
+      HALT_UNLESS(pParam);
       status = InsertBuffer((PC0C_RAW_DATA)pParam, &pIoPort->readBuf);
       break;
     }
