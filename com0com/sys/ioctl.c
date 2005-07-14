@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2005/05/19 08:23:41  vfrolov
+ * Fixed data types
+ *
  * Revision 1.4  2005/05/14 17:07:02  vfrolov
  * Implemented SERIAL_LSRMST_MST insertion
  *
@@ -492,6 +495,9 @@ NTSTATUS FdoPortIoCtl(
 
         ExFreePool(pReadBuf->pBase);
       }
+
+      readBufNew.escape = pReadBuf->escape;
+      readBufNew.insertData = pReadBuf->insertData;
 
       *pReadBuf = readBufNew;
 
