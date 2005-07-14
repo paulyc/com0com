@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2005/01/26 12:18:54  vfrolov
+ * Initial revision
+ *
  *
  */
 
@@ -26,6 +29,14 @@
 #define _TRACE_H_
 
 #if DBG
+
+#define HALT_UNLESS3(exp, p1, p2, p3) \
+  if (!(exp)) \
+    KeBugCheckEx(0xDEADC0CD, (FILE_ID << 16) + __LINE__, p1, p2, p3)
+
+#define HALT_UNLESS2(exp, p1, p2) HALT_UNLESS3(exp, p1, p2, 0)
+#define HALT_UNLESS1(exp, p1)     HALT_UNLESS3(exp, p1, 0, 0)
+#define HALT_UNLESS(exp)          HALT_UNLESS3(exp, 0, 0, 0)
 
 #define TRACE_FLAG_PARAMS         0x0001
 #define TRACE_FLAG_RESULTS        0x0002
@@ -86,6 +97,10 @@ CODE2NAME codeNameTableDeviceText[];
 
 #else /* DBG */
 
+#define HALT_UNLESS3(exp, p1, p2, p3)
+#define HALT_UNLESS2(exp, p1, p2)
+#define HALT_UNLESS1(exp, p1)
+#define HALT_UNLESS(exp)
 #define TraceOpen(a1, a2)
 #define TraceClose()
 #define Trace0(a1, a2)
