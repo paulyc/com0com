@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2005/07/14 13:51:08  vfrolov
+ * Replaced ASSERT by HALT_UNLESS
+ *
  * Revision 1.5  2005/07/13 16:12:36  vfrolov
  * Added c0cGlobal struct for global driver's data
  *
@@ -209,9 +212,7 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   pDevExt->pIoPortLocal = ((PC0C_PDOPORT_EXTENSION)pPhDevObj->DeviceExtension)->pIoPortLocal;
   pDevExt->pIoPortRemote = ((PC0C_PDOPORT_EXTENSION)pPhDevObj->DeviceExtension)->pIoPortRemote;
 
-  KeInitializeDpc(&pDevExt->pIoPortLocal->timerReadTotalDpc, TimeoutReadTotal, pDevExt);
-  KeInitializeDpc(&pDevExt->pIoPortLocal->timerReadIntervalDpc, TimeoutReadInterval, pDevExt);
-  KeInitializeDpc(&pDevExt->pIoPortLocal->timerWriteTotalDpc, TimeoutWriteTotal, pDevExt);
+  InitializeTimeoutDpc(pDevExt);
 
   KeInitializeSpinLock(&pDevExt->controlLock);
   pDevExt->specialChars.XonChar      = 0x11;
