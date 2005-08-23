@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2005/08/16 16:36:33  vfrolov
+ * Hidden timeout functions
+ *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
  *
@@ -28,7 +31,10 @@
 #ifndef _C0C_TIMEOUT_H_
 #define _C0C_TIMEOUT_H_
 
-VOID InitializeTimeoutDpc(IN PC0C_FDOPORT_EXTENSION pDevExt);
+VOID AllocTimeouts(IN PC0C_FDOPORT_EXTENSION pDevExt);
+VOID FreeTimeouts(IN PC0C_FDOPORT_EXTENSION pDevExt);
+
+VOID SetIntervalTimeout(PC0C_IO_PORT pIoPort);
 
 NTSTATUS FdoPortSetIrpTimeout(
     IN PC0C_FDOPORT_EXTENSION pDevExt,

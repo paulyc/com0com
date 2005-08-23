@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2005/08/16 16:36:33  vfrolov
+ * Hidden timeout functions
+ *
  * Revision 1.2  2005/07/14 13:51:09  vfrolov
  * Replaced ASSERT by HALT_UNLESS
  *
@@ -76,7 +79,6 @@ VOID TimeoutRoutine(
 NTSTATUS SetReadTimeout(IN PC0C_FDOPORT_EXTENSION pDevExt, PIRP pIrp)
 {
   SERIAL_TIMEOUTS timeouts;
-  KIRQL oldIrql;
   BOOLEAN setTotal;
   ULONG multiplier;
   ULONG constant;
@@ -88,9 +90,9 @@ NTSTATUS SetReadTimeout(IN PC0C_FDOPORT_EXTENSION pDevExt, PIRP pIrp)
   pState = GetIrpState(pIrp);
   HALT_UNLESS(pState);
 
-  KeAcquireSpinLock(&pDevExt->controlLock, &oldIrql);
+  KeAcquireSpinLockAtDpcLevel(&pDevExt->controlLock);
   timeouts = pDevExt->timeouts;
-  KeReleaseSpinLock(&pDevExt->controlLock, oldIrql);
+  KeReleaseSpinLockFromDpcLevel(&pDevExt->controlLock);
 
   if (timeouts.ReadIntervalTimeout == MAXULONG &&
       !timeouts.ReadTotalTimeoutMultiplier &&
@@ -126,14 +128,11 @@ NTSTATUS SetReadTimeout(IN PC0C_FDOPORT_EXTENSION pDevExt, PIRP pIrp)
     if (timeouts.ReadIntervalTimeout) {
       pState->flags |= C0C_IRP_FLAG_INTERVAL_TIMEOUT;
 
-      pDevExt->pIoPortLocal->timeoutInterval.QuadPart = 
+      pDevExt->pIoPortLocal->timeoutInterval.QuadPart =
           ((LONGLONG)timeouts.ReadIntervalTimeout) * -10000;
 
       if (pIrp->IoStatus.Information)
-        KeSetTimer(
-            &pDevExt->pIoPortLocal->timerReadInterval,
-            pDevExt->pIoPortLocal->timeoutInterval,
-            &pDevExt->pIoPortLocal->timerReadIntervalDpc);
+        SetIntervalTimeout(pDevExt->pIoPortLocal);
     }
   }
 
@@ -157,16 +156,15 @@ NTSTATUS SetReadTimeout(IN PC0C_FDOPORT_EXTENSION pDevExt, PIRP pIrp)
 NTSTATUS SetWriteTimeout(IN PC0C_FDOPORT_EXTENSION pDevExt, PIRP pIrp)
 {
   SERIAL_TIMEOUTS timeouts;
-  KIRQL oldIrql;
   BOOLEAN setTotal;
   ULONG multiplier;
   ULONG constant;
 
   KeCancelTimer(&pDevExt->pIoPortLocal->timerWriteTotal);
 
-  KeAcquireSpinLock(&pDevExt->controlLock, &oldIrql);
+  KeAcquireSpinLockAtDpcLevel(&pDevExt->controlLock);
   timeouts = pDevExt->timeouts;
-  KeReleaseSpinLock(&pDevExt->controlLock, oldIrql);
+  KeReleaseSpinLockFromDpcLevel(&pDevExt->controlLock);
 
   setTotal = FALSE;
   multiplier = 0;
@@ -240,11 +238,31 @@ VOID TimeoutWriteTotal(
   TimeoutRoutine(pDevExt, &pDevExt->pIoPortLocal->irpQueues[C0C_QUEUE_WRITE]);
 }
 
-VOID InitializeTimeoutDpc(IN PC0C_FDOPORT_EXTENSION pDevExt)
+VOID AllocTimeouts(IN PC0C_FDOPORT_EXTENSION pDevExt)
 {
+  KeInitializeTimer(&pDevExt->pIoPortLocal->timerReadTotal);
+  KeInitializeTimer(&pDevExt->pIoPortLocal->timerReadInterval);
+  KeInitializeTimer(&pDevExt->pIoPortLocal->timerWriteTotal);
+
   KeInitializeDpc(&pDevExt->pIoPortLocal->timerReadTotalDpc, TimeoutReadTotal, pDevExt);
   KeInitializeDpc(&pDevExt->pIoPortLocal->timerReadIntervalDpc, TimeoutReadInterval, pDevExt);
   KeInitializeDpc(&pDevExt->pIoPortLocal->timerWriteTotalDpc, TimeoutWriteTotal, pDevExt);
+}
+
+VOID FreeTimeouts(IN PC0C_FDOPORT_EXTENSION pDevExt)
+{
+    KeCancelTimer(&pDevExt->pIoPortLocal->timerReadTotal);
+    KeCancelTimer(&pDevExt->pIoPortLocal->timerReadInterval);
+    KeCancelTimer(&pDevExt->pIoPortLocal->timerWriteTotal);
+
+    KeRemoveQueueDpc(&pDevExt->pIoPortLocal->timerReadTotalDpc);
+    KeRemoveQueueDpc(&pDevExt->pIoPortLocal->timerReadIntervalDpc);
+    KeRemoveQueueDpc(&pDevExt->pIoPortLocal->timerWriteTotalDpc);
+}
+
+VOID SetIntervalTimeout(PC0C_IO_PORT pIoPort)
+{
+  KeSetTimer(&pIoPort->timerReadInterval, pIoPort->timeoutInterval, &pIoPort->timerReadIntervalDpc);
 }
 
 NTSTATUS FdoPortSetIrpTimeout(

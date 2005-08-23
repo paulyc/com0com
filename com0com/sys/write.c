@@ -19,31 +19,26 @@
  *
  *
  * $Log$
+ * Revision 1.1  2005/01/26 12:18:54  vfrolov
+ * Initial revision
+ *
  *
  */
 
 #include "precomp.h"
-#include "timeout.h"
 
 NTSTATUS StartIrpWrite(
     IN PC0C_FDOPORT_EXTENSION pDevExt,
     IN PLIST_ENTRY pQueueToComplete)
 {
-  NTSTATUS status;
-  PIRP pIrp;
-
-  pIrp = pDevExt->pIoPortLocal->irpQueues[C0C_QUEUE_WRITE].pCurrent;
-
-  status = FdoPortIo(C0C_IO_TYPE_WRITE,
-                     pIrp,
-                     pDevExt->pIoPortRemote,
-                     &pDevExt->pIoPortRemote->irpQueues[C0C_QUEUE_READ],
-                     pQueueToComplete);
-
-  if (status == STATUS_PENDING)
-    status = FdoPortSetIrpTimeout(pDevExt, pIrp);
-
-  return status;
+  return ReadWrite(
+      pDevExt->pIoPortRemote,
+      &pDevExt->pIoPortRemote->irpQueues[C0C_QUEUE_READ],
+      FALSE,
+      pDevExt->pIoPortLocal,
+      &pDevExt->pIoPortLocal->irpQueues[C0C_QUEUE_WRITE],
+      TRUE,
+      pQueueToComplete);
 }
 
 NTSTATUS FdoPortWrite(IN PC0C_FDOPORT_EXTENSION pDevExt, IN PIRP pIrp)
