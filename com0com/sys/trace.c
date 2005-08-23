@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2005/07/14 13:51:09  vfrolov
+ * Replaced ASSERT by HALT_UNLESS
+ *
  * Revision 1.6  2005/07/01 11:03:50  vfrolov
  * Included <stdarg.h>
  *
@@ -913,6 +916,7 @@ VOID TraceOpen(
     StrFree(&msg);
 
     TraceF(NULL, "===== BEGIN =====");
+    TraceF(NULL, "(" __DATE__ " " __TIME__ ")");
   }
 }
 
