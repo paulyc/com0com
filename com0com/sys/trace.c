@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2005/08/23 15:28:26  vfrolov
+ * Added build timestamp
+ *
  * Revision 1.7  2005/07/14 13:51:09  vfrolov
  * Replaced ASSERT by HALT_UNLESS
  *
@@ -456,7 +459,7 @@ PCHAR AnsiStrFormat(
 }
 /********************************************************************/
 
-PWCHAR code2name(
+PCHAR code2name(
     IN ULONG code,
     IN PCODE2NAME pTable)
 {
@@ -477,12 +480,12 @@ PCHAR AnsiStrCopyCode(
     IN PCHAR pPref,
     IN ULONG base)
 {
-  PWCHAR pStr;
+  PCHAR pStr;
 
   pStr = code2name(code, pTable);
 
   if (pStr) {
-    pDestStr = AnsiStrCopyStrW(pDestStr, pSize, pStr);
+    pDestStr = AnsiStrCopyStr(pDestStr, pSize, pStr);
   } else {
     if (pPref)
       pDestStr = AnsiStrCopyStr(pDestStr, pSize, pPref);
@@ -508,14 +511,14 @@ PCHAR AnsiStrCopyMask(
 
   for (b = 1 ; b ; b <<= 1) {
     if ((mask & b) != 0) {
-      PWCHAR pStr;
+      PCHAR pStr;
 
       pStr = code2name(b, pTable);
 
       if (pStr) {
         if (count)
           pDestStr = AnsiStrCopyStr(pDestStr, pSize, "|");
-        pDestStr = AnsiStrCopyStrW(pDestStr, pSize, pStr);
+        pDestStr = AnsiStrCopyStr(pDestStr, pSize, pStr);
         count++;
       } else {
         unknown |= b;
@@ -527,6 +530,38 @@ PCHAR AnsiStrCopyMask(
     if (count)
       pDestStr = AnsiStrCopyStr(pDestStr, pSize, "|");
     pDestStr = AnsiStrFormat(pDestStr, pSize, "0x%lX", unknown);
+  }
+
+  return AnsiStrCopyStr(pDestStr, pSize, "]");
+}
+
+PCHAR AnsiStrCopyFields(
+    PCHAR pDestStr,
+    PSIZE_T pSize,
+    IN PFIELD2NAME pTable,
+    IN ULONG mask)
+{
+  int count = 0;
+
+  pDestStr = AnsiStrCopyStr(pDestStr, pSize, "[");
+
+  while (pTable->name) {
+    ULONG m = (mask & pTable->mask);
+
+    if (m == pTable->code) {
+      mask &= ~pTable->mask;
+      if (count)
+        pDestStr = AnsiStrCopyStr(pDestStr, pSize, "|");
+      pDestStr = AnsiStrCopyStr(pDestStr, pSize, pTable->name);
+      count++;
+    }
+    pTable++;
+  }
+
+  if (mask) {
+    if (count)
+      pDestStr = AnsiStrCopyStr(pDestStr, pSize, "|");
+    pDestStr = AnsiStrFormat(pDestStr, pSize, "0x%lX", mask);
   }
 
   return AnsiStrCopyStr(pDestStr, pSize, "]");
@@ -580,12 +615,12 @@ PCHAR AnsiStrCopyHandFlow(
     IN PSERIAL_HANDFLOW pHandFlow)
 {
   pDestStr = AnsiStrCopyStr(pDestStr, pSize, " Hand");
-  pDestStr = AnsiStrCopyMask(pDestStr, pSize,
+  pDestStr = AnsiStrCopyFields(pDestStr, pSize,
       codeNameTableControlHandShake,
       pHandFlow->ControlHandShake);
 
   pDestStr = AnsiStrCopyStr(pDestStr, pSize, " Flow");
-  pDestStr = AnsiStrCopyMask(pDestStr, pSize,
+  pDestStr = AnsiStrCopyFields(pDestStr, pSize,
       codeNameTableFlowReplace,
       pHandFlow->FlowReplace);
 
