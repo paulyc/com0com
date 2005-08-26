@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2005/08/25 15:38:17  vfrolov
+ * Some code moved from io.c to bufutils.c
+ *
  * Revision 1.9  2005/08/25 08:25:40  vfrolov
  * Fixed data types
  *
@@ -375,7 +378,6 @@ NTSTATUS ReadWrite(
       writeLimit = GetWriteLimit(pWriteDelay);
       status = STATUS_PENDING;
     } else {
-      StopWriteDelayTimer(pWriteDelay);
       writeLimit = 0;
       status = STATUS_SUCCESS;
     }
