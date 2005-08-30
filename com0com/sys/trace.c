@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.9  2005/08/25 07:48:39  vfrolov
+ * Changed type of code names from wchar to char
+ * Fixed HandFlow tracing
+ *
  * Revision 1.8  2005/08/23 15:28:26  vfrolov
  * Added build timestamp
  *
@@ -76,6 +80,7 @@ static struct {
   ULONG getTimeouts;
   ULONG setTimeouts;
   ULONG getCommStatus;
+  ULONG getModemStatus;
 } traceEnable;
 /********************************************************************/
 static WCHAR traceFileNameBuf[256];
@@ -133,7 +138,7 @@ VOID QueryRegistryTraceEnable(IN PUNICODE_STRING pRegistryPath)
 {
   NTSTATUS status;
   UNICODE_STRING traceRegistryPath;
-  RTL_QUERY_REGISTRY_TABLE queryTable[6];
+  RTL_QUERY_REGISTRY_TABLE queryTable[7];
   ULONG zero = 0;
 
   RtlZeroMemory(&traceEnable, sizeof(traceEnable));
@@ -185,6 +190,13 @@ VOID QueryRegistryTraceEnable(IN PUNICODE_STRING pRegistryPath)
   queryTable[4].DefaultType   = REG_DWORD;
   queryTable[4].DefaultData   = &zero;
   queryTable[4].DefaultLength = sizeof(ULONG);
+
+  queryTable[5].Flags         = RTL_QUERY_REGISTRY_DIRECT;
+  queryTable[5].Name          = L"GetModemStatus";
+  queryTable[5].EntryContext  = &traceEnable.getModemStatus;
+  queryTable[5].DefaultType   = REG_DWORD;
+  queryTable[5].DefaultData   = &zero;
+  queryTable[5].DefaultLength = sizeof(ULONG);
 
   status = RtlQueryRegistryValues(
       RTL_REGISTRY_ABSOLUTE,
@@ -1086,6 +1098,10 @@ VOID TraceIrp(
           break;
         case IOCTL_SERIAL_GET_COMMSTATUS:
           if (!traceEnable.getCommStatus)
+            return;
+          break;
+        case IOCTL_SERIAL_GET_MODEMSTATUS:
+          if (!traceEnable.getModemStatus)
             return;
           break;
       }
