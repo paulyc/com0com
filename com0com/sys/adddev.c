@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2005/08/23 15:49:21  vfrolov
+ * Implemented baudrate emulation
+ *
  * Revision 1.7  2005/08/16 16:36:33  vfrolov
  * Hidden timeout functions
  *
@@ -39,7 +42,6 @@
  *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
- *
  *
  */
 
@@ -97,7 +99,7 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   UNICODE_STRING portName;
   PDEVICE_OBJECT pNewDevObj;
   PC0C_FDOPORT_EXTENSION pDevExt = NULL;
-  ULONG emuBR = 0;
+  ULONG emuBR, emuOverrun;
   WCHAR propertyBuffer[255];
   PWCHAR pPortName;
   ULONG len;
@@ -168,8 +170,10 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
       }
     }
 
+    emuBR = emuOverrun = 0;
+
     if (NT_SUCCESS(status)) {
-      RTL_QUERY_REGISTRY_TABLE queryTable[2];
+      RTL_QUERY_REGISTRY_TABLE queryTable[3];
       ULONG zero = 0;
 
       RtlZeroMemory(queryTable, sizeof(queryTable));
@@ -180,6 +184,13 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
       queryTable[0].DefaultType   = REG_DWORD;
       queryTable[0].DefaultData   = &zero;
       queryTable[0].DefaultLength = sizeof(ULONG);
+
+      queryTable[1].Flags         = RTL_QUERY_REGISTRY_DIRECT;
+      queryTable[1].Name          = L"EmuOverrun";
+      queryTable[1].EntryContext  = &emuOverrun;
+      queryTable[1].DefaultType   = REG_DWORD;
+      queryTable[1].DefaultData   = &zero;
+      queryTable[1].DefaultLength = sizeof(ULONG);
 
       RtlQueryRegistryValues(
           RTL_REGISTRY_ABSOLUTE,
@@ -234,7 +245,20 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   if (emuBR) {
     if (NT_SUCCESS(AllocWriteDelay(pDevExt)))
       Trace0((PC0C_COMMON_EXTENSION)pDevExt, L"Enabled baudrate emulation");
+    else
+      SysLog(pPhDevObj, status, L"AddFdoPort AllocWriteDelay FAIL");
+  } else {
+    Trace0((PC0C_COMMON_EXTENSION)pDevExt, L"Disabled baudrate emulation");
   }
+
+  if (emuOverrun) {
+    pDevExt->pIoPortLocal->emuOverrun = TRUE;
+    Trace0((PC0C_COMMON_EXTENSION)pDevExt, L"Enabled overrun emulation");
+  } else {
+    pDevExt->pIoPortLocal->emuOverrun = FALSE;
+    Trace0((PC0C_COMMON_EXTENSION)pDevExt, L"Disabled overrun emulation");
+  }
+
   AllocTimeouts(pDevExt);
 
   KeInitializeSpinLock(&pDevExt->controlLock);

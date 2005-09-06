@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2005/05/14 17:07:02  vfrolov
+ * Implemented SERIAL_LSRMST_MST insertion
+ *
  * Revision 1.4  2005/05/13 16:58:03  vfrolov
  * Implemented IOCTL_SERIAL_LSRMST_INSERT
  *
@@ -30,7 +33,6 @@
  *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
- *
  *
  */
 
@@ -79,6 +81,7 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   pDevExt->pIoPortLocal->readBuf = readBufNew;
 
+  pDevExt->pIoPortLocal->errors = 0;
   pDevExt->pIoPortLocal->waitMask = 0;
   pDevExt->pIoPortLocal->eventMask = 0;
   pDevExt->pIoPortLocal->escapeChar = 0;

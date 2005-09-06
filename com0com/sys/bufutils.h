@@ -19,12 +19,15 @@
  *
  *
  * $Log$
+ * Revision 1.1  2005/08/25 15:38:17  vfrolov
+ * Some code moved from io.c to bufutils.c
  *
  */
 
 #ifndef _C0C_BUFUTILS_H_
 #define _C0C_BUFUTILS_H_
 
+NTSTATUS MoveRawData(PC0C_RAW_DATA pDstRawData, PC0C_RAW_DATA pSrcRawData);
 VOID CopyCharsWithEscape(
     PC0C_BUFFER pBuf, UCHAR escapeChar,
     PUCHAR pReadBuf, SIZE_T readLength,
@@ -33,6 +36,7 @@ VOID CopyCharsWithEscape(
     PSIZE_T pWriteDone);
 SIZE_T ReadFromBuffer(PC0C_BUFFER pBuf, PVOID pRead, SIZE_T readLength);
 SIZE_T WriteToBuffer(PC0C_BUFFER pBuf, PVOID pWrite, SIZE_T writeLength, UCHAR escapeChar);
+VOID WriteMandatoryToBuffer(PC0C_BUFFER pBuf, UCHAR mandatoryChar);
 NTSTATUS WriteRawDataToBuffer(PC0C_RAW_DATA pRawData, PC0C_BUFFER pBuf);
 SIZE_T WriteRawData(PC0C_RAW_DATA pRawData, PNTSTATUS pStatus, PVOID pReadBuf, SIZE_T readLength);
 

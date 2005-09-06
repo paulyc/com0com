@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2005/08/25 15:38:17  vfrolov
+ * Some code moved from io.c to bufutils.c
  *
  */
 
@@ -238,6 +240,23 @@ SIZE_T WriteToBuffer(PC0C_BUFFER pBuf, PVOID pWrite, SIZE_T writeLength, UCHAR e
   return pWriteBuf - (PUCHAR)pWrite;
 }
 
+VOID WriteMandatoryToBuffer(PC0C_BUFFER pBuf, UCHAR mandatoryChar)
+{
+  if ((SIZE_T)(pBuf->pEnd - pBuf->pBase) <= pBuf->busy) {
+    if (pBuf->pBase) {
+      if (pBuf->pFree == pBuf->pBase)
+        *(pBuf->pEnd - 1) = mandatoryChar;
+      else
+        *(pBuf->pFree - 1) = mandatoryChar;
+    }
+  } else {
+    pBuf->busy++;
+    *pBuf->pFree = mandatoryChar;
+    if (++pBuf->pFree == pBuf->pEnd)
+      pBuf->pFree = pBuf->pBase;
+  }
+}
+
 NTSTATUS WriteRawDataToBuffer(PC0C_RAW_DATA pRawData, PC0C_BUFFER pBuf)
 {
   NTSTATUS status;
@@ -285,9 +304,6 @@ NTSTATUS WriteRawDataToBuffer(PC0C_RAW_DATA pRawData, PC0C_BUFFER pBuf)
 
     CompactRawData(pRawData, writeDone);
   }
-
-  if (status == STATUS_PENDING)
-    status = MoveRawData(&pBuf->insertData, pRawData);
 
   return status;
 }
