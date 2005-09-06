@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.3  2005/08/25 07:48:39  vfrolov
+ * Changed type of code names from wchar to char
+ * Fixed HandFlow tracing
+ *
  * Revision 1.2  2005/07/14 12:18:59  vfrolov
  * Defined HALT_UNLESS
  *
@@ -101,6 +105,7 @@ CODE2NAME codeNameTableIrpMj[];
 CODE2NAME codeNameTableRelations[];
 CODE2NAME codeNameTableBusQuery[];
 CODE2NAME codeNameTableDeviceText[];
+CODE2NAME codeNameTableErrors[];
 
 FIELD2NAME codeNameTableControlHandShake[];
 FIELD2NAME codeNameTableFlowReplace[];
