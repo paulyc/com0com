@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2005/09/09 15:21:32  vfrolov
+ * Added additional flushing for saved strings
+ *
  * Revision 1.11  2005/09/06 06:58:20  vfrolov
  * Added SERIAL_STATUS.Errors tracing
  * Added version tracing
@@ -89,6 +92,7 @@ static struct {
   ULONG setTimeouts;
   ULONG getCommStatus;
   ULONG getModemStatus;
+  ULONG modemStatus;
 } traceEnable;
 /********************************************************************/
 static WCHAR traceFileNameBuf[256];
@@ -146,7 +150,7 @@ VOID QueryRegistryTraceEnable(IN PUNICODE_STRING pRegistryPath)
 {
   NTSTATUS status;
   UNICODE_STRING traceRegistryPath;
-  RTL_QUERY_REGISTRY_TABLE queryTable[7];
+  RTL_QUERY_REGISTRY_TABLE queryTable[8];
   ULONG zero = 0;
 
   RtlZeroMemory(&traceEnable, sizeof(traceEnable));
@@ -205,6 +209,13 @@ VOID QueryRegistryTraceEnable(IN PUNICODE_STRING pRegistryPath)
   queryTable[5].DefaultType   = REG_DWORD;
   queryTable[5].DefaultData   = &zero;
   queryTable[5].DefaultLength = sizeof(ULONG);
+
+  queryTable[6].Flags         = RTL_QUERY_REGISTRY_DIRECT;
+  queryTable[6].Name          = L"ModemStatus";
+  queryTable[6].EntryContext  = &traceEnable.modemStatus;
+  queryTable[6].DefaultType   = REG_DWORD;
+  queryTable[6].DefaultData   = &zero;
+  queryTable[6].DefaultLength = sizeof(ULONG);
 
   status = RtlQueryRegistryValues(
       RTL_REGISTRY_ABSOLUTE,
@@ -1076,6 +1087,21 @@ VOID TraceMask(
 
   TraceOutput(pDevExt, pBuf->buf);
   FreeTraceBuf(pBuf);
+}
+
+VOID TraceModemStatus(IN PC0C_IO_PORT pIoPort)
+{
+  if (!TRACE_FILE_OK)
+    return;
+
+  if (!traceEnable.modemStatus)
+    return;
+
+  TraceMask(
+      (PC0C_COMMON_EXTENSION)pIoPort->pDevExt,
+      "ModemStatus",
+      codeNameTableModemStatus,
+      pIoPort->modemStatus);
 }
 
 VOID TraceIrp(

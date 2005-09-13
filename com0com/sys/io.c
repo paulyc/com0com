@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2005/09/06 07:23:44  vfrolov
+ * Implemented overrun emulation
+ *
  * Revision 1.11  2005/08/26 08:35:05  vfrolov
  * Fixed unwanted interference to baudrate emulation by read operations
  *
@@ -565,15 +568,11 @@ VOID SetModemStatus(
   else
     pIoPort->modemStatus &= ~bits;
 
-  TraceMask(
-    (PC0C_COMMON_EXTENSION)pIoPort->pDevExt,
-    "ModemStatus",
-    codeNameTableModemStatus,
-    pIoPort->modemStatus);
-
   modemStatusChanged = modemStatusOld ^ pIoPort->modemStatus;
 
   if (modemStatusChanged) {
+    TraceModemStatus(pIoPort);
+
     if (pIoPort->escapeChar) {
       NTSTATUS status;
       C0C_RAW_DATA insertData;
