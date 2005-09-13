@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2005/09/06 07:23:44  vfrolov
+ * Implemented overrun emulation
+ *
  * Revision 1.11  2005/08/23 15:49:21  vfrolov
  * Implemented baudrate emulation
  *
@@ -224,7 +227,6 @@ VOID c0cUnload(IN PDRIVER_OBJECT pDrvObj);
 
 DeclareMajorFunction(c0cOpen);
 DeclareMajorFunction(c0cClose);
-DeclareMajorFunction(c0cFlush);
 DeclareMajorFunction(c0cWrite);
 DeclareMajorFunction(c0cRead);
 DeclareMajorFunction(c0cIoControl);

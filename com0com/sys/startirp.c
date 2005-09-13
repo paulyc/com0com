@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2005/09/06 07:23:44  vfrolov
+ * Implemented overrun emulation
+ *
  * Revision 1.3  2005/08/24 12:50:40  vfrolov
  * Fixed IRP processing order
  *
@@ -52,6 +55,8 @@ PC0C_IRP_STATE GetIrpState(IN PIRP pIrp)
       return (PC0C_IRP_STATE)&pIrpStack->Parameters.DeviceIoControl.Type3InputBuffer;
     }
     break;
+  case IRP_MJ_FLUSH_BUFFERS:
+    return (PC0C_IRP_STATE)&pIrpStack->Parameters.Others.Argument1;
   }
 
   return NULL;
