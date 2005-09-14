@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2005/09/14 10:42:38  vfrolov
+ * Implemented SERIAL_EV_TXEMPTY
+ *
  * Revision 1.14  2005/09/13 14:56:16  vfrolov
  * Implemented IRP_MJ_FLUSH_BUFFERS
  *
@@ -474,7 +477,7 @@ NTSTATUS ReadWrite(
 
     wasWrite = FALSE;
 
-    for (firstWrite = TRUE ; !pWriteLimit || *pWriteLimit ; firstWrite = FALSE) {
+    for (firstWrite = TRUE ;; firstWrite = FALSE) {
       NTSTATUS statusWrite;
       PDRIVER_CANCEL pCancelRoutineWrite;
       PIRP pIrpWrite;
@@ -501,7 +504,9 @@ NTSTATUS ReadWrite(
       if (IoGetCurrentIrpStackLocation(pIrpWrite)->MajorFunction == IRP_MJ_FLUSH_BUFFERS) {
         pIrpWrite->IoStatus.Information = 0;
         statusWrite = STATUS_SUCCESS;
-      } else {
+      }
+      else
+      if (!pWriteLimit || *pWriteLimit) {
         if (statusRead == STATUS_PENDING)
           ReadWriteDirect(
               pIrpRead, pIrpWrite,
