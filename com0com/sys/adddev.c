@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2005/09/06 07:23:44  vfrolov
+ * Implemented overrun emulation
+ *
  * Revision 1.8  2005/08/23 15:49:21  vfrolov
  * Implemented baudrate emulation
  *
@@ -360,7 +363,7 @@ NTSTATUS AddPdoPort(
   status = IoCreateDevice(pDrvObj,
                           sizeof(*pDevExt),
                           &ntDeviceName,
-                          FILE_DEVICE_BUS_EXTENDER,
+                          FILE_DEVICE_SERIAL_PORT,
                           FILE_DEVICE_SECURE_OPEN,
                           TRUE,
                           &pNewDevObj);
