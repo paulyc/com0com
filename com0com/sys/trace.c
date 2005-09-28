@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2005/09/13 08:55:41  vfrolov
+ * Disabled modem status tracing by default
+ *
  * Revision 1.12  2005/09/09 15:21:32  vfrolov
  * Added additional flushing for saved strings
  *
@@ -1343,6 +1346,21 @@ VOID TraceIrp(
 
       pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
       pDestStr = AnsiStrCopyCode(pDestStr, &size, code, codeNameTablePower, "POWER_", 10);
+      break;
+    }
+    case IRP_MJ_QUERY_INFORMATION: {
+      ULONG code = pIrpStack->Parameters.QueryFile.FileInformationClass;
+
+      pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
+      pDestStr = AnsiStrCopyCode(pDestStr, &size, code, codeNameTableFileInformationClass, NULL, 10);
+      break;
+    }
+    case IRP_MJ_SET_INFORMATION: {
+      ULONG code = pIrpStack->Parameters.SetFile.FileInformationClass;
+
+      pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
+      pDestStr = AnsiStrCopyCode(pDestStr, &size, code, codeNameTableFileInformationClass, NULL, 10);
+      break;
     }
   }
 

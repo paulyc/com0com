@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2005/09/13 14:56:16  vfrolov
+ * Implemented IRP_MJ_FLUSH_BUFFERS
+ *
  * Revision 1.12  2005/09/06 07:23:44  vfrolov
  * Implemented overrun emulation
  *
@@ -232,9 +235,7 @@ DeclareMajorFunction(c0cRead);
 DeclareMajorFunction(c0cIoControl);
 DeclareMajorFunction(c0cInternalIoControl);
 DeclareMajorFunction(c0cCleanup);
-
-DeclareMajorFunction(c0cQueryInformation);
-DeclareMajorFunction(c0cSetInformation);
+DeclareMajorFunction(c0cFileInformation);
 DeclareMajorFunction(c0cSystemControlDispatch);
 
 DeclareMajorFunction(c0cPnpDispatch);

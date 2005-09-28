@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2005/09/13 08:55:41  vfrolov
+ * Disabled modem status tracing by default
+ *
  * Revision 1.4  2005/09/06 06:49:39  vfrolov
  * Added codeNameTableErrors[]
  *
@@ -111,6 +114,7 @@ CODE2NAME codeNameTableRelations[];
 CODE2NAME codeNameTableBusQuery[];
 CODE2NAME codeNameTableDeviceText[];
 CODE2NAME codeNameTableErrors[];
+CODE2NAME codeNameTableFileInformationClass[];
 
 FIELD2NAME codeNameTableControlHandShake[];
 FIELD2NAME codeNameTableFlowReplace[];
