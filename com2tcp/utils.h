@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2005/06/10 15:55:10  vfrolov
+ * Implemented --terminal option
+ *
  * Revision 1.2  2005/06/08 07:40:23  vfrolov
  * Added missing DataStream::busy initialization
  *
@@ -79,8 +82,6 @@ class DataStream
     int GetData(void *pBuf, int count);
     void PutEof() { eof = TRUE; }
     BOOL isFull() const { return threshold && threshold < busy; }
-
-  protected:
     void Clean();
 
   private:
@@ -108,6 +109,7 @@ class Protocol
     void WriteEof() { streamWriteRecv.PutEof(); }
     BOOL isWriteFull() const { return streamWriteRecv.isFull(); }
     int Recv(void *pBuf, int count) { return streamWriteRecv.GetData(pBuf, count); }
+    virtual void Clean();
 
   private:
     DataStream streamSendRead;

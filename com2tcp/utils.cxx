@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2005/06/10 15:51:26  vfrolov
+ * Included precomp.h
+ *
  * Revision 1.1  2005/06/06 15:19:02  vfrolov
  * Initial revision
  *
@@ -166,5 +169,11 @@ int Protocol::Send(const void *pBuf, int count)
 int Protocol::Write(const void *pBuf, int count)
 {
   return WriteRaw(pBuf, count);
+}
+
+void Protocol::Clean()
+{
+  streamSendRead.Clean();
+  streamWriteRecv.Clean();
 }
 ///////////////////////////////////////////////////////////////
