@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2005/10/03 13:48:08  vfrolov
+ * Added --ignore-dsr and listen options
+ *
  * Revision 1.6  2005/06/10 15:55:10  vfrolov
  * Implemented --terminal option
  *
@@ -43,6 +46,9 @@
 #include "precomp.h"
 #include "telnet.h"
 
+///////////////////////////////////////////////////////////////
+static SOCKET Accept(SOCKET hSockListen);
+static void Disconnect(SOCKET hSock);
 ///////////////////////////////////////////////////////////////
 static void TraceLastError(const char *pFmt, ...)
 {
@@ -103,7 +109,12 @@ static BOOL PrepareEvents(int num, HANDLE *hEvents, OVERLAPPED *overlaps)
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-static void InOut(HANDLE hC0C, SOCKET hSock, Protocol &protocol, BOOL ignoreDSR)
+static void InOut(
+   HANDLE hC0C,
+   SOCKET hSock,
+   Protocol &protocol,
+   BOOL ignoreDSR,
+   SOCKET hSockListen = INVALID_SOCKET)
 {
   printf("InOut() START\n");
 
@@ -118,6 +129,7 @@ static void InOut(HANDLE hC0C, SOCKET hSock, Protocol &protocol, BOOL ignoreDSR)
     EVENT_WRITTEN,
     EVENT_STAT,
     EVENT_CLOSE,
+    EVENT_ACCEPT,
     EVENT_NUM
   };
 
@@ -133,6 +145,9 @@ static void InOut(HANDLE hC0C, SOCKET hSock, Protocol &protocol, BOOL ignoreDSR)
   }
 
   WSAEventSelect(hSock, hEvents[EVENT_CLOSE], FD_CLOSE);
+
+  if (hSockListen != INVALID_SOCKET)
+    WSAEventSelect(hSockListen, hEvents[EVENT_ACCEPT], FD_ACCEPT);
 
   DWORD not_used;
 
@@ -330,6 +345,20 @@ static void InOut(HANDLE hC0C, SOCKET hSock, Protocol &protocol, BOOL ignoreDSR)
           Sleep(1000);
         stop = TRUE;
         break;
+      case WAIT_OBJECT_0 + EVENT_ACCEPT: {
+        ResetEvent(hEvents[EVENT_ACCEPT]);
+        printf("EVENT_ACCEPT\n");
+
+        SOCKET hSockTmp = Accept(hSockListen);
+
+        if (hSockTmp != INVALID_SOCKET) {
+          char msg[] = "*** Serial port is busy ***\n";
+
+          send(hSockTmp, msg, strlen(msg), 0);
+          Disconnect(hSockTmp);
+        }
+        break;
+      }
       case WAIT_TIMEOUT:
         break;
       default:
@@ -341,6 +370,14 @@ static void InOut(HANDLE hC0C, SOCKET hSock, Protocol &protocol, BOOL ignoreDSR)
 
   CancelIo(hC0C);
   CancelIo((HANDLE)hSock);
+
+  if (hSockListen != INVALID_SOCKET) {
+    WSAEventSelect(hSockListen, hEvents[EVENT_ACCEPT], 0);
+
+    u_long blocking = 0;
+
+    ioctlsocket(hSockListen, FIONBIO, &blocking);
+  }
 
   CloseEvents(EVENT_NUM, hEvents);
 
@@ -614,6 +651,29 @@ static void Disconnect(SOCKET hSock)
   printf("Disconnect() - OK\n");
 }
 ///////////////////////////////////////////////////////////////
+
+static SOCKET Accept(SOCKET hSockListen)
+{
+  struct sockaddr_in sn;
+  int snlen = sizeof(sn);
+  SOCKET hSock = accept(hSockListen, (struct sockaddr *)&sn, &snlen);
+
+  if (hSock == INVALID_SOCKET) {
+    TraceLastError("tcp2com(): accept()");
+    return INVALID_SOCKET;
+  }
+
+  u_long addr = ntohl(sn.sin_addr.s_addr);
+
+  printf("Accept(%d.%d.%d.%d) - OK\n",
+      (addr >> 24) & 0xFF,
+      (addr >> 16) & 0xFF,
+      (addr >>  8) & 0xFF,
+       addr        & 0xFF);
+
+  return hSock;
+}
+
 static int tcp2com(
     const char *pPath,
     BOOL ignoreDSR,
@@ -642,29 +702,17 @@ static int tcp2com(
     closesocket(hSockListen);
     return 2;
   }
-  
+
   for (;;) {
-    struct sockaddr_in sn;
-    int snlen = sizeof(sn);
-    SOCKET hSock = accept(hSockListen, (struct sockaddr *)&sn, &snlen);
+    SOCKET hSock = Accept(hSockListen);
 
-    if (hSock == INVALID_SOCKET) {
-      TraceLastError("tcp2com(): accept()");
+    if (hSock == INVALID_SOCKET)
       break;
-    }
-
-    u_long addr = ntohl(sn.sin_addr.s_addr);
-
-    printf("Accept(%d.%d.%d.%d) - OK\n",
-        (addr >> 24) & 0xFF,
-        (addr >> 16) & 0xFF,
-        (addr >>  8) & 0xFF,
-         addr        & 0xFF);
 
     HANDLE hC0C = OpenC0C(pPath, ignoreDSR);
 
     if (hC0C != INVALID_HANDLE_VALUE) {
-      InOut(hC0C, hSock, protocol, ignoreDSR);
+      InOut(hC0C, hSock, protocol, ignoreDSR, hSockListen);
       CloseHandle(hC0C);
     }
 
