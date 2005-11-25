@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.16  2005/09/14 13:14:47  vfrolov
+ * Fixed possible tick loss
+ *
  * Revision 1.15  2005/09/14 10:42:38  vfrolov
  * Implemented SERIAL_EV_TXEMPTY
  *
@@ -105,11 +108,27 @@ NTSTATUS ReadBuffer(PIRP pIrp, PC0C_BUFFER pBuf, PSIZE_T pReadDone)
   return status;
 }
 
-VOID WaitCompleteRxChar(PC0C_IO_PORT pReadIoPort, PLIST_ENTRY pQueueToComplete)
+VOID OnRxChars(PC0C_IO_PORT pReadIoPort, PVOID pBuf, SIZE_T size, PLIST_ENTRY pQueueToComplete)
 {
-  if (pReadIoPort->waitMask & SERIAL_EV_RXCHAR) {
-    pReadIoPort->eventMask |= SERIAL_EV_RXCHAR;
-    WaitComplete(pReadIoPort, pQueueToComplete);
+  if (pReadIoPort->waitMask & (SERIAL_EV_RXCHAR | SERIAL_EV_RXFLAG)) {
+    if (pReadIoPort->waitMask & SERIAL_EV_RXCHAR)
+      pReadIoPort->eventMask |= SERIAL_EV_RXCHAR;
+
+    if (pReadIoPort->waitMask & SERIAL_EV_RXFLAG) {
+      PUCHAR p = (PUCHAR)pBuf;
+      SIZE_T s = size;
+      UCHAR c = pReadIoPort->pDevExt->specialChars.EventChar;
+
+      while (s--) {
+        if (c == *p++) {
+          pReadIoPort->eventMask |= SERIAL_EV_RXFLAG;
+          break;
+        }
+      }
+    }
+
+    if (pReadIoPort->eventMask)
+      WaitComplete(pReadIoPort, pQueueToComplete);
   }
 }
 
@@ -123,18 +142,22 @@ NTSTATUS WriteBuffer(
   NTSTATUS status;
   SIZE_T writeLength, information;
   SIZE_T writeDone;
+  PVOID pWriteBuf;
   PC0C_BUFFER pBuf;
   SIZE_T length;
 
-  writeLength = IoGetCurrentIrpStackLocation(pIrp)->Parameters.Write.Length;
   information = pIrp->IoStatus.Information;
+
+  pWriteBuf = GET_REST_BUFFER(pIrp, information);
+  writeLength = IoGetCurrentIrpStackLocation(pIrp)->Parameters.Write.Length;
+
   pBuf = &pReadIoPort->readBuf;
   length = writeLength - information;
 
   if (pWriteLimit && length > *pWriteLimit)
     length = *pWriteLimit;
 
-  writeDone = WriteToBuffer(pBuf, GET_REST_BUFFER(pIrp, information), length, pReadIoPort->escapeChar);
+  writeDone = WriteToBuffer(pBuf, pWriteBuf, length, pReadIoPort->escapeChar);
 
   if (writeDone) {
     *pWriteDone += writeDone;
@@ -144,7 +167,7 @@ NTSTATUS WriteBuffer(
     if (pWriteLimit)
       *pWriteLimit -= writeDone;
 
-    WaitCompleteRxChar(pReadIoPort, pQueueToComplete);
+    OnRxChars(pReadIoPort, pWriteBuf, writeDone, pQueueToComplete);
   }
 
   if (information == writeLength)
@@ -178,9 +201,13 @@ NTSTATUS WriteOverrun(
   NTSTATUS status;
   SIZE_T writeLength, information;
   SIZE_T writeDone;
+  PVOID pWriteBuf;
 
-  writeLength = IoGetCurrentIrpStackLocation(pIrp)->Parameters.Write.Length;
   information = pIrp->IoStatus.Information;
+
+  pWriteBuf = GET_REST_BUFFER(pIrp, information);
+  writeLength = IoGetCurrentIrpStackLocation(pIrp)->Parameters.Write.Length;
+
   writeDone = writeLength - information;
 
   if (pWriteLimit && writeDone > *pWriteLimit)
@@ -195,6 +222,7 @@ NTSTATUS WriteOverrun(
       *pWriteLimit -= writeDone;
 
     AlertOverrun(pReadIoPort, pQueueToComplete);
+    OnRxChars(pReadIoPort, pWriteBuf, writeDone, pQueueToComplete);
   }
 
   if (information == writeLength)
@@ -246,7 +274,7 @@ VOID ReadWriteDirect(
     *pStatusWrite = STATUS_SUCCESS;
 
   if (writeDone)
-    WaitCompleteRxChar(pReadIoPort, pQueueToComplete);
+    OnRxChars(pReadIoPort, pWriteBuf, writeDone, pQueueToComplete);
 
   *pReadDone += readDone;
   *pWriteDone += writeDone;
