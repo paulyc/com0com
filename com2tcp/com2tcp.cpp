@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2005/10/18 09:53:36  vfrolov
+ * Added EVENT_ACCEPT
+ *
  * Revision 1.7  2005/10/03 13:48:08  vfrolov
  * Added --ignore-dsr and listen options
  *
@@ -598,11 +601,13 @@ static BOOL SetAddr(struct sockaddr_in &sn, const char *pAddr, const char *pPort
   memset(&sn, 0, sizeof(sn));
   sn.sin_family = AF_INET;
 
-  struct servent *pServEnt;
+  if (pPort) {
+    struct servent *pServEnt;
 
-  pServEnt = getservbyname(pPort, pProtoName);
+    pServEnt = getservbyname(pPort, pProtoName);
 
-  sn.sin_port = pServEnt ? pServEnt->s_port : htons((u_short)atoi(pPort));
+    sn.sin_port = pServEnt ? pServEnt->s_port : htons((u_short)atoi(pPort));
+  }
 
   sn.sin_addr.s_addr = pAddr ? inet_addr(pAddr) : INADDR_ANY;
 
@@ -619,7 +624,9 @@ static BOOL SetAddr(struct sockaddr_in &sn, const char *pAddr, const char *pPort
   return TRUE;
 }
 
-static SOCKET Socket()
+static SOCKET Socket(
+    const char *pIF,
+    const char *pPort = NULL)
 {
   const struct protoent *pProtoEnt;
 
@@ -635,6 +642,19 @@ static SOCKET Socket()
   if (hSock == INVALID_SOCKET) {
     TraceLastError("Socket(): socket()");
     return INVALID_SOCKET;
+  }
+
+  if (pIF || pPort) {
+    struct sockaddr_in sn;
+
+    if (!SetAddr(sn, pIF, pPort))
+      return INVALID_SOCKET;
+
+    if (bind(hSock, (struct sockaddr *)&sn, sizeof(sn)) == SOCKET_ERROR) {
+      TraceLastError("Socket(): bind(\"%s\", \"%s\")", pIF, pPort);
+      closesocket(hSock);
+      return INVALID_SOCKET;
+    }
   }
 
   return hSock;
@@ -681,21 +701,10 @@ static int tcp2com(
     const char *pPort,
     Protocol &protocol)
 {
-  struct sockaddr_in snl;
-
-  if (!SetAddr(snl, pIF, pPort))
-    return 2;
-
-  SOCKET hSockListen = Socket();
+  SOCKET hSockListen = Socket(pIF, pPort);
 
   if (hSockListen == INVALID_SOCKET)
     return 2;
-
-  if (bind(hSockListen, (struct sockaddr *)&snl, sizeof(snl)) == SOCKET_ERROR) {
-    TraceLastError("tcp2com(): bind(\"%s\", \"%s\")", pIF, pPort);
-    closesocket(hSockListen);
-    return 2;
-  }
 
   if (listen(hSockListen, SOMAXCONN) == SOCKET_ERROR) {
     TraceLastError("tcp2com(): listen(\"%s\", \"%s\")", pIF, pPort);
@@ -724,14 +733,17 @@ static int tcp2com(
   return 2;
 }
 ///////////////////////////////////////////////////////////////
-static SOCKET Connect(const char *pAddr, const char *pPort)
+static SOCKET Connect(
+    const char *pIF,
+    const char *pAddr,
+    const char *pPort)
 {
   struct sockaddr_in sn;
 
   if (!SetAddr(sn, pAddr, pPort))
     return INVALID_SOCKET;
 
-  SOCKET hSock = Socket();
+  SOCKET hSock = Socket(pIF);
 
   if (hSock == INVALID_SOCKET)
     return INVALID_SOCKET;
@@ -750,6 +762,7 @@ static SOCKET Connect(const char *pAddr, const char *pPort)
 static int com2tcp(
     const char *pPath,
     BOOL ignoreDSR,
+    const char *pIF,
     const char *pAddr,
     const char *pPort,
     Protocol &protocol,
@@ -762,7 +775,7 @@ static int com2tcp(
   }
 
   while (WaitComReady(hC0C, ignoreDSR, pAwakSeq)) {
-    SOCKET hSock = Connect(pAddr, pPort);
+    SOCKET hSock = Connect(pIF, pAddr, pPort);
 
     if (hSock == INVALID_SOCKET)
       break;
@@ -779,19 +792,25 @@ static int com2tcp(
 ///////////////////////////////////////////////////////////////
 static void Usage(const char *pProgName)
 {
-  fprintf(stderr, "Usage:\n");
+  fprintf(stderr, "Usage (client mode):\n");
   fprintf(stderr, "    %s [options] \\\\.\\<com port> <host addr> <host port>\n", pProgName);
+  fprintf(stderr, "\n");
+  fprintf(stderr, "Usage (server mode):\n");
   fprintf(stderr, "    %s [options] \\\\.\\<com port> <listen port>\n", pProgName);
+  fprintf(stderr, "\n");
   fprintf(stderr, "Common options:\n");
   fprintf(stderr, "    --telnet              - use Telnet protocol.\n");
-  fprintf(stderr, "    --terminal type       - use terminal type (RFC 1091).\n");
+  fprintf(stderr, "    --terminal <type>     - use terminal <type> (RFC 1091).\n");
   fprintf(stderr, "    --ignore-dsr          - ignore DSR state.\n");
-  fprintf(stderr, "Connect options:\n");
-  fprintf(stderr, "    --awak-seq sequence   - wait awakening sequence from com port\n"
+  fprintf(stderr, "\n");
+  fprintf(stderr, "Client mode options:\n");
+  fprintf(stderr, "    --awak-seq <sequence> - wait for awakening <sequence> from com port\n"
                   "                            before connecting to host. All data before\n"
-                  "                            sequence and sequence will be not sent.\n");
-  fprintf(stderr, "Listen options:\n");
-  fprintf(stderr, "    --interface if        - listen interface if.\n");
+                  "                            <sequence> and <sequence> itself will not be sent.\n");
+  fprintf(stderr, "    --interface <if>      - use interface <if> for connecting.\n");
+  fprintf(stderr, "\n");
+  fprintf(stderr, "Server mode options:\n");
+  fprintf(stderr, "    --interface <if>      - use interface <if> for listening.\n");
   exit(1);
 }
 ///////////////////////////////////////////////////////////////
@@ -865,7 +884,7 @@ int main(int argc, char* argv[])
   int res;
 
   if (argc == 4)
-    res = com2tcp(pArgs[0], ignoreDSR, pArgs[1], pArgs[2], *pProtocol, pAwakSeq);
+    res = com2tcp(pArgs[0], ignoreDSR, pIF, pArgs[1], pArgs[2], *pProtocol, pAwakSeq);
   else
     res = tcp2com(pArgs[0], ignoreDSR, pIF, pArgs[1], *pProtocol);
 
