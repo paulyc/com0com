@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2005/09/06 07:23:44  vfrolov
+ * Implemented overrun emulation
+ *
  * Revision 1.1  2005/08/25 15:38:17  vfrolov
  * Some code moved from io.c to bufutils.c
  *
@@ -329,4 +332,71 @@ SIZE_T WriteRawData(PC0C_RAW_DATA pRawData, PNTSTATUS pStatus, PVOID pReadBuf, S
     *pStatus = STATUS_SUCCESS;
 
   return length;
+}
+
+BOOLEAN SetNewBufferBase(PC0C_BUFFER pBuf, PUCHAR pBase, SIZE_T size)
+{
+  C0C_BUFFER newBuf;
+
+  if (size <= C0C_BUFFER_SIZE(pBuf)) {
+    ExFreePool(pBase);
+    return FALSE;
+  }
+
+  newBuf.pFree = newBuf.pBusy = newBuf.pBase = pBase;
+  newBuf.pEnd = newBuf.pBase + size;
+  newBuf.busy = 0;
+
+  if (pBuf->pBase) {
+    while (pBuf->busy) {
+      SIZE_T length;
+
+      length = pBuf->pFree <= pBuf->pBusy ?
+          pBuf->pEnd - pBuf->pBusy : pBuf->busy;
+
+      RtlCopyMemory(newBuf.pFree, pBuf->pBusy, length);
+
+      pBuf->busy -= length;
+      pBuf->pBusy += length;
+      if (pBuf->pBusy == pBuf->pEnd)
+        pBuf->pBusy = pBuf->pBase;
+
+      newBuf.busy += length;
+      newBuf.pFree += length;
+    }
+
+    ExFreePool(pBuf->pBase);
+  }
+
+  newBuf.escape = pBuf->escape;
+  newBuf.insertData = pBuf->insertData;
+
+  *pBuf = newBuf;
+
+  return TRUE;
+}
+
+VOID PurgeBuffer(PC0C_BUFFER pBuf)
+{
+  pBuf->pFree = pBuf->pBusy = pBuf->pBase;
+  pBuf->busy = 0;
+  pBuf->escape = FALSE;
+  pBuf->insertData.size = 0;
+}
+
+VOID InitBuffer(PC0C_BUFFER pBuf, PUCHAR pBase, SIZE_T size)
+{
+  RtlZeroMemory(pBuf, sizeof(*pBuf));
+
+  pBuf->pBase = pBase;
+  pBuf->pEnd = pBuf->pBase + size;
+  PurgeBuffer(pBuf);
+}
+
+VOID FreeBuffer(PC0C_BUFFER pBuf)
+{
+  if (pBuf->pBase)
+    ExFreePool(pBuf->pBase);
+
+  RtlZeroMemory(pBuf, sizeof(*pBuf));
 }

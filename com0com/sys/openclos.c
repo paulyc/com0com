@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2005/09/06 07:23:44  vfrolov
+ * Implemented overrun emulation
+ *
  * Revision 1.5  2005/05/14 17:07:02  vfrolov
  * Implemented SERIAL_LSRMST_MST insertion
  *
@@ -37,11 +40,12 @@
  */
 
 #include "precomp.h"
+#include "bufutils.h"
 
 NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 {
   LIST_ENTRY queueToComplete;
-  C0C_BUFFER readBufNew;
+  PUCHAR pBase;
   ULONG size;
   KIRQL oldIrql;
 
@@ -50,41 +54,44 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
     return STATUS_ACCESS_DENIED;
   }
 
+  if (!pDevExt->pIoPortRemote->pDevExt) {
+    InterlockedDecrement(&pDevExt->openCount);
+    return STATUS_INSUFFICIENT_RESOURCES;
+  }
+
   switch (MmQuerySystemSize()) {
   case MmLargeSystem:
     size = 4096;
-    readBufNew.pBase = (PUCHAR)ExAllocatePool(NonPagedPool, size);
-    if (readBufNew.pBase)
+    pBase = (PUCHAR)ExAllocatePool(NonPagedPool, size);
+    if (pBase)
       break;
   case MmMediumSystem:
     size = 1024;
-    readBufNew.pBase = (PUCHAR)ExAllocatePool(NonPagedPool, size);
-    if (readBufNew.pBase)
+    pBase = (PUCHAR)ExAllocatePool(NonPagedPool, size);
+    if (pBase)
       break;
   case MmSmallSystem:
     size = 128;
-    readBufNew.pBase = (PUCHAR)ExAllocatePool(NonPagedPool, size);
-    if (readBufNew.pBase)
+    pBase = (PUCHAR)ExAllocatePool(NonPagedPool, size);
+    if (pBase)
       break;
   default:
     size = 0;
-    readBufNew.pBase = NULL;
+    pBase = NULL;
   }
-
-  readBufNew.pEnd = readBufNew.pBase + size;
-
-  C0C_BUFFER_PURGE(readBufNew);
 
   InitializeListHead(&queueToComplete);
 
   KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
 
-  pDevExt->pIoPortLocal->readBuf = readBufNew;
+  InitBuffer(&pDevExt->pIoPortLocal->readBuf, pBase, size);
 
   pDevExt->pIoPortLocal->errors = 0;
   pDevExt->pIoPortLocal->waitMask = 0;
   pDevExt->pIoPortLocal->eventMask = 0;
   pDevExt->pIoPortLocal->escapeChar = 0;
+  pDevExt->handFlow.XoffLimit = size >> 3;
+  pDevExt->handFlow.XonLimit = size >> 1;
 
   UpdateHandFlow(pDevExt, &queueToComplete);
 
@@ -98,7 +105,6 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 NTSTATUS FdoPortClose(IN PC0C_FDOPORT_EXTENSION pDevExt)
 {
   LIST_ENTRY queueToComplete;
-  C0C_BUFFER readBuf;
   KIRQL oldIrql;
 
   InitializeListHead(&queueToComplete);
@@ -106,16 +112,11 @@ NTSTATUS FdoPortClose(IN PC0C_FDOPORT_EXTENSION pDevExt)
   KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
 
   SetModemStatus(pDevExt->pIoPortRemote, C0C_MSB_CTS | C0C_MSB_DSR, FALSE, &queueToComplete);
-
-  readBuf = pDevExt->pIoPortLocal->readBuf;
-  RtlZeroMemory(&pDevExt->pIoPortLocal->readBuf, sizeof(pDevExt->pIoPortLocal->readBuf));
+  FreeBuffer(&pDevExt->pIoPortLocal->readBuf);
 
   KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
 
   FdoPortCompleteQueue(&queueToComplete);
-
-  if (readBuf.pBase)
-    ExFreePool(readBuf.pBase);
 
   InterlockedDecrement(&pDevExt->openCount);
 
