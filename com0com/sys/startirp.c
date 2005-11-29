@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2005/09/13 14:56:16  vfrolov
+ * Implemented IRP_MJ_FLUSH_BUFFERS
+ *
  * Revision 1.4  2005/09/06 07:23:44  vfrolov
  * Implemented overrun emulation
  *
@@ -149,28 +152,20 @@ VOID CancelQueue(PC0C_IRP_QUEUE pQueue, PLIST_ENTRY pQueueToComplete)
   }
 }
 
-VOID FdoPortCancelQueue(IN PC0C_FDOPORT_EXTENSION pDevExt, IN PC0C_IRP_QUEUE pQueue)
+VOID FdoPortCancelQueues(IN PC0C_FDOPORT_EXTENSION pDevExt)
 {
   LIST_ENTRY queueToComplete;
   KIRQL oldIrql;
-
-  InitializeListHead(&queueToComplete);
-
-  KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
-
-  CancelQueue(pQueue, &queueToComplete);
-
-  KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
-
-  FdoPortCompleteQueue(&queueToComplete);
-}
-
-VOID FdoPortCancelQueues(IN PC0C_FDOPORT_EXTENSION pDevExt)
-{
   int i;
 
+  InitializeListHead(&queueToComplete);
+  KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
+
   for (i = 0 ; i < C0C_QUEUE_SIZE ; i++)
-    FdoPortCancelQueue(pDevExt, &pDevExt->pIoPortLocal->irpQueues[i]);
+    CancelQueue(&pDevExt->pIoPortLocal->irpQueues[i], &queueToComplete);
+
+  KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
+  FdoPortCompleteQueue(&queueToComplete);
 }
 
 VOID FdoPortCompleteQueue(IN PLIST_ENTRY pQueueToComplete)
