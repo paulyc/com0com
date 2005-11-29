@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.16  2005/11/29 08:35:14  vfrolov
+ * Implemented SERIAL_EV_RX80FULL
+ *
  * Revision 1.15  2005/11/28 12:57:16  vfrolov
  * Moved some C0C_BUFFER code to bufutils.c
  *
@@ -325,7 +328,7 @@ NTSTATUS ReadWrite(
 VOID SetModemStatus(
     IN PC0C_IO_PORT pIoPort,
     IN ULONG bits,
-    IN BOOLEAN set,
+    IN ULONG mask,
     PLIST_ENTRY pQueueToComplete);
 
 VOID UpdateHandFlow(

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2005/11/28 12:57:16  vfrolov
+ * Moved some C0C_BUFFER code to bufutils.c
+ *
  * Revision 1.6  2005/09/06 07:23:44  vfrolov
  * Implemented overrun emulation
  *
@@ -111,7 +114,7 @@ NTSTATUS FdoPortClose(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
 
-  SetModemStatus(pDevExt->pIoPortRemote, C0C_MSB_CTS | C0C_MSB_DSR, FALSE, &queueToComplete);
+  SetModemStatus(pDevExt->pIoPortRemote, 0, C0C_MSB_CTS | C0C_MSB_DSR, &queueToComplete);
   FreeBuffer(&pDevExt->pIoPortLocal->readBuf);
 
   KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
