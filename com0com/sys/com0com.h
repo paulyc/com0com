@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2005/11/28 12:57:16  vfrolov
+ * Moved some C0C_BUFFER code to bufutils.c
+ *
  * Revision 1.14  2005/09/28 10:06:42  vfrolov
  * Implemented IRP_MJ_QUERY_INFORMATION and IRP_MJ_SET_INFORMATION
  *
@@ -118,6 +121,7 @@ typedef struct _C0C_BUFFER {
   PUCHAR                  pFree;
   PUCHAR                  pEnd;
   SIZE_T                  busy;
+  SIZE_T                  size80;
   BOOLEAN                 escape;
   C0C_RAW_DATA            insertData;
 } C0C_BUFFER, *PC0C_BUFFER;

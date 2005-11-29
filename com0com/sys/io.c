@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.17  2005/11/25 08:59:39  vfrolov
+ * Implemented SERIAL_EV_RXFLAG
+ *
  * Revision 1.16  2005/09/14 13:14:47  vfrolov
  * Fixed possible tick loss
  *
@@ -348,7 +351,7 @@ NTSTATUS StopCurrentIrp(
       status = STATUS_SUCCESS;
     }
     else
-    if ((first && pState->flags & C0C_IRP_FLAG_INTERVAL_TIMEOUT) != 0) {
+    if (first && (pState->flags & C0C_IRP_FLAG_INTERVAL_TIMEOUT) != 0) {
       SetIntervalTimeout(pIoPort);
     }
   }
@@ -459,6 +462,7 @@ NTSTATUS ReadWrite(
     PLIST_ENTRY pQueueToComplete)
 {
   NTSTATUS status;
+  SIZE_T readBufBusyBeg, readBufBusyEnd;
   BOOLEAN firstRead;
   PC0C_ADAPTIVE_DELAY pWriteDelay;
   SIZE_T writeLimit;
@@ -481,6 +485,8 @@ NTSTATUS ReadWrite(
     status = STATUS_SUCCESS;
     pWriteLimit = NULL;
   }
+
+  readBufBusyBeg = C0C_BUFFER_BUSY(&pIoPortRead->readBuf);
 
   for (firstRead = TRUE ;; firstRead = FALSE) {
     NTSTATUS statusRead;
@@ -598,6 +604,18 @@ NTSTATUS ReadWrite(
 
     if (statusRead == STATUS_PENDING)
       break;
+  }
+
+  readBufBusyEnd = C0C_BUFFER_BUSY(&pIoPortRead->readBuf);
+
+  if (readBufBusyBeg != readBufBusyEnd) {
+    if ((pIoPortRead->waitMask & SERIAL_EV_RX80FULL) &&
+        readBufBusyEnd > pIoPortRead->readBuf.size80 &&
+        readBufBusyBeg <= pIoPortRead->readBuf.size80)
+    {
+      pIoPortRead->eventMask |= SERIAL_EV_RX80FULL;
+      WaitComplete(pIoPortRead, pQueueToComplete);
+    }
   }
 
   return status;
