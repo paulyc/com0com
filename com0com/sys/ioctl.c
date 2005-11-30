@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2005/11/29 16:16:46  vfrolov
+ * Removed FdoPortCancelQueue()
+ *
  * Revision 1.10  2005/11/29 12:33:21  vfrolov
  * Changed SetModemStatus() to ability set and clear bits simultaneously
  *
@@ -513,6 +516,24 @@ NTSTATUS FdoPortIoCtl(
       KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
       break;
     }
+    case IOCTL_SERIAL_GET_STATS:
+      if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(SERIALPERF_STATS)) {
+        status = STATUS_BUFFER_TOO_SMALL;
+        break;
+      }
+
+      KeAcquireSpinLock(&pDevExt->controlLock, &oldIrql);
+      *(PSERIALPERF_STATS)pIrp->AssociatedIrp.SystemBuffer = pDevExt->pIoPortLocal->perfStats;
+      KeReleaseSpinLock(&pDevExt->controlLock, oldIrql);
+      pIrp->IoStatus.Information = sizeof(SERIALPERF_STATS);
+
+      TraceIrp("FdoPortIoCtl", pIrp, &status, TRACE_FLAG_RESULTS);
+      break;
+    case IOCTL_SERIAL_CLEAR_STATS:
+      KeAcquireSpinLock(&pDevExt->controlLock, &oldIrql);
+      RtlZeroMemory(&pDevExt->pIoPortLocal->perfStats, sizeof(pDevExt->pIoPortLocal->perfStats));
+      KeReleaseSpinLock(&pDevExt->controlLock, oldIrql);
+      break;
     default:
       status = STATUS_INVALID_PARAMETER;
     }

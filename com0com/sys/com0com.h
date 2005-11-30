@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.18  2005/11/29 16:16:46  vfrolov
+ * Removed FdoPortCancelQueue()
+ *
  * Revision 1.17  2005/11/29 12:33:21  vfrolov
  * Changed SetModemStatus() to ability set and clear bits simultaneously
  *
@@ -169,6 +172,7 @@ typedef struct _C0C_IO_PORT {
   ULONG                   waitMask;
   ULONG                   eventMask;
   UCHAR                   escapeChar;
+  SERIALPERF_STATS        perfStats;
 
   #define C0C_MSB_CTS     0x10
   #define C0C_MSB_DSR     0x20

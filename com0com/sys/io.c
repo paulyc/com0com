@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.19  2005/11/29 12:33:21  vfrolov
+ * Changed SetModemStatus() to ability set and clear bits simultaneously
+ *
  * Revision 1.18  2005/11/29 08:35:13  vfrolov
  * Implemented SERIAL_EV_RX80FULL
  *
@@ -136,6 +139,9 @@ VOID OnRxChars(PC0C_IO_PORT pReadIoPort, PVOID pBuf, SIZE_T size, PLIST_ENTRY pQ
     if (pReadIoPort->eventMask)
       WaitComplete(pReadIoPort, pQueueToComplete);
   }
+
+  pReadIoPort->perfStats.ReceivedCount += size;
+  pReadIoPort->pDevExt->pIoPortRemote->perfStats.TransmittedCount += size;
 }
 
 NTSTATUS WriteBuffer(
@@ -228,6 +234,7 @@ NTSTATUS WriteOverrun(
       *pWriteLimit -= writeDone;
 
     AlertOverrun(pReadIoPort, pQueueToComplete);
+    pReadIoPort->perfStats.BufferOverrunErrorCount += writeDone;
     OnRxChars(pReadIoPort, pWriteBuf, writeDone, pQueueToComplete);
   }
 

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2005/11/29 12:33:21  vfrolov
+ * Changed SetModemStatus() to ability set and clear bits simultaneously
+ *
  * Revision 1.7  2005/11/28 12:57:16  vfrolov
  * Moved some C0C_BUFFER code to bufutils.c
  *
@@ -93,6 +96,7 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
   pDevExt->pIoPortLocal->waitMask = 0;
   pDevExt->pIoPortLocal->eventMask = 0;
   pDevExt->pIoPortLocal->escapeChar = 0;
+  RtlZeroMemory(&pDevExt->pIoPortLocal->perfStats, sizeof(pDevExt->pIoPortLocal->perfStats));
   pDevExt->handFlow.XoffLimit = size >> 3;
   pDevExt->handFlow.XonLimit = size >> 1;
 
