@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.19  2005/11/30 16:04:11  vfrolov
+ * Implemented IOCTL_SERIAL_GET_STATS and IOCTL_SERIAL_CLEAR_STATS
+ *
  * Revision 1.18  2005/11/29 16:16:46  vfrolov
  * Removed FdoPortCancelQueue()
  *
@@ -280,6 +283,11 @@ VOID CancelQueue(PC0C_IRP_QUEUE pQueue, PLIST_ENTRY pQueueToComplete);
 VOID FdoPortCancelQueues(IN PC0C_FDOPORT_EXTENSION pDevExt);
 VOID FdoPortCompleteQueue(IN PLIST_ENTRY pQueueToComplete);
 
+NTSTATUS FdoPortImmediateChar(
+    IN PC0C_FDOPORT_EXTENSION pDevExt,
+    IN PIRP pIrp,
+    IN PIO_STACK_LOCATION pIrpStack);
+
 NTSTATUS FdoPortWaitOnMask(
     IN PC0C_FDOPORT_EXTENSION pDevExt,
     IN PIRP pIrp,
@@ -311,6 +319,7 @@ typedef struct _C0C_IRP_STATE {
 } C0C_IRP_STATE, *PC0C_IRP_STATE;
 
 PC0C_IRP_STATE GetIrpState(IN PIRP pIrp);
+SIZE_T GetWriteLength(IN PIRP pIrp);
 
 #define C0C_IO_TYPE_WAIT_COMPLETE      3
 #define C0C_IO_TYPE_INSERT             4

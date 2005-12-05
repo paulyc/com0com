@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2005/08/23 15:49:21  vfrolov
+ * Implemented baudrate emulation
+ *
  * Revision 1.3  2005/08/16 16:36:33  vfrolov
  * Hidden timeout functions
  *
@@ -180,7 +183,7 @@ NTSTATUS SetWriteTimeout(IN PC0C_FDOPORT_EXTENSION pDevExt, PIRP pIrp)
     LARGE_INTEGER total;
     ULONG length;
 
-    length = IoGetCurrentIrpStackLocation(pIrp)->Parameters.Write.Length;
+    length = GetWriteLength(pIrp);
 
     total.QuadPart = ((LONGLONG)(UInt32x32To64(length, multiplier) + constant)) * -10000;
 

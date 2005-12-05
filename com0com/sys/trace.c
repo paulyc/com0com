@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2005/11/30 16:04:12  vfrolov
+ * Implemented IOCTL_SERIAL_GET_STATS and IOCTL_SERIAL_CLEAR_STATS
+ *
  * Revision 1.14  2005/09/28 10:06:42  vfrolov
  * Implemented IRP_MJ_QUERY_INFORMATION and IRP_MJ_SET_INFORMATION
  *
@@ -1339,6 +1342,12 @@ VOID TraceIrp(
         case IOCTL_SERIAL_GET_STATS:
           if ((flags & TRACE_FLAG_RESULTS) && inform >= sizeof(SERIALPERF_STATS))
             pDestStr = AnsiStrCopyPerfStats(pDestStr, &size, (PSERIALPERF_STATS)pSysBuf);
+          break;
+        case IOCTL_SERIAL_IMMEDIATE_CHAR:
+          if (flags & TRACE_FLAG_RESULTS) {
+            pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
+            pDestStr = AnsiStrCopyDump(pDestStr, &size, pSysBuf, inform);
+          }
           break;
       }
       break;
