@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.21  2005/12/05 10:54:55  vfrolov
+ * Implemented IOCTL_SERIAL_IMMEDIATE_CHAR
+ *
  * Revision 1.20  2005/11/30 16:04:11  vfrolov
  * Implemented IOCTL_SERIAL_GET_STATS and IOCTL_SERIAL_CLEAR_STATS
  *
@@ -94,7 +97,7 @@
 #define GET_REST_BUFFER(pIrp, done) \
     (((PUCHAR)(pIrp)->AssociatedIrp.SystemBuffer) + done)
 
-SIZE_T GetWriteLength(IN PIRP pIrp)
+ULONG GetWriteLength(IN PIRP pIrp)
 {
   PIO_STACK_LOCATION pIrpStack = IoGetCurrentIrpStackLocation(pIrp);
 
@@ -158,8 +161,8 @@ VOID OnRxChars(PC0C_IO_PORT pReadIoPort, PVOID pBuf, SIZE_T size, PLIST_ENTRY pQ
       WaitComplete(pReadIoPort, pQueueToComplete);
   }
 
-  pReadIoPort->perfStats.ReceivedCount += size;
-  pReadIoPort->pDevExt->pIoPortRemote->perfStats.TransmittedCount += size;
+  pReadIoPort->perfStats.ReceivedCount += (ULONG)size;
+  pReadIoPort->pDevExt->pIoPortRemote->perfStats.TransmittedCount += (ULONG)size;
 }
 
 NTSTATUS WriteBuffer(
@@ -252,7 +255,7 @@ NTSTATUS WriteOverrun(
       *pWriteLimit -= writeDone;
 
     AlertOverrun(pReadIoPort, pQueueToComplete);
-    pReadIoPort->perfStats.BufferOverrunErrorCount += writeDone;
+    pReadIoPort->perfStats.BufferOverrunErrorCount += (ULONG)writeDone;
     OnRxChars(pReadIoPort, pWriteBuf, writeDone, pQueueToComplete);
   }
 

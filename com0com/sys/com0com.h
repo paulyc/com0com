@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.20  2005/12/05 10:54:55  vfrolov
+ * Implemented IOCTL_SERIAL_IMMEDIATE_CHAR
+ *
  * Revision 1.19  2005/11/30 16:04:11  vfrolov
  * Implemented IOCTL_SERIAL_GET_STATS and IOCTL_SERIAL_CLEAR_STATS
  *
@@ -319,7 +322,7 @@ typedef struct _C0C_IRP_STATE {
 } C0C_IRP_STATE, *PC0C_IRP_STATE;
 
 PC0C_IRP_STATE GetIrpState(IN PIRP pIrp);
-SIZE_T GetWriteLength(IN PIRP pIrp);
+ULONG GetWriteLength(IN PIRP pIrp);
 
 #define C0C_IO_TYPE_WAIT_COMPLETE      3
 #define C0C_IO_TYPE_INSERT             4
