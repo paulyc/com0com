@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2005/09/28 10:06:42  vfrolov
+ * Implemented IRP_MJ_QUERY_INFORMATION and IRP_MJ_SET_INFORMATION
+ *
  * Revision 1.3  2005/09/06 06:49:38  vfrolov
  * Added codeNameTableErrors[]
  *
@@ -167,6 +170,12 @@ CODE2NAME codeNameTableModemStatus[] = {
   TOCODE2NAME(C0C_MSB_, DSR),
   TOCODE2NAME(C0C_MSB_, RING),
   TOCODE2NAME(C0C_MSB_, RLSD),
+  {0, NULL}
+};
+
+CODE2NAME codeNameTableDTRRTS[] = {
+  {SERIAL_DTR_STATE, "DTR"},
+  {SERIAL_RTS_STATE, "RTS"},
   {0, NULL}
 };
 

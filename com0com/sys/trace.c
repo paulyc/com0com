@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.16  2005/12/05 10:54:55  vfrolov
+ * Implemented IOCTL_SERIAL_IMMEDIATE_CHAR
+ *
  * Revision 1.15  2005/11/30 16:04:12  vfrolov
  * Implemented IOCTL_SERIAL_GET_STATS and IOCTL_SERIAL_CLEAR_STATS
  *
@@ -1252,6 +1255,13 @@ VOID TraceIrp(
             pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
             pDestStr = AnsiStrCopyMask(pDestStr, &size,
                 codeNameTableModemStatus, *((PULONG)pSysBuf));
+          }
+          break;
+        case IOCTL_SERIAL_GET_DTRRTS:
+          if ((flags & TRACE_FLAG_RESULTS) && inform >= sizeof(ULONG)) {
+            pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
+            pDestStr = AnsiStrCopyMask(pDestStr, &size,
+                codeNameTableDTRRTS, *((PULONG)pSysBuf));
           }
           break;
         case IOCTL_SERIAL_SET_WAIT_MASK:

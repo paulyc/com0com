@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2005/09/28 10:06:42  vfrolov
+ * Implemented IRP_MJ_QUERY_INFORMATION and IRP_MJ_SET_INFORMATION
+ *
  * Revision 1.5  2005/09/13 08:55:41  vfrolov
  * Disabled modem status tracing by default
  *
@@ -108,6 +111,7 @@ CODE2NAME codeNameTablePnp[];
 CODE2NAME codeNameTablePower[];
 CODE2NAME codeNameTableDoType[];
 CODE2NAME codeNameTableModemStatus[];
+CODE2NAME codeNameTableDTRRTS[];
 CODE2NAME codeNameTableStatus[];
 CODE2NAME codeNameTableIrpMj[];
 CODE2NAME codeNameTableRelations[];
