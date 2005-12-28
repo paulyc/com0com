@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2005/12/06 13:01:54  vfrolov
+ * Implemented IOCTL_SERIAL_GET_DTRRTS
+ *
  * Revision 1.13  2005/12/05 10:54:55  vfrolov
  * Implemented IOCTL_SERIAL_IMMEDIATE_CHAR
  *
@@ -154,6 +157,8 @@ NTSTATUS FdoPortIoCtl(
       TraceIrp("FdoPortIoCtl", pIrp, &status, TRACE_FLAG_RESULTS);
       break;
     }
+    case IOCTL_SERIAL_SET_XON:
+      break;
     case IOCTL_SERIAL_GET_MODEMSTATUS:
       if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(ULONG)) {
         status = STATUS_BUFFER_TOO_SMALL;
