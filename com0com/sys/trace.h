@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2005 Vyacheslav Frolov
+ * Copyright (c) 2004-2006 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2005/12/06 13:01:54  vfrolov
+ * Implemented IOCTL_SERIAL_GET_DTRRTS
+ *
  * Revision 1.6  2005/09/28 10:06:42  vfrolov
  * Implemented IRP_MJ_QUERY_INFORMATION and IRP_MJ_SET_INFORMATION
  *
@@ -118,6 +121,7 @@ CODE2NAME codeNameTableRelations[];
 CODE2NAME codeNameTableBusQuery[];
 CODE2NAME codeNameTableDeviceText[];
 CODE2NAME codeNameTableErrors[];
+CODE2NAME codeNameTableHoldReasons[];
 CODE2NAME codeNameTableFileInformationClass[];
 
 FIELD2NAME codeNameTableControlHandShake[];
