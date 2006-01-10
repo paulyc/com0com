@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2005 Vyacheslav Frolov
+ * Copyright (c) 2004-2006 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2005/09/27 16:41:01  vfrolov
+ * Fixed DeviceType
+ *
  * Revision 1.9  2005/09/06 07:23:44  vfrolov
  * Implemented overrun emulation
  *
@@ -61,7 +64,7 @@
 NTSTATUS InitCommonExt(
     PC0C_COMMON_EXTENSION pDevExt,
     IN PDEVICE_OBJECT pDevObj,
-    int doType,
+    short doType,
     PWCHAR pPortName)
 {
   pDevExt->pDevObj = pDevObj;

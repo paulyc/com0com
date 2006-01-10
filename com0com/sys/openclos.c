@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2005 Vyacheslav Frolov
+ * Copyright (c) 2004-2006 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2005/11/30 16:04:12  vfrolov
+ * Implemented IOCTL_SERIAL_GET_STATS and IOCTL_SERIAL_CLEAR_STATS
+ *
  * Revision 1.8  2005/11/29 12:33:21  vfrolov
  * Changed SetModemStatus() to ability set and clear bits simultaneously
  *
@@ -46,6 +49,7 @@
  */
 
 #include "precomp.h"
+#include "handflow.h"
 #include "bufutils.h"
 
 NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
@@ -88,10 +92,17 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   InitializeListHead(&queueToComplete);
 
+#if DBG
+  if (pDevExt->pIoPortLocal->amountInWriteQueue) {
+    Trace0((PC0C_COMMON_EXTENSION)pDevExt, L"!!!WARNING!!! amountInWriteQueue != 0");
+  }
+#endif /* DBG */
+
   KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
 
   InitBuffer(&pDevExt->pIoPortLocal->readBuf, pBase, size);
 
+  pDevExt->pIoPortLocal->tryWrite = FALSE;
   pDevExt->pIoPortLocal->errors = 0;
   pDevExt->pIoPortLocal->waitMask = 0;
   pDevExt->pIoPortLocal->eventMask = 0;
@@ -100,7 +111,7 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
   pDevExt->handFlow.XoffLimit = size >> 3;
   pDevExt->handFlow.XonLimit = size >> 1;
 
-  UpdateHandFlow(pDevExt, &queueToComplete);
+  SetHandFlow(pDevExt, NULL, &queueToComplete);
 
   KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
 
@@ -118,6 +129,7 @@ NTSTATUS FdoPortClose(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
 
+  pDevExt->pIoPortLocal->flipXoffLimit = FALSE;
   SetModemStatus(pDevExt->pIoPortRemote, 0, C0C_MSB_CTS | C0C_MSB_DSR, &queueToComplete);
   FreeBuffer(&pDevExt->pIoPortLocal->readBuf);
 

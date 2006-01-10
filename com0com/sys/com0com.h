@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2005 Vyacheslav Frolov
+ * Copyright (c) 2004-2006 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.21  2005/12/06 13:04:32  vfrolov
+ * Fixed data types
+ *
  * Revision 1.20  2005/12/05 10:54:55  vfrolov
  * Implemented IOCTL_SERIAL_IMMEDIATE_CHAR
  *
@@ -104,13 +107,16 @@
 #define C0C_PORT_NAME_LEN 12
 
 #define COMMON_EXTENSION                \
-  int                     doType;       \
+  short                   doType;       \
   PDEVICE_OBJECT          pDevObj;      \
   WCHAR                   portName[C0C_PORT_NAME_LEN]; \
 
 #define FDO_EXTENSION                   \
   COMMON_EXTENSION                      \
   PDEVICE_OBJECT          pLowDevObj;   \
+
+#define C0C_XCHAR_ON      1
+#define C0C_XCHAR_OFF     2
 
 typedef struct _C0C_COMMON_EXTENSION {
   COMMON_EXTENSION
@@ -135,6 +141,7 @@ typedef struct _C0C_BUFFER {
   PUCHAR                  pBusy;
   PUCHAR                  pFree;
   PUCHAR                  pEnd;
+  SIZE_T                  limit;
   SIZE_T                  busy;
   SIZE_T                  size80;
   BOOLEAN                 escape;
@@ -175,6 +182,7 @@ typedef struct _C0C_IO_PORT {
   struct _C0C_ADAPTIVE_DELAY *pWriteDelay;
 
   ULONG                   errors;
+  ULONG                   amountInWriteQueue;
   ULONG                   waitMask;
   ULONG                   eventMask;
   UCHAR                   escapeChar;
@@ -188,6 +196,11 @@ typedef struct _C0C_IO_PORT {
   ULONG                   modemStatus;
 
   C0C_BUFFER              readBuf;
+
+  short                   sendXonXoff;
+  ULONG                   writeHolding;
+  BOOLEAN                 tryWrite;
+  BOOLEAN                 flipXoffLimit;
 
   BOOLEAN                 emuOverrun;
 } C0C_IO_PORT, *PC0C_IO_PORT;
@@ -328,7 +341,7 @@ ULONG GetWriteLength(IN PIRP pIrp);
 #define C0C_IO_TYPE_INSERT             4
 
 NTSTATUS FdoPortIo(
-    int ioType,
+    short ioType,
     PVOID pParam,
     PC0C_IO_PORT pIoPort,
     PC0C_IRP_QUEUE pQueue,
@@ -336,10 +349,8 @@ NTSTATUS FdoPortIo(
 
 NTSTATUS ReadWrite(
     PC0C_IO_PORT pIoPortRead,
-    PC0C_IRP_QUEUE pQueueRead,
     BOOLEAN startRead,
     PC0C_IO_PORT pIoPortWrite,
-    PC0C_IRP_QUEUE pQueueWrite,
     BOOLEAN startWrite,
     PLIST_ENTRY pQueueToComplete);
 
@@ -348,9 +359,5 @@ VOID SetModemStatus(
     IN ULONG bits,
     IN ULONG mask,
     PLIST_ENTRY pQueueToComplete);
-
-VOID UpdateHandFlow(
-    IN PC0C_FDOPORT_EXTENSION pDevExt,
-    IN PLIST_ENTRY pQueueToComplete);
 
 #endif /* _C0C_COM0COM_H_ */

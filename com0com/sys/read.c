@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2005 Vyacheslav Frolov
+ * Copyright (c) 2004-2006 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2005/09/06 07:23:44  vfrolov
+ * Implemented overrun emulation
+ *
  * Revision 1.2  2005/08/23 15:49:21  vfrolov
  * Implemented baudrate emulation
  *
@@ -34,12 +37,8 @@ NTSTATUS StartIrpRead(
     IN PLIST_ENTRY pQueueToComplete)
 {
   return ReadWrite(
-      pDevExt->pIoPortLocal,
-      &pDevExt->pIoPortLocal->irpQueues[C0C_QUEUE_READ],
-      TRUE,
-      pDevExt->pIoPortRemote,
-      &pDevExt->pIoPortRemote->irpQueues[C0C_QUEUE_WRITE],
-      FALSE,
+      pDevExt->pIoPortLocal, TRUE,
+      pDevExt->pIoPortRemote, FALSE,
       pQueueToComplete);
 }
 

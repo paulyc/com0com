@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2005 Vyacheslav Frolov
+ * Copyright (c) 2005-2006 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2005/08/23 15:30:22  vfrolov
+ * Initial revision
+ *
  *
  */
 
@@ -58,12 +61,8 @@ VOID WriteDelayRoutine(
       NTSTATUS status;
 
       status = ReadWrite(
-          pDevExt->pIoPortRemote,
-          &pDevExt->pIoPortRemote->irpQueues[C0C_QUEUE_READ],
-          FALSE,
-          pDevExt->pIoPortLocal,
-          &pDevExt->pIoPortLocal->irpQueues[C0C_QUEUE_WRITE],
-          FALSE,
+          pDevExt->pIoPortRemote, FALSE,
+          pDevExt->pIoPortLocal, FALSE,
           &queueToComplete);
 
       if (status != STATUS_PENDING)

@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2005 Vyacheslav Frolov
+ * Copyright (c) 2004-2006 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2005/12/05 10:54:56  vfrolov
+ * Implemented IOCTL_SERIAL_IMMEDIATE_CHAR
+ *
  * Revision 1.4  2005/09/13 14:56:16  vfrolov
  * Implemented IRP_MJ_FLUSH_BUFFERS
  *
@@ -40,12 +43,8 @@ NTSTATUS StartIrpWrite(
     IN PLIST_ENTRY pQueueToComplete)
 {
   return ReadWrite(
-      pDevExt->pIoPortRemote,
-      &pDevExt->pIoPortRemote->irpQueues[C0C_QUEUE_READ],
-      FALSE,
-      pDevExt->pIoPortLocal,
-      &pDevExt->pIoPortLocal->irpQueues[C0C_QUEUE_WRITE],
-      TRUE,
+      pDevExt->pIoPortRemote, FALSE,
+      pDevExt->pIoPortLocal, TRUE,
       pQueueToComplete);
 }
 
