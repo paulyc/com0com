@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.22  2006/01/10 10:17:23  vfrolov
+ * Implemented flow control and handshaking
+ * Implemented IOCTL_SERIAL_SET_XON and IOCTL_SERIAL_SET_XOFF
+ * Added setting of HoldReasons, WaitForImmediate and AmountInOutQueue
+ *   fields of SERIAL_STATUS for IOCTL_SERIAL_GET_COMMSTATUS
+ *
  * Revision 1.21  2005/12/06 13:04:32  vfrolov
  * Fixed data types
  *
@@ -199,6 +205,7 @@ typedef struct _C0C_IO_PORT {
 
   short                   sendXonXoff;
   ULONG                   writeHolding;
+  BOOLEAN                 sendBreak;
   BOOLEAN                 tryWrite;
   BOOLEAN                 flipXoffLimit;
 

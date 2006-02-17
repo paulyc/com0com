@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2006/01/10 10:12:05  vfrolov
+ * Initial revision
+ *
  *
  */
 
@@ -229,5 +232,23 @@ VOID SetXonXoffHolding(PC0C_IO_PORT pIoPort, short xonXoff)
   case C0C_XCHAR_OFF:
     pIoPort->writeHolding |= SERIAL_TX_WAITING_FOR_XON;
     break;
+  }
+}
+
+VOID SetBreakHolding(PC0C_IO_PORT pIoPort, BOOLEAN on)
+{
+  if (on) {
+    if ((pIoPort->writeHolding & SERIAL_TX_WAITING_ON_BREAK) == 0) {
+      pIoPort->writeHolding |= SERIAL_TX_WAITING_ON_BREAK;
+      pIoPort->sendBreak = TRUE;
+      pIoPort->tryWrite = TRUE;
+    }
+  } else {
+    if (pIoPort->writeHolding & SERIAL_TX_WAITING_ON_BREAK) {
+      pIoPort->writeHolding &= ~SERIAL_TX_WAITING_ON_BREAK;
+
+      if (!pIoPort->writeHolding && pIoPort->irpQueues[C0C_QUEUE_WRITE].pCurrent)
+        pIoPort->tryWrite = TRUE;
+    }
   }
 }
