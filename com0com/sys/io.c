@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.24  2006/02/17 07:55:13  vfrolov
+ * Implemented IOCTL_SERIAL_SET_BREAK_ON and IOCTL_SERIAL_SET_BREAK_OFF
+ *
  * Revision 1.23  2006/01/10 10:17:23  vfrolov
  * Implemented flow control and handshaking
  * Implemented IOCTL_SERIAL_SET_XON and IOCTL_SERIAL_SET_XOFF
@@ -654,6 +657,28 @@ VOID InsertLsrMst(
   }
 }
 
+VOID InsertChar(
+    PC0C_IO_PORT pIoPortRead,
+    UCHAR value,
+    PLIST_ENTRY pQueueToComplete)
+{
+  C0C_RAW_DATA insertData;
+
+  insertData.size = 1;
+  insertData.data[0] = value;
+
+  if (FdoPortIo(
+      C0C_IO_TYPE_INSERT,
+      &insertData,
+      pIoPortRead,
+      &pIoPortRead->irpQueues[C0C_QUEUE_READ],
+      pQueueToComplete) == STATUS_PENDING)
+  {
+    AlertOverrun(pIoPortRead, pQueueToComplete);
+    Trace0((PC0C_COMMON_EXTENSION)pIoPortRead->pDevExt, L"WARNING: Lost char");
+  }
+}
+
 NTSTATUS TryReadWrite(
     PC0C_IO_PORT pIoPortRead,
     BOOLEAN startRead,
@@ -975,6 +1000,8 @@ NTSTATUS TryReadWrite(
 
           InsertLsrMst(pIoPortRead, FALSE,  lsr, pQueueToComplete);
         }
+        if (pIoPortRead->pDevExt->handFlow.FlowReplace & SERIAL_BREAK_CHAR)
+          InsertChar(pIoPortRead, pIoPortRead->pDevExt->specialChars.BreakChar, pQueueToComplete);
       }
       break;
     }
