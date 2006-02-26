@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.25  2006/02/21 13:42:11  vfrolov
+ * Implemented SERIAL_BREAK_CHAR
+ *
  * Revision 1.24  2006/02/17 07:55:13  vfrolov
  * Implemented IOCTL_SERIAL_SET_BREAK_ON and IOCTL_SERIAL_SET_BREAK_OFF
  *
@@ -498,8 +501,13 @@ PIRP StartCurrentIrp(PC0C_IRP_QUEUE pQueue, PDRIVER_CANCEL *ppCancelRoutine, PBO
     *ppCancelRoutine = IoSetCancelRoutine(pIrp, NULL);
     #pragma warning(pop)
 
-    if (*ppCancelRoutine)
+    if (*ppCancelRoutine) {
+#if DBG
+      HALT_UNLESS(!pQueue->started);
+      pQueue->started = TRUE;
+#endif /* DBG */
       return pIrp;
+    }
 
     ShiftQueue(pQueue);
     *pFirst = FALSE;
@@ -517,6 +525,11 @@ NTSTATUS StopCurrentIrp(
     PLIST_ENTRY pQueueToComplete)
 {
   PIRP pIrp;
+
+#if DBG
+  HALT_UNLESS(pQueue->started);
+  pQueue->started = FALSE;
+#endif /* DBG */
 
   pIrp = pQueue->pCurrent;
 
@@ -717,7 +730,7 @@ NTSTATUS TryReadWrite(
   pWriteDelay = pIoPortWrite->pWriteDelay;
 
   if (pWriteDelay) {
-    if (pQueueWrite->pCurrent || pIoPortWrite->sendXonXoff) {
+    if (pQueueWrite->pCurrent || pIoPortWrite->sendBreak || pIoPortWrite->sendXonXoff) {
       StartWriteDelayTimer(pWriteDelay);
       writeLimit = GetWriteLimit(pWriteDelay);
       status = STATUS_PENDING;
