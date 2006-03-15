@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2006/02/17 07:55:13  vfrolov
+ * Implemented IOCTL_SERIAL_SET_BREAK_ON and IOCTL_SERIAL_SET_BREAK_OFF
+ *
  * Revision 1.1  2006/01/10 10:12:05  vfrolov
  * Initial revision
  *
@@ -39,9 +42,10 @@ NTSTATUS SetHandFlow(
     PSERIAL_HANDFLOW pHandFlow,
     PLIST_ENTRY pQueueToComplete)
 {
-  ULONG bits;
+  ULONG bits, mask;
   PC0C_BUFFER pReadBuf;
   PSERIAL_HANDFLOW pNewHandFlow;
+  BOOLEAN setModemStatusHolding;
 
   pReadBuf = &pDevExt->pIoPortLocal->readBuf;
 
@@ -58,32 +62,58 @@ NTSTATUS SetHandFlow(
     pNewHandFlow = &pDevExt->handFlow;
   }
 
+  // Set local side
   if ((pNewHandFlow->FlowReplace & SERIAL_AUTO_TRANSMIT) == 0)
     SetXonXoffHolding(pDevExt->pIoPortLocal, C0C_XCHAR_ON);
 
-  bits = 0;
+  if (!pHandFlow ||
+      (pDevExt->handFlow.ControlHandShake & SERIAL_OUT_HANDSHAKEMASK) !=
+          (pHandFlow->ControlHandShake & SERIAL_OUT_HANDSHAKEMASK))
+  {
+    setModemStatusHolding = TRUE;
+  } else {
+    setModemStatusHolding = FALSE;
+  }
+
+  // Set remote side
+  bits = mask = 0;
 
   if (!pHandFlow ||
       (pDevExt->handFlow.FlowReplace & SERIAL_RTS_MASK) !=
           (pHandFlow->FlowReplace & SERIAL_RTS_MASK))
   {
-    if ((pNewHandFlow->FlowReplace & SERIAL_RTS_MASK) == SERIAL_RTS_CONTROL)
+    if ((pNewHandFlow->FlowReplace & SERIAL_RTS_MASK) == 0) {
+      mask |= C0C_MSB_CTS; // Turn off CTS on remote side if RTS is disabled
+    }
+    else
+    if ((pNewHandFlow->FlowReplace & SERIAL_RTS_MASK) == SERIAL_RTS_CONTROL) {
       bits |= C0C_MSB_CTS;
+      mask |= C0C_MSB_CTS;
+    }
   }
 
   if (!pHandFlow ||
       (pDevExt->handFlow.ControlHandShake & SERIAL_DTR_MASK) !=
           (pHandFlow->ControlHandShake & SERIAL_DTR_MASK))
   {
-    if ((pNewHandFlow->ControlHandShake & SERIAL_DTR_MASK) == SERIAL_DTR_CONTROL)
+    if ((pNewHandFlow->ControlHandShake & SERIAL_DTR_MASK) == 0) {
+      mask |= C0C_MSB_DSR; // Turn off DSR on remote side if DTR is disabled
+    }
+    else
+    if ((pNewHandFlow->ControlHandShake & SERIAL_DTR_MASK) == SERIAL_DTR_CONTROL) {
       bits |= C0C_MSB_DSR;
+      mask |= C0C_MSB_DSR;
+    }
   }
 
   if (pHandFlow)
     pDevExt->handFlow = *pHandFlow;
 
-  if (bits)
-    SetModemStatus(pDevExt->pIoPortRemote, bits, bits, pQueueToComplete);
+  if (setModemStatusHolding)
+    SetModemStatusHolding(pDevExt->pIoPortLocal);
+
+  if (mask)
+    SetModemStatus(pDevExt->pIoPortRemote, bits, mask, pQueueToComplete);
 
   SetLimit(pDevExt->pIoPortRemote->pDevExt);
   SetLimit(pDevExt);
