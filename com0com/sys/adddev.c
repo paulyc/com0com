@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2006/03/27 09:38:23  vfrolov
+ * Utilized StrAppendDeviceProperty()
+ *
  * Revision 1.12  2006/02/26 08:35:55  vfrolov
  * Added check for start/stop queue matching
  *
@@ -120,6 +123,7 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   int i;
 
   status = STATUS_SUCCESS;
+  RtlInitUnicodeString(&portName, NULL);
   RtlInitUnicodeString(&property, NULL);
 
   StrAppendDeviceProperty(&status, &property, pPhDevObj, DevicePropertyPhysicalDeviceObjectName);
@@ -140,8 +144,6 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
     SysLog(pPhDevObj, status, L"AddFdoPort no port name in the property");
     goto clean;
   }
-
-  RtlInitUnicodeString(&portName, NULL);
 
   {
     UNICODE_STRING portRegistryPath;
