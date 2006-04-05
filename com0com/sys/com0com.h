@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.24  2006/02/26 08:35:55  vfrolov
+ * Added check for start/stop queue matching
+ *
  * Revision 1.23  2006/02/17 07:55:13  vfrolov
  * Implemented IOCTL_SERIAL_SET_BREAK_ON and IOCTL_SERIAL_SET_BREAK_OFF
  *
@@ -211,9 +214,9 @@ typedef struct _C0C_IO_PORT {
 
   short                   sendXonXoff;
   ULONG                   writeHolding;
+  ULONG                   writeHoldingRemote;
   BOOLEAN                 sendBreak;
   BOOLEAN                 tryWrite;
-  BOOLEAN                 flipXoffLimit;
 
   BOOLEAN                 emuOverrun;
 } C0C_IO_PORT, *PC0C_IO_PORT;
