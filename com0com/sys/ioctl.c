@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.17  2006/02/17 07:55:13  vfrolov
+ * Implemented IOCTL_SERIAL_SET_BREAK_ON and IOCTL_SERIAL_SET_BREAK_OFF
+ *
  * Revision 1.16  2006/01/10 10:17:23  vfrolov
  * Implemented flow control and handshaking
  * Implemented IOCTL_SERIAL_SET_XON and IOCTL_SERIAL_SET_XOFF
@@ -298,7 +301,7 @@ NTSTATUS FdoPortIoCtl(
       if (*pSysBuf & SERIAL_PURGE_RXCLEAR) {
         PurgeBuffer(&pDevExt->pIoPortLocal->readBuf);
         UpdateHandFlow(pDevExt, TRUE, &queueToComplete);
-        if (pDevExt->pIoPortRemote->tryWrite) {
+        if (pDevExt->pIoPortLocal->tryWrite || pDevExt->pIoPortRemote->tryWrite) {
           ReadWrite(
               pDevExt->pIoPortLocal, FALSE,
               pDevExt->pIoPortRemote, FALSE,
@@ -648,7 +651,7 @@ NTSTATUS FdoPortIoCtl(
         pDevExt->handFlow.XonLimit = pSysBuf->InSize >> 1;
         SetLimit(pDevExt);
         UpdateHandFlow(pDevExt, TRUE, &queueToComplete);
-        if (pDevExt->pIoPortRemote->tryWrite) {
+        if (pDevExt->pIoPortLocal->tryWrite || pDevExt->pIoPortRemote->tryWrite) {
           ReadWrite(
               pDevExt->pIoPortLocal, FALSE,
               pDevExt->pIoPortRemote, FALSE,
