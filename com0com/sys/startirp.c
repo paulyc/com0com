@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.8  2006/01/10 10:17:23  vfrolov
+ * Implemented flow control and handshaking
+ * Implemented IOCTL_SERIAL_SET_XON and IOCTL_SERIAL_SET_XOFF
+ * Added setting of HoldReasons, WaitForImmediate and AmountInOutQueue
+ *   fields of SERIAL_STATUS for IOCTL_SERIAL_GET_COMMSTATUS
+ *
  * Revision 1.7  2005/12/05 10:54:55  vfrolov
  * Implemented IOCTL_SERIAL_IMMEDIATE_CHAR
  *
@@ -43,6 +49,7 @@
  */
 
 #include "precomp.h"
+#include "handflow.h"
 
 /*
  * FILE_ID used by HALT_UNLESS to put it on BSOD
@@ -238,10 +245,17 @@ NTSTATUS StartIrp(
   pQueue->pCurrent = pIrp;
   pState->flags |= C0C_IRP_FLAG_IS_CURRENT;
 
-  if (pState->iQueue == C0C_QUEUE_WRITE)
-    pDevExt->pIoPortLocal->amountInWriteQueue += GetWriteLength(pIrp);
-
   InitializeListHead(&queueToComplete);
+
+  if (pState->iQueue == C0C_QUEUE_WRITE) {
+    ULONG length = GetWriteLength(pIrp);
+
+    if (length) {
+      pDevExt->pIoPortLocal->amountInWriteQueue += length;
+      UpdateTransmitToggle(pDevExt, &queueToComplete);
+    }
+  }
+
   status = pStartRoutine(pDevExt, &queueToComplete);
 
   if (status == STATUS_PENDING) {

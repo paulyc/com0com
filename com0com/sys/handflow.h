@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2006/02/17 07:55:13  vfrolov
+ * Implemented IOCTL_SERIAL_SET_BREAK_ON and IOCTL_SERIAL_SET_BREAK_OFF
+ *
  * Revision 1.1  2006/01/10 10:12:05  vfrolov
  * Initial revision
  *
@@ -36,6 +39,10 @@ NTSTATUS SetHandFlow(
 VOID UpdateHandFlow(
     PC0C_FDOPORT_EXTENSION pDevExt,
     BOOLEAN freed,
+    PLIST_ENTRY pQueueToComplete);
+
+VOID UpdateTransmitToggle(
+    PC0C_FDOPORT_EXTENSION pDevExt,
     PLIST_ENTRY pQueueToComplete);
 
 VOID SetLimit(PC0C_FDOPORT_EXTENSION pDevExt);
