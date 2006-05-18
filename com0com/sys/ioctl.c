@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.20  2006/05/18 08:00:30  vfrolov
+ * Implemented SERIAL_RX_WAITING_FOR_DSR
+ *
  * Revision 1.19  2006/05/17 15:31:14  vfrolov
  * Implemented SERIAL_TRANSMIT_TOGGLE
  *
@@ -363,6 +366,9 @@ NTSTATUS FdoPortIoCtl(
       {
         pSysBuf->HoldReasons |= SERIAL_RX_WAITING_FOR_DSR;
       }
+
+      if (pIoPort->writeHoldingRemote & SERIAL_TX_WAITING_FOR_XON)
+        pSysBuf->HoldReasons |= SERIAL_TX_WAITING_XOFF_SENT;
 
       pSysBuf->Errors = pIoPort->errors;
       pIoPort->errors = 0;
