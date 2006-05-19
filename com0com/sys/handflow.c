@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2006/05/17 15:31:14  vfrolov
+ * Implemented SERIAL_TRANSMIT_TOGGLE
+ *
  * Revision 1.4  2006/04/05 07:22:15  vfrolov
  * Replaced flipXoffLimit flag by writeHoldingRemote to correct handFlow changing
  *
@@ -72,8 +75,12 @@ NTSTATUS SetHandFlow(
   }
 
   // Set local side
-  if ((pNewHandFlow->FlowReplace & SERIAL_AUTO_TRANSMIT) == 0)
+  if (pHandFlow &&
+      ((pDevExt->handFlow.FlowReplace & SERIAL_AUTO_TRANSMIT) != 0) &&
+      ((pHandFlow->FlowReplace & SERIAL_AUTO_TRANSMIT) == 0))
+  {
     SetXonXoffHolding(pIoPortLocal, C0C_XCHAR_ON);
+  }
 
   if (!pHandFlow ||
       (pDevExt->handFlow.ControlHandShake & SERIAL_OUT_HANDSHAKEMASK) !=
@@ -162,6 +169,8 @@ NTSTATUS SetHandFlow(
     if (pNewHandFlow->FlowReplace & SERIAL_AUTO_RECEIVE) {
       if (C0C_BUFFER_BUSY(pReadBuf) > (C0C_BUFFER_SIZE(pReadBuf) - pNewHandFlow->XoffLimit)) {
         pIoPortLocal->writeHoldingRemote |= SERIAL_TX_WAITING_FOR_XON;
+        if ((pNewHandFlow->FlowReplace & SERIAL_XOFF_CONTINUE) == 0)
+          pIoPortLocal->writeHolding |= SERIAL_TX_WAITING_FOR_XON;
         pIoPortLocal->sendXonXoff = C0C_XCHAR_OFF;
         pIoPortLocal->tryWrite = TRUE;
       }
@@ -169,6 +178,7 @@ NTSTATUS SetHandFlow(
     else
     if (pIoPortLocal->writeHoldingRemote & SERIAL_TX_WAITING_FOR_XON) {
       pIoPortLocal->writeHoldingRemote &= ~SERIAL_TX_WAITING_FOR_XON;
+      pIoPortLocal->writeHolding &= ~SERIAL_TX_WAITING_FOR_XON;
       if (pIoPortLocal->sendXonXoff != C0C_XCHAR_OFF) {
         // XOFF was sent so send XON
         pIoPortLocal->sendXonXoff = C0C_XCHAR_ON;
@@ -242,6 +252,8 @@ VOID UpdateHandFlow(
 
       if (pHandFlowLocal->FlowReplace & SERIAL_AUTO_RECEIVE) {
         pIoPortLocal->writeHoldingRemote |= SERIAL_TX_WAITING_FOR_XON;
+        if ((pHandFlowLocal->FlowReplace & SERIAL_XOFF_CONTINUE) == 0)
+          pIoPortLocal->writeHolding |= SERIAL_TX_WAITING_FOR_XON;
         pIoPortLocal->sendXonXoff = C0C_XCHAR_OFF;
         pIoPortLocal->tryWrite = TRUE;
       }
@@ -262,6 +274,7 @@ VOID UpdateHandFlow(
 
       if (pHandFlowLocal->FlowReplace & SERIAL_AUTO_RECEIVE) {
         pIoPortLocal->writeHoldingRemote &= ~SERIAL_TX_WAITING_FOR_XON;
+        pIoPortLocal->writeHolding &= ~SERIAL_TX_WAITING_FOR_XON;
         pIoPortLocal->sendXonXoff = C0C_XCHAR_ON;
         pIoPortLocal->tryWrite = TRUE;
       }
