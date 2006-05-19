@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2006/01/10 09:32:20  vfrolov
+ * Added codeNameTableHoldReasons[]
+ *
  * Revision 1.7  2005/12/06 13:01:54  vfrolov
  * Implemented IOCTL_SERIAL_GET_DTRRTS
  *
@@ -114,7 +117,7 @@ CODE2NAME codeNameTablePnp[];
 CODE2NAME codeNameTablePower[];
 CODE2NAME codeNameTableDoType[];
 CODE2NAME codeNameTableModemStatus[];
-CODE2NAME codeNameTableDTRRTS[];
+CODE2NAME codeNameTableModemControl[];
 CODE2NAME codeNameTableStatus[];
 CODE2NAME codeNameTableIrpMj[];
 CODE2NAME codeNameTableRelations[];

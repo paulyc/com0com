@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.21  2006/05/18 09:38:10  vfrolov
+ * Implemented SERIAL_TX_WAITING_XOFF_SENT
+ *
  * Revision 1.20  2006/05/18 08:00:30  vfrolov
  * Implemented SERIAL_RX_WAITING_FOR_DSR
  *
@@ -173,6 +176,7 @@ NTSTATUS FdoPortIoCtl(
         }
       }
       break;
+    case IOCTL_SERIAL_GET_MODEM_CONTROL:
     case IOCTL_SERIAL_GET_DTRRTS: {
       ULONG modemStatusRemote;
 
@@ -188,6 +192,9 @@ NTSTATUS FdoPortIoCtl(
       *(PULONG)pIrp->AssociatedIrp.SystemBuffer =
           ((modemStatusRemote & C0C_MSB_DSR) ? SERIAL_DTR_STATE : 0) |
           ((modemStatusRemote & C0C_MSB_CTS) ? SERIAL_RTS_STATE : 0);
+
+      if (code == IOCTL_SERIAL_GET_MODEM_CONTROL)
+        *(PULONG)pIrp->AssociatedIrp.SystemBuffer |= 0x8;
 
       pIrp->IoStatus.Information = sizeof(ULONG);
 

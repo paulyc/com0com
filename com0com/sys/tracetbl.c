@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2006/01/10 09:32:20  vfrolov
+ * Added codeNameTableHoldReasons[]
+ *
  * Revision 1.5  2005/12/06 13:01:54  vfrolov
  * Implemented IOCTL_SERIAL_GET_DTRRTS
  *
@@ -176,9 +179,12 @@ CODE2NAME codeNameTableModemStatus[] = {
   {0, NULL}
 };
 
-CODE2NAME codeNameTableDTRRTS[] = {
+CODE2NAME codeNameTableModemControl[] = {
   {SERIAL_DTR_STATE, "DTR"},
   {SERIAL_RTS_STATE, "RTS"},
+  {0x04, "OUT1"},
+  {0x08, "OUT2"},
+  {0x10, "LOOP"},
   {0, NULL}
 };
 
