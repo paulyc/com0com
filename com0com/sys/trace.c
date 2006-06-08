@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.19  2006/05/19 15:02:03  vfrolov
+ * Implemented IOCTL_SERIAL_GET_MODEM_CONTROL
+ *
  * Revision 1.18  2006/01/10 09:44:04  vfrolov
  * Added ability to enable/disable dump
  * Added tracing of HoldReasons, WaitForImmediate, AmountInOutQueue for SERIAL_STATUS
@@ -1092,7 +1095,7 @@ VOID Trace0(
     IN PC0C_COMMON_EXTENSION pDevExt,
     IN PWCHAR pStr)
 {
-  if (!TRACE_FILE_OK)
+  if (!TRACE_FILE_OK || !pStr)
     return;
 
   TraceF(pDevExt, "%S", pStr);
@@ -1103,7 +1106,7 @@ VOID Trace00(
     IN PWCHAR pStr1,
     IN PWCHAR pStr2)
 {
-  if (!TRACE_FILE_OK)
+  if (!TRACE_FILE_OK || !pStr1 || !pStr2)
     return;
 
   TraceF(pDevExt, "%S%S", pStr1, pStr2);
