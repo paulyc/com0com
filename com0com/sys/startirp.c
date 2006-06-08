@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2006/05/17 15:31:14  vfrolov
+ * Implemented SERIAL_TRANSMIT_TOGGLE
+ *
  * Revision 1.8  2006/01/10 10:17:23  vfrolov
  * Implemented flow control and handshaking
  * Implemented IOCTL_SERIAL_SET_XON and IOCTL_SERIAL_SET_XOFF
@@ -202,12 +205,15 @@ VOID FdoPortCompleteQueue(IN PLIST_ENTRY pQueueToComplete)
     HALT_UNLESS(pState);
 
     if (pState->iQueue == C0C_QUEUE_WRITE) {
+      KIRQL oldIrql;
       PC0C_FDOPORT_EXTENSION pDevExt;
 
       pDevExt = IoGetCurrentIrpStackLocation(pIrp)->DeviceObject->DeviceExtension;
 
+      KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
       pDevExt->pIoPortLocal->amountInWriteQueue -=
           GetWriteLength(pIrp) - (ULONG)pIrp->IoStatus.Information;
+      KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
     }
 
     if (pIrp->IoStatus.Status == STATUS_CANCELLED)

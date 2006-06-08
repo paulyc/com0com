@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2005/12/05 10:54:55  vfrolov
+ * Implemented IOCTL_SERIAL_IMMEDIATE_CHAR
+ *
  * Revision 1.4  2005/08/23 15:49:21  vfrolov
  * Implemented baudrate emulation
  *
@@ -61,6 +64,20 @@ VOID TimeoutRoutine(
     #pragma warning(pop)
 
     if (pCancelRoutine) {
+      PC0C_IRP_STATE pState;
+
+      pState = GetIrpState(pIrp);
+      HALT_UNLESS(pState);
+
+      if (pState->iQueue == C0C_QUEUE_WRITE) {
+        PC0C_FDOPORT_EXTENSION pDevExt;
+
+        pDevExt = IoGetCurrentIrpStackLocation(pIrp)->DeviceObject->DeviceExtension;
+
+        pDevExt->pIoPortLocal->amountInWriteQueue -=
+            GetWriteLength(pIrp) - (ULONG)pIrp->IoStatus.Information;
+      }
+
       ShiftQueue(pQueue);
       if (pQueue->pCurrent)
         FdoPortSetIrpTimeout(pDevExt, pQueue->pCurrent);
