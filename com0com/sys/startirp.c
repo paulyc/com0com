@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2006/06/08 11:33:35  vfrolov
+ * Fixed bugs with amountInWriteQueue
+ *
  * Revision 1.9  2006/05/17 15:31:14  vfrolov
  * Implemented SERIAL_TRANSMIT_TOGGLE
  *
@@ -258,7 +261,7 @@ NTSTATUS StartIrp(
 
     if (length) {
       pDevExt->pIoPortLocal->amountInWriteQueue += length;
-      UpdateTransmitToggle(pDevExt, &queueToComplete);
+      UpdateTransmitToggle(pDevExt->pIoPortLocal, &queueToComplete);
     }
   }
 

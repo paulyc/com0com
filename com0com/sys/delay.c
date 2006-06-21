@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.2  2006/01/10 10:17:23  vfrolov
+ * Implemented flow control and handshaking
+ * Implemented IOCTL_SERIAL_SET_XON and IOCTL_SERIAL_SET_XOFF
+ * Added setting of HoldReasons, WaitForImmediate and AmountInOutQueue
+ *   fields of SERIAL_STATUS for IOCTL_SERIAL_GET_COMMSTATUS
+ *
  * Revision 1.1  2005/08/23 15:30:22  vfrolov
  * Initial revision
  *
@@ -39,15 +45,15 @@ VOID WriteDelayRoutine(
     IN PVOID systemArgument1,
     IN PVOID systemArgument2)
 {
-  PC0C_FDOPORT_EXTENSION pDevExt;
+  PC0C_IO_PORT pIoPort;
   PC0C_ADAPTIVE_DELAY pWriteDelay;
 
   UNREFERENCED_PARAMETER(pDpc);
   UNREFERENCED_PARAMETER(systemArgument1);
   UNREFERENCED_PARAMETER(systemArgument2);
 
-  pDevExt = (PC0C_FDOPORT_EXTENSION)deferredContext;
-  pWriteDelay = pDevExt->pIoPortLocal->pWriteDelay;
+  pIoPort = (PC0C_IO_PORT)deferredContext;
+  pWriteDelay = pIoPort->pWriteDelay;
 
   if (pWriteDelay) {
     LIST_ENTRY queueToComplete;
@@ -55,21 +61,21 @@ VOID WriteDelayRoutine(
 
     InitializeListHead(&queueToComplete);
 
-    KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
+    KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
 
     if (pWriteDelay->started) {
       NTSTATUS status;
 
       status = ReadWrite(
-          pDevExt->pIoPortRemote, FALSE,
-          pDevExt->pIoPortLocal, FALSE,
+          pIoPort->pIoPortRemote, FALSE,
+          pIoPort, FALSE,
           &queueToComplete);
 
       if (status != STATUS_PENDING)
         StopWriteDelayTimer(pWriteDelay);
     }
 
-    KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
+    KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
 
     FdoPortCompleteQueue(&queueToComplete);
   }
@@ -95,7 +101,7 @@ SIZE_T GetWriteLimit(PC0C_ADAPTIVE_DELAY pWriteDelay)
   return (SIZE_T)(maxFrames - pWriteDelay->sentFrames);
 }
 
-NTSTATUS AllocWriteDelay(IN PC0C_FDOPORT_EXTENSION pDevExt)
+NTSTATUS AllocWriteDelay(PC0C_IO_PORT pIoPort)
 {
   PC0C_ADAPTIVE_DELAY pWriteDelay;
 
@@ -107,21 +113,21 @@ NTSTATUS AllocWriteDelay(IN PC0C_FDOPORT_EXTENSION pDevExt)
   RtlZeroMemory(pWriteDelay, sizeof(*pWriteDelay));
 
   KeInitializeTimer(&pWriteDelay->timer);
-  KeInitializeDpc(&pWriteDelay->timerDpc, WriteDelayRoutine, pDevExt);
+  KeInitializeDpc(&pWriteDelay->timerDpc, WriteDelayRoutine, pIoPort);
 
-  pDevExt->pIoPortLocal->pWriteDelay = pWriteDelay;
+  pIoPort->pWriteDelay = pWriteDelay;
 
   return STATUS_SUCCESS;
 }
 
-VOID FreeWriteDelay(IN PC0C_FDOPORT_EXTENSION pDevExt)
+VOID FreeWriteDelay(PC0C_IO_PORT pIoPort)
 {
   PC0C_ADAPTIVE_DELAY pWriteDelay;
 
-  pWriteDelay = pDevExt->pIoPortLocal->pWriteDelay;
+  pWriteDelay = pIoPort->pWriteDelay;
 
   if (pWriteDelay) {
-    pDevExt->pIoPortLocal->pWriteDelay = NULL;
+    pIoPort->pWriteDelay = NULL;
     StopWriteDelayTimer(pWriteDelay);
     ExFreePool(pWriteDelay);
   }

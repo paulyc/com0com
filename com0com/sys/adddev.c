@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2006/03/29 09:39:28  vfrolov
+ * Fixed possible usage uninitialized portName
+ *
  * Revision 1.13  2006/03/27 09:38:23  vfrolov
  * Utilized StrAppendDeviceProperty()
  *
@@ -86,12 +89,11 @@ NTSTATUS InitCommonExt(
 
 VOID RemoveFdoPort(IN PC0C_FDOPORT_EXTENSION pDevExt)
 {
-  if (pDevExt->pIoPortLocal && pDevExt->pIoPortLocal->pDevExt) {
+  if (pDevExt->pIoPortLocal) {
+    FreeTimeouts(pDevExt->pIoPortLocal);
+    FreeWriteDelay(pDevExt->pIoPortLocal);
     pDevExt->pIoPortLocal->pDevExt = NULL;
-    FreeTimeouts(pDevExt);
   }
-
-  FreeWriteDelay(pDevExt);
 
   if (pDevExt->mappedSerialDevice)
     RtlDeleteRegistryValue(RTL_REGISTRY_DEVICEMAP, C0C_SERIAL_DEVICEMAP,
@@ -252,12 +254,11 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
     goto clean;
   }
 
-  pDevExt->pIoLock = ((PC0C_PDOPORT_EXTENSION)pPhDevObj->DeviceExtension)->pIoLock;
   pDevExt->pIoPortLocal = ((PC0C_PDOPORT_EXTENSION)pPhDevObj->DeviceExtension)->pIoPortLocal;
-  pDevExt->pIoPortRemote = ((PC0C_PDOPORT_EXTENSION)pPhDevObj->DeviceExtension)->pIoPortRemote;
+  pDevExt->pIoLock = pDevExt->pIoPortLocal->pIoLock;
 
   if (emuBR) {
-    if (NT_SUCCESS(AllocWriteDelay(pDevExt)))
+    if (NT_SUCCESS(AllocWriteDelay(pDevExt->pIoPortLocal)))
       Trace0((PC0C_COMMON_EXTENSION)pDevExt, L"Enabled baudrate emulation");
     else
       SysLog(pPhDevObj, status, L"AddFdoPort AllocWriteDelay FAIL");
@@ -273,13 +274,18 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
     Trace0((PC0C_COMMON_EXTENSION)pDevExt, L"Disabled overrun emulation");
   }
 
-  AllocTimeouts(pDevExt);
+  AllocTimeouts(pDevExt->pIoPortLocal);
 
   KeInitializeSpinLock(&pDevExt->controlLock);
-  pDevExt->specialChars.XonChar      = 0x11;
-  pDevExt->specialChars.XoffChar     = 0x13;
-  pDevExt->handFlow.ControlHandShake = SERIAL_DTR_CONTROL;
-  pDevExt->handFlow.FlowReplace      = SERIAL_RTS_CONTROL;
+
+  RtlZeroMemory(&pDevExt->pIoPortLocal->specialChars, sizeof(pDevExt->pIoPortLocal->specialChars));
+  pDevExt->pIoPortLocal->specialChars.XonChar      = 0x11;
+  pDevExt->pIoPortLocal->specialChars.XoffChar     = 0x13;
+
+  RtlZeroMemory(&pDevExt->pIoPortLocal->handFlow, sizeof(pDevExt->pIoPortLocal->handFlow));
+  pDevExt->pIoPortLocal->handFlow.ControlHandShake = SERIAL_DTR_CONTROL;
+  pDevExt->pIoPortLocal->handFlow.FlowReplace      = SERIAL_RTS_CONTROL;
+
   pDevExt->lineControl.WordLength    = 7;
   pDevExt->lineControl.Parity        = EVEN_PARITY;
   pDevExt->lineControl.StopBits      = STOP_BIT_1;
@@ -347,7 +353,6 @@ NTSTATUS AddPdoPort(
     IN BOOLEAN isA,
     IN PC0C_FDOBUS_EXTENSION pBusExt,
     IN PC0C_IO_PORT pIoPortLocal,
-    IN PC0C_IO_PORT pIoPortRemote,
     OUT PC0C_PDOPORT_EXTENSION *ppDevExt)
 {
   NTSTATUS status;
@@ -355,7 +360,6 @@ NTSTATUS AddPdoPort(
   PDEVICE_OBJECT pNewDevObj;
   UNICODE_STRING ntDeviceName;
   PC0C_PDOPORT_EXTENSION pDevExt = NULL;
-  int i;
 
   status = STATUS_SUCCESS;
 
@@ -396,17 +400,7 @@ NTSTATUS AddPdoPort(
   }
 
   pDevExt->pBusExt = pBusExt;
-  pDevExt->pIoLock = &pBusExt->ioLock;
   pDevExt->pIoPortLocal = pIoPortLocal;
-  pDevExt->pIoPortRemote = pIoPortRemote;
-
-  for (i = 0 ; i < C0C_QUEUE_SIZE ; i++) {
-    InitializeListHead(&pIoPortLocal->irpQueues[i].queue);
-    pIoPortLocal->irpQueues[i].pCurrent = NULL;
-#if DBG
-    pIoPortLocal->irpQueues[i].started = FALSE;
-#endif /* DBG */
-  }
 
   Trace0((PC0C_COMMON_EXTENSION)pDevExt, L"AddPdoPort OK");
 
@@ -545,14 +539,28 @@ NTSTATUS AddFdoBus(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   KeInitializeSpinLock(&pDevExt->ioLock);
 
   for (i = 0 ; i < 2 ; i++) {
-    BOOLEAN isA = (BOOLEAN)(i ? FALSE : TRUE);
+    PC0C_IO_PORT pIoPort;
+    int j;
+
+    pIoPort = &pDevExt->childs[i].ioPort;
+
+    pIoPort->pIoLock = &pDevExt->ioLock;
+
+    for (j = 0 ; j < C0C_QUEUE_SIZE ; j++) {
+      InitializeListHead(&pIoPort->irpQueues[j].queue);
+      pIoPort->irpQueues[j].pCurrent = NULL;
+#if DBG
+      pIoPort->irpQueues[j].started = FALSE;
+#endif /* DBG */
+    }
+
+    pIoPort->pIoPortRemote = &pDevExt->childs[(i + 1) % 2].ioPort;
 
     status = AddPdoPort(pDrvObj,
                         num,
-                        isA,
+                        (BOOLEAN)(i ? FALSE : TRUE),
                         pDevExt,
-                        &pDevExt->childs[i].ioPort,
-                        &pDevExt->childs[(i + 1) % 2].ioPort,
+                        pIoPort,
                         &pDevExt->childs[i].pDevExt);
 
     if (!NT_SUCCESS(status)) {

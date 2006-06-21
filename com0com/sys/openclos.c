@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2006/06/08 11:33:35  vfrolov
+ * Fixed bugs with amountInWriteQueue
+ *
  * Revision 1.12  2006/04/05 07:22:15  vfrolov
  * Replaced flipXoffLimit flag by writeHoldingRemote to correct handFlow changing
  *
@@ -77,11 +80,6 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
     return STATUS_ACCESS_DENIED;
   }
 
-  if (!pDevExt->pIoPortRemote->pDevExt) {
-    InterlockedDecrement(&pDevExt->openCount);
-    return STATUS_INSUFFICIENT_RESOURCES;
-  }
-
   switch (MmQuerySystemSize()) {
   case MmLargeSystem:
     size = 4096;
@@ -132,10 +130,10 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
   pDevExt->pIoPortLocal->eventMask = 0;
   pDevExt->pIoPortLocal->escapeChar = 0;
   RtlZeroMemory(&pDevExt->pIoPortLocal->perfStats, sizeof(pDevExt->pIoPortLocal->perfStats));
-  pDevExt->handFlow.XoffLimit = size >> 3;
-  pDevExt->handFlow.XonLimit = size >> 1;
+  pDevExt->pIoPortLocal->handFlow.XoffLimit = size >> 3;
+  pDevExt->pIoPortLocal->handFlow.XonLimit = size >> 1;
 
-  SetHandFlow(pDevExt, NULL, &queueToComplete);
+  SetHandFlow(pDevExt->pIoPortLocal, NULL, &queueToComplete);
 
   KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
 
@@ -155,7 +153,7 @@ NTSTATUS FdoPortClose(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   pDevExt->pIoPortLocal->writeHoldingRemote = 0;
   pDevExt->pIoPortLocal->sendXonXoff = 0;
-  SetModemStatus(pDevExt->pIoPortRemote, 0, C0C_MSB_CTS | C0C_MSB_DSR, &queueToComplete);
+  SetModemStatus(pDevExt->pIoPortLocal->pIoPortRemote, 0, C0C_MSB_CTS | C0C_MSB_DSR, &queueToComplete);
   FreeBuffer(&pDevExt->pIoPortLocal->readBuf);
   SetBreakHolding(pDevExt->pIoPortLocal, FALSE);
 

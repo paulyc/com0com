@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.25  2006/04/05 07:22:15  vfrolov
+ * Replaced flipXoffLimit flag by writeHoldingRemote to correct handFlow changing
+ *
  * Revision 1.24  2006/02/26 08:35:55  vfrolov
  * Added check for start/stop queue matching
  *
@@ -176,6 +179,9 @@ typedef struct _C0C_IO_PORT {
 
   struct _C0C_FDOPORT_EXTENSION *pDevExt;
 
+  struct _C0C_IO_PORT     *pIoPortRemote;
+  PKSPIN_LOCK             pIoLock;
+
   #define C0C_QUEUE_READ  0
   #define C0C_QUEUE_WRITE 1
   #define C0C_QUEUE_WAIT  2
@@ -195,6 +201,9 @@ typedef struct _C0C_IO_PORT {
   KDPC                    timerWriteTotalDpc;
 
   struct _C0C_ADAPTIVE_DELAY *pWriteDelay;
+
+  SERIAL_HANDFLOW         handFlow;
+  SERIAL_CHARS            specialChars;
 
   ULONG                   errors;
   ULONG                   amountInWriteQueue;
@@ -226,9 +235,7 @@ typedef struct _C0C_PDOPORT_EXTENSION {
 
   struct _C0C_FDOBUS_EXTENSION *pBusExt;
 
-  PKSPIN_LOCK             pIoLock;
   PC0C_IO_PORT            pIoPortLocal;
-  PC0C_IO_PORT            pIoPortRemote;
 } C0C_PDOPORT_EXTENSION, *PC0C_PDOPORT_EXTENSION;
 
 typedef struct _C0C_FDOPORT_EXTENSION {
@@ -236,7 +243,6 @@ typedef struct _C0C_FDOPORT_EXTENSION {
 
   PKSPIN_LOCK             pIoLock;
   PC0C_IO_PORT            pIoPortLocal;
-  PC0C_IO_PORT            pIoPortRemote;
 
   UNICODE_STRING          ntDeviceName;
   UNICODE_STRING          win32DeviceName;
@@ -249,9 +255,7 @@ typedef struct _C0C_FDOPORT_EXTENSION {
 
   SERIAL_BAUD_RATE        baudRate;
   SERIAL_LINE_CONTROL     lineControl;
-  SERIAL_CHARS            specialChars;
   SERIAL_TIMEOUTS         timeouts;
-  SERIAL_HANDFLOW         handFlow;
 
 } C0C_FDOPORT_EXTENSION, *PC0C_FDOPORT_EXTENSION;
 

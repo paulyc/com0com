@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.6  2006/01/10 10:17:23  vfrolov
+ * Implemented flow control and handshaking
+ * Implemented IOCTL_SERIAL_SET_XON and IOCTL_SERIAL_SET_XOFF
+ * Added setting of HoldReasons, WaitForImmediate and AmountInOutQueue
+ *   fields of SERIAL_STATUS for IOCTL_SERIAL_GET_COMMSTATUS
+ *
  * Revision 1.5  2005/12/05 10:54:56  vfrolov
  * Implemented IOCTL_SERIAL_IMMEDIATE_CHAR
  *
@@ -43,7 +49,7 @@ NTSTATUS StartIrpWrite(
     IN PLIST_ENTRY pQueueToComplete)
 {
   return ReadWrite(
-      pDevExt->pIoPortRemote, FALSE,
+      pDevExt->pIoPortLocal->pIoPortRemote, FALSE,
       pDevExt->pIoPortLocal, TRUE,
       pQueueToComplete);
 }
@@ -65,7 +71,7 @@ NTSTATUS FdoPortWrite(IN PC0C_FDOPORT_EXTENSION pDevExt, IN PIRP pIrp)
 
   pIrp->IoStatus.Information = 0;
 
-  if ((pDevExt->handFlow.ControlHandShake & SERIAL_ERROR_ABORT) && pDevExt->pIoPortLocal->errors) {
+  if ((pDevExt->pIoPortLocal->handFlow.ControlHandShake & SERIAL_ERROR_ABORT) && pDevExt->pIoPortLocal->errors) {
     status = STATUS_CANCELLED;
   } else {
     if (IoGetCurrentIrpStackLocation(pIrp)->MajorFunction == IRP_MJ_FLUSH_BUFFERS ||

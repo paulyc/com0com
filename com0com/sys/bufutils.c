@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2006/05/17 15:28:03  vfrolov
+ * Implemented SERIAL_DSR_SENSITIVITY
+ *
  * Revision 1.5  2006/01/10 10:17:23  vfrolov
  * Implemented flow control and handshaking
  * Implemented IOCTL_SERIAL_SET_XON and IOCTL_SERIAL_SET_XOFF
@@ -99,7 +102,7 @@ VOID FlowFilterInit(PC0C_IO_PORT pIoPort, PC0C_FLOW_FILTER pFlowFilter)
 
   RtlZeroMemory(pFlowFilter, sizeof(*pFlowFilter));
 
-  pHandFlow = &pIoPort->pDevExt->handFlow;
+  pHandFlow = &pIoPort->handFlow;
 
   if ((pHandFlow->ControlHandShake & SERIAL_DSR_SENSITIVITY) &&
       (pIoPort->modemStatus & C0C_MSB_DSR) == 0)
@@ -110,8 +113,8 @@ VOID FlowFilterInit(PC0C_IO_PORT pIoPort, PC0C_FLOW_FILTER pFlowFilter)
 
   if (pHandFlow->FlowReplace & SERIAL_AUTO_TRANSMIT) {
     pFlowFilter->flags |= C0C_FLOW_FILTER_AUTO_TRANSMIT;
-    pFlowFilter->xonChar = pIoPort->pDevExt->specialChars.XonChar;
-    pFlowFilter->xoffChar = pIoPort->pDevExt->specialChars.XoffChar;
+    pFlowFilter->xonChar = pIoPort->specialChars.XonChar;
+    pFlowFilter->xoffChar = pIoPort->specialChars.XoffChar;
   }
 
   if (pHandFlow->FlowReplace & SERIAL_NULL_STRIPPING)
@@ -122,7 +125,7 @@ VOID FlowFilterInit(PC0C_IO_PORT pIoPort, PC0C_FLOW_FILTER pFlowFilter)
 
   if (pIoPort->waitMask & SERIAL_EV_RXFLAG) {
     pFlowFilter->flags |= C0C_FLOW_FILTER_EV_RXFLAG;
-    pFlowFilter->eventChar = pIoPort->pDevExt->specialChars.EventChar;
+    pFlowFilter->eventChar = pIoPort->specialChars.EventChar;
   }
 
   pFlowFilter->escapeChar = pIoPort->escapeChar;

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.27  2006/05/17 15:31:14  vfrolov
+ * Implemented SERIAL_TRANSMIT_TOGGLE
+ *
  * Revision 1.26  2006/02/26 08:39:19  vfrolov
  * Added check for start/stop queue matching
  * Fixed delayed BREAK losts
@@ -273,7 +276,7 @@ VOID WriteBuffer(
 
     if (pDataWrite->type == RW_DATA_TYPE_IRP) {
       pDataWrite->data.irp.pIrp->IoStatus.Information = information;
-      pReadIoPort->pDevExt->pIoPortRemote->amountInWriteQueue -= (ULONG)writeDone;
+      pReadIoPort->pIoPortRemote->amountInWriteQueue -= (ULONG)writeDone;
     }
 
     if (pWriteLimit)
@@ -283,7 +286,7 @@ VOID WriteBuffer(
     if (isBreak)
       OnRxBreak(pReadIoPort, pQueueToComplete);
     else
-      pReadIoPort->pDevExt->pIoPortRemote->perfStats.TransmittedCount += (ULONG)writeDone;
+      pReadIoPort->pIoPortRemote->perfStats.TransmittedCount += (ULONG)writeDone;
   }
 
   if (information == writeLength) {
@@ -301,10 +304,10 @@ VOID AlertOverrun(PC0C_IO_PORT pReadIoPort, PLIST_ENTRY pQueueToComplete)
 {
   pReadIoPort->errors |= SERIAL_ERROR_QUEUEOVERRUN;
 
-  if (pReadIoPort->pDevExt->handFlow.FlowReplace & SERIAL_ERROR_CHAR)
-    WriteMandatoryToBuffer(&pReadIoPort->readBuf, pReadIoPort->pDevExt->specialChars.ErrorChar);
+  if (pReadIoPort->handFlow.FlowReplace & SERIAL_ERROR_CHAR)
+    WriteMandatoryToBuffer(&pReadIoPort->readBuf, pReadIoPort->specialChars.ErrorChar);
 
-  if (pReadIoPort->pDevExt->handFlow.ControlHandShake & SERIAL_ERROR_ABORT) {
+  if (pReadIoPort->handFlow.ControlHandShake & SERIAL_ERROR_ABORT) {
     CancelQueue(&pReadIoPort->irpQueues[C0C_QUEUE_READ], pQueueToComplete);
     CancelQueue(&pReadIoPort->irpQueues[C0C_QUEUE_WRITE], pQueueToComplete);
   }
@@ -361,7 +364,7 @@ VOID WriteOverrun(
 
     if (pDataWrite->type == RW_DATA_TYPE_IRP) {
       pDataWrite->data.irp.pIrp->IoStatus.Information = information;
-      pReadIoPort->pDevExt->pIoPortRemote->amountInWriteQueue -= (ULONG)writeDone;
+      pReadIoPort->pIoPortRemote->amountInWriteQueue -= (ULONG)writeDone;
     }
 
     if (pWriteLimit)
@@ -376,7 +379,7 @@ VOID WriteOverrun(
     if (isBreak)
       OnRxBreak(pReadIoPort, pQueueToComplete);
     else
-      pReadIoPort->pDevExt->pIoPortRemote->perfStats.TransmittedCount += (ULONG)writeDone;
+      pReadIoPort->pIoPortRemote->perfStats.TransmittedCount += (ULONG)writeDone;
   }
 
   if (information == writeLength) {
@@ -441,7 +444,7 @@ VOID ReadWriteDirect(
 
   if (pDataWrite->type == RW_DATA_TYPE_IRP) {
     pDataWrite->data.irp.pIrp->IoStatus.Information += writeDone;
-    pReadIoPort->pDevExt->pIoPortRemote->amountInWriteQueue -= (ULONG)writeDone;
+    pReadIoPort->pIoPortRemote->amountInWriteQueue -= (ULONG)writeDone;
   }
 
   if (readDone == readLength)
@@ -462,7 +465,7 @@ VOID ReadWriteDirect(
     if (isBreak)
       OnRxBreak(pReadIoPort, pQueueToComplete);
     else
-      pReadIoPort->pDevExt->pIoPortRemote->perfStats.TransmittedCount += (ULONG)writeDone;
+      pReadIoPort->pIoPortRemote->perfStats.TransmittedCount += (ULONG)writeDone;
   }
 
   *pReadDone += readDone;
@@ -553,7 +556,7 @@ NTSTATUS StopCurrentIrp(
   }
 
   if (!first && status == STATUS_PENDING)
-    status = FdoPortSetIrpTimeout(pIoPort->pDevExt, pIrp);
+    status = SetIrpTimeout(pIoPort, pIrp);
 
   HALT_UNLESS(pCancelRoutine);
 
@@ -641,7 +644,7 @@ NTSTATUS FdoPortIo(
       status = WriteRawDataToBuffer((PC0C_RAW_DATA)pParam, &pIoPort->readBuf);
       if (status == STATUS_PENDING && !pIoPort->emuOverrun)
         status = MoveRawData(&pIoPort->readBuf.insertData, (PC0C_RAW_DATA)pParam);
-      UpdateHandFlow(pIoPort->pDevExt, FALSE, pQueueToComplete);
+      UpdateHandFlow(pIoPort, FALSE, pQueueToComplete);
       break;
     }
   }
@@ -792,7 +795,7 @@ NTSTATUS TryReadWrite(
   readBufBusyEnd = C0C_BUFFER_BUSY(&pIoPortRead->readBuf);
 
   if (readBufBusyBeg > readBufBusyEnd) {
-    UpdateHandFlow(pIoPortRead->pDevExt, TRUE, pQueueToComplete);
+    UpdateHandFlow(pIoPortRead, TRUE, pQueueToComplete);
     readBufBusyBeg = readBufBusyEnd;
   }
 
@@ -810,12 +813,12 @@ NTSTATUS TryReadWrite(
     switch (pIoPortWrite->sendXonXoff) {
     case C0C_XCHAR_ON:
       dataChar.data.chr.type = RW_DATA_TYPE_CHR_XCHR;
-      dataChar.data.chr.chr = pIoPortWrite->pDevExt->specialChars.XonChar;
+      dataChar.data.chr.chr = pIoPortWrite->specialChars.XonChar;
       dataChar.data.chr.isChr = TRUE;
       break;
     case C0C_XCHAR_OFF:
       dataChar.data.chr.type = RW_DATA_TYPE_CHR_XCHR;
-      dataChar.data.chr.chr = pIoPortWrite->pDevExt->specialChars.XoffChar;
+      dataChar.data.chr.chr = pIoPortWrite->specialChars.XoffChar;
       dataChar.data.chr.isChr = TRUE;
       break;
     default:
@@ -930,7 +933,7 @@ NTSTATUS TryReadWrite(
     if (startRead && firstRead) {
       if (dataIrpRead.data.irp.status == STATUS_PENDING)
         dataIrpRead.data.irp.status =
-            FdoPortSetIrpTimeout(pIoPortRead->pDevExt, dataIrpRead.data.irp.pIrp);
+            SetIrpTimeout(pIoPortRead, dataIrpRead.data.irp.pIrp);
 
       status = dataIrpRead.data.irp.status;
 
@@ -975,7 +978,7 @@ NTSTATUS TryReadWrite(
             WaitComplete(pIoPortRead, pQueueToComplete);
           }
 
-          UpdateHandFlow(pIoPortRead->pDevExt, FALSE, pQueueToComplete);
+          UpdateHandFlow(pIoPortRead, FALSE, pQueueToComplete);
           readBufBusyBeg = readBufBusyEnd;
         }
 
@@ -1017,8 +1020,8 @@ NTSTATUS TryReadWrite(
 
           InsertLsrMst(pIoPortRead, FALSE,  lsr, pQueueToComplete);
         }
-        if (pIoPortRead->pDevExt->handFlow.FlowReplace & SERIAL_BREAK_CHAR)
-          InsertChar(pIoPortRead, pIoPortRead->pDevExt->specialChars.BreakChar, pQueueToComplete);
+        if (pIoPortRead->handFlow.FlowReplace & SERIAL_BREAK_CHAR)
+          InsertChar(pIoPortRead, pIoPortRead->specialChars.BreakChar, pQueueToComplete);
       }
       break;
     }
@@ -1050,7 +1053,7 @@ NTSTATUS TryReadWrite(
               WaitComplete(pIoPortRead, pQueueToComplete);
             }
 
-            UpdateHandFlow(pIoPortRead->pDevExt, FALSE, pQueueToComplete);
+            UpdateHandFlow(pIoPortRead, FALSE, pQueueToComplete);
             readBufBusyBeg = readBufBusyEnd;
           }
 
@@ -1082,7 +1085,7 @@ NTSTATUS TryReadWrite(
     if(startWrite && firstWrite) {
       if (dataIrpWrite.data.irp.status == STATUS_PENDING)
         dataIrpWrite.data.irp.status =
-            FdoPortSetIrpTimeout(pIoPortWrite->pDevExt, dataIrpWrite.data.irp.pIrp);
+            SetIrpTimeout(pIoPortWrite, dataIrpWrite.data.irp.pIrp);
 
       status = dataIrpWrite.data.irp.status;
 
@@ -1112,7 +1115,7 @@ NTSTATUS TryReadWrite(
     WaitComplete(pIoPortWrite, pQueueToComplete);
   }
 
-  UpdateTransmitToggle(pIoPortWrite->pDevExt, pQueueToComplete);
+  UpdateTransmitToggle(pIoPortWrite, pQueueToComplete);
 
   return status;
 }
