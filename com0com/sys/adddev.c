@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2006/06/21 16:23:57  vfrolov
+ * Fixed possible BSOD after one port of pair removal
+ *
  * Revision 1.14  2006/03/29 09:39:28  vfrolov
  * Fixed possible usage uninitialized portName
  *
@@ -255,7 +258,7 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   }
 
   pDevExt->pIoPortLocal = ((PC0C_PDOPORT_EXTENSION)pPhDevObj->DeviceExtension)->pIoPortLocal;
-  pDevExt->pIoLock = pDevExt->pIoPortLocal->pIoLock;
+  pDevExt->pIoPortLocal->pDevExt = pDevExt;
 
   if (emuBR) {
     if (NT_SUCCESS(AllocWriteDelay(pDevExt->pIoPortLocal)))
@@ -291,7 +294,7 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   pDevExt->lineControl.StopBits      = STOP_BIT_1;
   pDevExt->baudRate.BaudRate         = 1200;
 
-  SetWriteDelay(pDevExt);
+  SetWriteDelay(pDevExt->pIoPortLocal);
 
   status = IoCreateSymbolicLink(&pDevExt->win32DeviceName, &pDevExt->ntDeviceName);
 
@@ -324,8 +327,6 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
 
   pNewDevObj->Flags &= ~DO_DEVICE_INITIALIZING;
   pNewDevObj->Flags |= DO_BUFFERED_IO;
-
-  pDevExt->pIoPortLocal->pDevExt = pDevExt;
 
   Trace0((PC0C_COMMON_EXTENSION)pDevExt, L"AddFdoPort OK");
 

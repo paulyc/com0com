@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2006/06/21 16:23:57  vfrolov
+ * Fixed possible BSOD after one port of pair removal
+ *
  * Revision 1.10  2006/06/08 11:33:35  vfrolov
  * Fixed bugs with amountInWriteQueue
  *
@@ -118,23 +121,23 @@ VOID ShiftQueue(PC0C_IRP_QUEUE pQueue)
 
 VOID CancelRoutine(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
 {
-  PC0C_FDOPORT_EXTENSION pDevExt;
+  PC0C_IO_PORT pIoPort;
   PC0C_IRP_STATE pState;
   KIRQL oldIrql;
   PC0C_IRP_QUEUE pQueue;
 
   IoReleaseCancelSpinLock(pIrp->CancelIrql);
 
-  pDevExt = pDevObj->DeviceExtension;
+  pIoPort = FDO_PORT_TO_IO_PORT(pDevObj);
   pState = GetIrpState(pIrp);
   HALT_UNLESS(pState);
 
-  pQueue = &pDevExt->pIoPortLocal->irpQueues[pState->iQueue];
+  pQueue = &pIoPort->irpQueues[pState->iQueue];
 
-  KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
+  KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
 
   if (pState->iQueue == C0C_QUEUE_WRITE) {
-    pDevExt->pIoPortLocal->amountInWriteQueue -=
+    pIoPort->amountInWriteQueue -=
         GetWriteLength(pIrp) - (ULONG)pIrp->IoStatus.Information;
   }
 
@@ -146,7 +149,7 @@ VOID CancelRoutine(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
   if (pState->flags & C0C_IRP_FLAG_IS_CURRENT)
     ShiftQueue(pQueue);
 
-  KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
+  KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
 
   TraceIrp("cancel", pIrp, NULL, TRACE_FLAG_RESULTS);
 
@@ -176,19 +179,19 @@ VOID CancelQueue(PC0C_IRP_QUEUE pQueue, PLIST_ENTRY pQueueToComplete)
   }
 }
 
-VOID FdoPortCancelQueues(IN PC0C_FDOPORT_EXTENSION pDevExt)
+VOID FdoPortCancelQueues(IN PC0C_IO_PORT pIoPort)
 {
   LIST_ENTRY queueToComplete;
   KIRQL oldIrql;
   int i;
 
   InitializeListHead(&queueToComplete);
-  KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
+  KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
 
   for (i = 0 ; i < C0C_QUEUE_SIZE ; i++)
-    CancelQueue(&pDevExt->pIoPortLocal->irpQueues[i], &queueToComplete);
+    CancelQueue(&pIoPort->irpQueues[i], &queueToComplete);
 
-  KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
+  KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
   FdoPortCompleteQueue(&queueToComplete);
 }
 
@@ -209,14 +212,14 @@ VOID FdoPortCompleteQueue(IN PLIST_ENTRY pQueueToComplete)
 
     if (pState->iQueue == C0C_QUEUE_WRITE) {
       KIRQL oldIrql;
-      PC0C_FDOPORT_EXTENSION pDevExt;
+      PC0C_IO_PORT pIoPort;
 
-      pDevExt = IoGetCurrentIrpStackLocation(pIrp)->DeviceObject->DeviceExtension;
+      pIoPort = FDO_PORT_TO_IO_PORT(IoGetCurrentIrpStackLocation(pIrp)->DeviceObject);
 
-      KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
-      pDevExt->pIoPortLocal->amountInWriteQueue -=
+      KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
+      pIoPort->amountInWriteQueue -=
           GetWriteLength(pIrp) - (ULONG)pIrp->IoStatus.Information;
-      KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
+      KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
     }
 
     if (pIrp->IoStatus.Status == STATUS_CANCELLED)
@@ -241,7 +244,7 @@ NTSTATUS NoPending(IN PIRP pIrp, NTSTATUS status)
 }
 
 NTSTATUS StartIrp(
-    IN PC0C_FDOPORT_EXTENSION pDevExt,
+    IN PC0C_IO_PORT pIoPort,
     IN PIRP pIrp,
     IN PC0C_IRP_STATE pState,
     IN PC0C_IRP_QUEUE pQueue,
@@ -260,12 +263,12 @@ NTSTATUS StartIrp(
     ULONG length = GetWriteLength(pIrp);
 
     if (length) {
-      pDevExt->pIoPortLocal->amountInWriteQueue += length;
-      UpdateTransmitToggle(pDevExt->pIoPortLocal, &queueToComplete);
+      pIoPort->amountInWriteQueue += length;
+      UpdateTransmitToggle(pIoPort, &queueToComplete);
     }
   }
 
-  status = pStartRoutine(pDevExt, &queueToComplete);
+  status = pStartRoutine(pIoPort, &queueToComplete);
 
   if (status == STATUS_PENDING) {
     pIrp->IoStatus.Status = STATUS_PENDING;
@@ -274,7 +277,7 @@ NTSTATUS StartIrp(
     status = NoPending(pIrp, status);
 
     if (pState->iQueue == C0C_QUEUE_WRITE && status != STATUS_PENDING) {
-      pDevExt->pIoPortLocal->amountInWriteQueue -=
+      pIoPort->amountInWriteQueue -=
           GetWriteLength(pIrp) - (ULONG)pIrp->IoStatus.Information;
     }
 
@@ -282,7 +285,7 @@ NTSTATUS StartIrp(
       ShiftQueue(pQueue);
   }
 
-  KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
+  KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
 
   FdoPortCompleteQueue(&queueToComplete);
 
@@ -290,7 +293,7 @@ NTSTATUS StartIrp(
 }
 
 NTSTATUS FdoPortStartIrp(
-    IN PC0C_FDOPORT_EXTENSION pDevExt,
+    IN PC0C_IO_PORT pIoPort,
     IN PIRP pIrp,
     IN UCHAR iQueue,
     IN PC0C_FDOPORT_START_ROUTINE pStartRoutine)
@@ -307,9 +310,9 @@ NTSTATUS FdoPortStartIrp(
   pState->flags = 0;
   pState->iQueue = iQueue;
 
-  pQueue = &pDevExt->pIoPortLocal->irpQueues[iQueue];
+  pQueue = &pIoPort->irpQueues[iQueue];
 
-  KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
+  KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
 
   #pragma warning(push, 3)
   IoSetCancelRoutine(pIrp, CancelRoutine);
@@ -317,10 +320,10 @@ NTSTATUS FdoPortStartIrp(
 
   if (pIrp->Cancel) {
     status = NoPending(pIrp, STATUS_CANCELLED);
-    KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
+    KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
   } else {
     if (!pQueue->pCurrent) {
-      status = StartIrp(pDevExt, pIrp, pState, pQueue, oldIrql, pStartRoutine);
+      status = StartIrp(pIoPort, pIrp, pState, pQueue, oldIrql, pStartRoutine);
     } else {
       PIO_STACK_LOCATION pIrpStack;
 
@@ -354,7 +357,7 @@ NTSTATUS FdoPortStartIrp(
           InsertHeadList(&pQueue->queue, &pQueue->pCurrent->Tail.Overlay.ListEntry);
           pCurrentState->flags |= C0C_IRP_FLAG_IN_QUEUE;
 
-          status = StartIrp(pDevExt, pIrp, pState, pQueue, oldIrql, pStartRoutine);
+          status = StartIrp(pIoPort, pIrp, pState, pQueue, oldIrql, pStartRoutine);
         }
       }
       else {
@@ -364,12 +367,12 @@ NTSTATUS FdoPortStartIrp(
         pState->flags |= C0C_IRP_FLAG_IN_QUEUE;
 
         if (pState->iQueue == C0C_QUEUE_WRITE)
-          pDevExt->pIoPortLocal->amountInWriteQueue += GetWriteLength(pIrp);
+          pIoPort->amountInWriteQueue += GetWriteLength(pIrp);
 
         status = STATUS_PENDING;
       }
 
-      KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
+      KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
     }
   }
 

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2006/06/21 16:23:57  vfrolov
+ * Fixed possible BSOD after one port of pair removal
+ *
  * Revision 1.2  2006/01/10 10:17:23  vfrolov
  * Implemented flow control and handshaking
  * Implemented IOCTL_SERIAL_SET_XON and IOCTL_SERIAL_SET_XOFF
@@ -133,19 +136,23 @@ VOID FreeWriteDelay(PC0C_IO_PORT pIoPort)
   }
 }
 
-VOID SetWriteDelay(IN PC0C_FDOPORT_EXTENSION pDevExt)
+VOID SetWriteDelay(PC0C_IO_PORT pIoPort)
 {
   PC0C_ADAPTIVE_DELAY pWriteDelay;
   KIRQL oldIrql;
   C0C_DELAY_PARAMS params;
   SERIAL_LINE_CONTROL lineControl;
+  PC0C_FDOPORT_EXTENSION pDevExt;
 
-  pWriteDelay = pDevExt->pIoPortLocal->pWriteDelay;
+  pWriteDelay = pIoPort->pWriteDelay;
 
   if (!pWriteDelay)
     return;
 
-  KeAcquireSpinLock(pDevExt->pIoLock, &oldIrql);
+  KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
+
+  pDevExt = pIoPort->pDevExt;
+  HALT_UNLESS(pDevExt);
 
   KeAcquireSpinLockAtDpcLevel(&pDevExt->controlLock);
   lineControl = pDevExt->lineControl;
@@ -190,7 +197,7 @@ VOID SetWriteDelay(IN PC0C_FDOPORT_EXTENSION pDevExt)
     }
   }
 
-  KeReleaseSpinLock(pDevExt->pIoLock, oldIrql);
+  KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
 }
 
 VOID StartWriteDelayTimer(PC0C_ADAPTIVE_DELAY pWriteDelay)
