@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2006/05/19 15:02:03  vfrolov
+ * Implemented IOCTL_SERIAL_GET_MODEM_CONTROL
+ *
  * Revision 1.6  2006/01/10 09:32:20  vfrolov
  * Added codeNameTableHoldReasons[]
  *
@@ -227,6 +230,7 @@ CODE2NAME codeNameTableStatus[] = {
   TOCODE2NAME(STATUS_, TIMEOUT),
   TOCODE2NAME(STATUS_, UNSUCCESSFUL),
   TOCODE2NAME(STATUS_, OBJECT_NAME_NOT_FOUND),
+  TOCODE2NAME(STATUS_, DEVICE_BUSY),
   {0, NULL}
 };
 
