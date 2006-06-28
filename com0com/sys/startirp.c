@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2006/06/23 11:44:52  vfrolov
+ * Mass replacement pDevExt by pIoPort
+ *
  * Revision 1.11  2006/06/21 16:23:57  vfrolov
  * Fixed possible BSOD after one port of pair removal
  *
@@ -320,10 +323,9 @@ NTSTATUS FdoPortStartIrp(
 
   if (pIrp->Cancel) {
     status = NoPending(pIrp, STATUS_CANCELLED);
-    KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
   } else {
     if (!pQueue->pCurrent) {
-      status = StartIrp(pIoPort, pIrp, pState, pQueue, oldIrql, pStartRoutine);
+      return StartIrp(pIoPort, pIrp, pState, pQueue, oldIrql, pStartRoutine);
     } else {
       PIO_STACK_LOCATION pIrpStack;
 
@@ -357,7 +359,7 @@ NTSTATUS FdoPortStartIrp(
           InsertHeadList(&pQueue->queue, &pQueue->pCurrent->Tail.Overlay.ListEntry);
           pCurrentState->flags |= C0C_IRP_FLAG_IN_QUEUE;
 
-          status = StartIrp(pIoPort, pIrp, pState, pQueue, oldIrql, pStartRoutine);
+          return StartIrp(pIoPort, pIrp, pState, pQueue, oldIrql, pStartRoutine);
         }
       }
       else {
@@ -371,10 +373,10 @@ NTSTATUS FdoPortStartIrp(
 
         status = STATUS_PENDING;
       }
-
-      KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
     }
   }
+
+  KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
 
   return status;
 }
