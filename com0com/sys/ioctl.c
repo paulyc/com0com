@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.24  2006/06/23 11:44:52  vfrolov
+ * Mass replacement pDevExt by pIoPort
+ *
  * Revision 1.23  2006/06/21 16:23:57  vfrolov
  * Fixed possible BSOD after one port of pair removal
  *
@@ -755,8 +758,10 @@ NTSTATUS c0cIoControl(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
   }
 
+#if DBG
   if (status != STATUS_SUCCESS)
     TraceCode(pDevExt, "IOCTL_", codeNameTableIoctl, code, &status);
+#endif /* DBG */
 
   return status;
 }
