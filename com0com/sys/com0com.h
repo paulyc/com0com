@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.27  2006/06/23 11:44:52  vfrolov
+ * Mass replacement pDevExt by pIoPort
+ *
  * Revision 1.26  2006/06/21 16:23:57  vfrolov
  * Fixed possible BSOD after one port of pair removal
  *
@@ -131,6 +134,7 @@
 
 #define FDO_EXTENSION                   \
   COMMON_EXTENSION                      \
+  PDEVICE_OBJECT          pPhDevObj;   \
   PDEVICE_OBJECT          pLowDevObj;   \
 
 #define C0C_XCHAR_ON      1
