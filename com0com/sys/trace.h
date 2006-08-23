@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2006/05/19 15:02:03  vfrolov
+ * Implemented IOCTL_SERIAL_GET_MODEM_CONTROL
+ *
  * Revision 1.8  2006/01/10 09:32:20  vfrolov
  * Added codeNameTableHoldReasons[]
  *
@@ -115,6 +118,7 @@ CODE2NAME codeNameTablePurgeMask[];
 CODE2NAME codeNameTableIoctl[];
 CODE2NAME codeNameTablePnp[];
 CODE2NAME codeNameTablePower[];
+CODE2NAME codeNameTableWmi[];
 CODE2NAME codeNameTableDoType[];
 CODE2NAME codeNameTableModemStatus[];
 CODE2NAME codeNameTableModemControl[];
