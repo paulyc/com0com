@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.17  2006/08/23 13:48:12  vfrolov
+ * Implemented WMI functionality
+ *
  * Revision 1.16  2006/06/23 11:44:52  vfrolov
  * Mass replacement pDevExt by pIoPort
  *
@@ -230,6 +233,30 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   if (!NT_SUCCESS(status)) {
     SysLog(pPhDevObj, status, L"AddFdoPort FAIL");
     goto clean;
+  }
+
+  {
+    HANDLE hKey;
+
+    status = IoOpenDeviceRegistryKey(pPhDevObj,
+                                     PLUGPLAY_REGKEY_DEVICE,
+                                     STANDARD_RIGHTS_READ,
+                                     &hKey);
+
+    if (status == STATUS_SUCCESS) {
+      UNICODE_STRING keyName;
+
+      RtlInitUnicodeString(&keyName, L"PortName");
+
+      status = ZwSetValueKey(hKey, &keyName, 0, REG_SZ, portName.Buffer, portName.Length + sizeof(WCHAR));
+
+      if (!NT_SUCCESS(status))
+        SysLog(pPhDevObj, status, L"ZwSetValueKey(PortName) FAIL");
+
+      ZwClose(hKey);
+    } else {
+      SysLog(pPhDevObj, status, L"IoOpenDeviceRegistryKey(PLUGPLAY_REGKEY_DEVICE) FAIL");
+    }
   }
 
   status = IoCreateDevice(pDrvObj,
