@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.28  2006/08/23 13:48:12  vfrolov
+ * Implemented WMI functionality
+ *
  * Revision 1.27  2006/06/23 11:44:52  vfrolov
  * Mass replacement pDevExt by pIoPort
  *
@@ -108,27 +111,23 @@
 #ifndef _C0C_COM0COM_H_
 #define _C0C_COM0COM_H_
 
+#define TEXT_PREF L
+#include "../include/com0com.h"
+
 #define C0C_SERIAL_DEVICEMAP        L"SERIALCOMM"
 #define C0C_PREF_WIN32_DEVICE_NAME  L"\\DosDevices\\"
-#define C0C_PREF_NT_DEVICE_NAME     L"\\Device\\"
 
-#define C0C_BUS_DEVICE_ID           L"root\\com0com"
-#define C0C_PORT_DEVICE_ID          L"com0com\\port"
-#define C0C_PORT_HARDWARE_IDS       L"com0com\\port\0"
+#define C0C_PORT_HARDWARE_IDS       C0C_PORT_DEVICE_ID L"\0"
 #define C0C_PORT_COMPATIBLE_IDS     L"\0"
 
-#define C0C_PREF_BUS_NAME           L"CNCBUS"
-#define C0C_PREF_PORT_NAME_A        L"CNCA"
-#define C0C_PREF_PORT_NAME_B        L"CNCB"
-
-#define C0C_DOTYPE_FB     1
-#define C0C_DOTYPE_PP	    2
-#define C0C_DOTYPE_FP     3
+#define C0C_DOTYPE_FB     ((unsigned)0xC0C1)
+#define C0C_DOTYPE_PP	    ((unsigned)0xC0C2)
+#define C0C_DOTYPE_FP     ((unsigned)0xC0C3)
 
 #define C0C_PORT_NAME_LEN 12
 
 #define COMMON_EXTENSION                \
-  short                   doType;       \
+  unsigned short          doType;       \
   PDEVICE_OBJECT          pDevObj;      \
   WCHAR                   portName[C0C_PORT_NAME_LEN]; \
 
