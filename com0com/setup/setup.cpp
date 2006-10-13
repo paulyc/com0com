@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.2  2006/08/25 10:36:48  vfrolov
+ * Added C0C_PREF_PORT_NAME_A and C0C_PREF_PORT_NAME_B defines
+ * Added deleting Class subkeys
+ *
  * Revision 1.1  2006/07/28 12:16:42  vfrolov
  * Initial revision
  *
@@ -32,16 +36,13 @@
 #include "msg.h"
 #include "utils.h"
 
-#define C0C_BUS_DEVICE_ID        "root\\com0com"
-#define C0C_PORT_DEVICE_ID       "com0com\\port"
-#define C0C_PREF_PORT_NAME_A     "CNCA"
-#define C0C_PREF_PORT_NAME_B     "CNCB"
+#define TEXT_PREF
+#include "../include/com0com.h"
 
 #define C0C_INF_NAME             "com0com.inf"
 #define C0C_CLASS_GUID           "{df799e12-3c56-421b-b298-b6d3642bc878}"
 #define C0C_CLASS                "CNCPorts"
 #define C0C_PROVIDER             "Vyacheslav Frolov"
-#define C0C_SERVICE              "com0com"
 #define C0C_REGKEY_EVENTLOG      REGSTR_PATH_SERVICES "\\Eventlog\\System\\" C0C_SERVICE
 #define C0C_COPY_DRIVERS_SECTION "com0com_CopyDrivers"
 
@@ -57,7 +58,8 @@ int Change(InfFile &infFile, const char *pPhPortName, const char *pParameters)
     for (int j = 0 ; j < 2 ; j++) {
       char phPortName[20];
 
-      SNPRINTF(phPortName, sizeof(phPortName), "%s%d", j ? C0C_PREF_PORT_NAME_B : C0C_PREF_PORT_NAME_A, i);
+      SNPRINTF(phPortName, sizeof(phPortName)/sizeof(phPortName[0]), "%s%d",
+               j ? C0C_PREF_PORT_NAME_B : C0C_PREF_PORT_NAME_A, i);
 
       PortParameters portParameters(C0C_SERVICE, phPortName);
 
@@ -65,7 +67,7 @@ int Change(InfFile &infFile, const char *pPhPortName, const char *pParameters)
 
       char buf[100];
 
-      portParameters.FillParametersStr(buf, sizeof(buf));
+      portParameters.FillParametersStr(buf, sizeof(buf)/sizeof(buf[0]));
       Trace("       %s %s\n", phPortName, buf);
 
       if (err == ERROR_SUCCESS) {
@@ -76,10 +78,15 @@ int Change(InfFile &infFile, const char *pPhPortName, const char *pParameters)
           err = portParameters.Save();
 
           if (err == ERROR_SUCCESS) {
-            portParameters.FillParametersStr(buf, sizeof(buf));
+            portParameters.FillParametersStr(buf, sizeof(buf)/sizeof(buf[0]));
             Trace("change %s %s\n", phPortName, buf);
 
-            RestartDevices(infFile, C0C_PORT_DEVICE_ID, phPortName, &rebootRequired);
+            char phDevDevName[40];
+
+            SNPRINTF(phDevDevName, sizeof(phDevDevName)/sizeof(phDevDevName[0]), "%s%d",
+                     j ? C0C_PREF_DEVICE_NAME_A : C0C_PREF_DEVICE_NAME_B, i);
+
+            RestartDevices(infFile, C0C_PORT_DEVICE_ID, phDevDevName, &rebootRequired);
           } else {
             ShowError(MB_OK|MB_ICONWARNING, err, "portParameters.Save(%s)", phPortName);
           }
@@ -137,7 +144,8 @@ int Install(InfFile &infFile, const char *pParametersA, const char *pParametersB
 
     pParameters = j ? pParametersB : pParametersA;
 
-    SNPRINTF(phPortName, sizeof(phPortName), "%s%d", j ? C0C_PREF_PORT_NAME_B : C0C_PREF_PORT_NAME_A, i);
+    SNPRINTF(phPortName, sizeof(phPortName)/sizeof(phPortName[0]), "%s%d",
+             j ? C0C_PREF_PORT_NAME_B : C0C_PREF_PORT_NAME_A, i);
 
     PortParameters portParameters(C0C_SERVICE, phPortName);
 
@@ -158,7 +166,7 @@ int Install(InfFile &infFile, const char *pParametersA, const char *pParametersB
 
     char buf[100];
 
-    portParameters.FillParametersStr(buf, sizeof(buf));
+    portParameters.FillParametersStr(buf, sizeof(buf)/sizeof(buf[0]));
 
     Trace("       %s %s\n", phPortName, buf);
   }
