@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.29  2006/10/13 10:15:02  vfrolov
+ * Some defines moved to ../include/com0com.h
+ * Changed defines of C0C_DOTYPE_* to more unique values
+ *
  * Revision 1.28  2006/08/23 13:48:12  vfrolov
  * Implemented WMI functionality
  *
@@ -254,8 +258,7 @@ typedef struct _C0C_FDOPORT_EXTENSION {
 
   UNICODE_STRING          ntDeviceName;
   UNICODE_STRING          win32DeviceName;
-  BOOLEAN                 createdSymbolicLink;
-  BOOLEAN                 mappedSerialDevice;
+  UNICODE_STRING          symbolicLinkName;
 
   LONG                    openCount;
 
