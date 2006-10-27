@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.21  2006/08/23 13:05:43  vfrolov
+ * Added ability to trace w/o table
+ * Added tracing IRP_MN_QUERY_ID result
+ * Added tracing GUID for IRP_MN_QUERY_INTERFACE
+ * Added tracing WMI
+ *
  * Revision 1.20  2006/06/08 11:30:52  vfrolov
  * Added params check to Trace0() and Trace00()
  *
@@ -928,7 +934,7 @@ VOID TraceOutput(
       pDestStr = AnsiStrCopyStr(pDestStr, &size, " ...\r\n");
     }
 
-    InterlockedExchange(&strOldFreeInd, (LONG)(sizeof(strOld) - size));
+    strOldFreeInd = (LONG)(sizeof(strOld) - size);
 
     KeReleaseSpinLock(&strOldLock, oldIrql);
 
@@ -969,7 +975,7 @@ VOID TraceOutput(
       size = TRACE_BUF_SIZE;
       pDestStr = pBuf->buf;
 
-      while (InterlockedExchangeAdd(&strOldFreeInd, 0)) {
+      while (strOldFreeInd) {
         SIZE_T lenBuf;
         KIRQL oldIrql;
 
@@ -983,7 +989,7 @@ VOID TraceOutput(
           strOldBusyInd += (LONG)lenBuf;
           HALT_UNLESS3(strOldBusyInd <= strOldFreeInd, strOldFreeInd, strOldBusyInd, lenBuf);
           if (strOldBusyInd == strOldFreeInd)
-            InterlockedExchange(&strOldFreeInd, strOldBusyInd = 0);
+            strOldFreeInd = strOldBusyInd = 0;
         }
         KeReleaseSpinLock(&strOldLock, oldIrql);
 
