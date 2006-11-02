@@ -19,9 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.2  2006/10/13 10:26:35  vfrolov
+ * Some defines moved to ../include/com0com.h
+ * Changed name of device object (for WMI)
+ *
  * Revision 1.1  2006/07/28 12:16:42  vfrolov
  * Initial revision
- *
  *
  */
 
@@ -36,6 +39,8 @@ struct EnumParams {
   EnumParams() {
     pDevId = NULL;
     pPhObjName = NULL;
+    pParam1 = NULL;
+    pParam2 = NULL;
 
     count = 0;
     pRebootRequired = NULL;
@@ -43,6 +48,8 @@ struct EnumParams {
 
   const char *pDevId;
   const char *pPhObjName;
+  void *pParam1;
+  void *pParam2;
 
   int count;
   BOOL *pRebootRequired;
@@ -184,24 +191,42 @@ static BOOL ChangeState(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, DWORD 
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-static int CountDevice(HDEVINFO /*hDevInfo*/, PSP_DEVINFO_DATA /*pDevInfoData*/, PDevParams pDevParams)
+static int EnumDevice(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, PDevParams pDevParams)
 {
-  //Trace("Counted %s %s\n", pDevParams->pDevId, pDevParams->pPhObjName);
+  //Trace("Enumerated %s %s\n", pDevParams->pDevId, pDevParams->pPhObjName);
+
+  int res = IDCONTINUE;
+
+  if (pDevParams->pEnumParams->pParam1) {
+    if (!PDEVCALLBACK(pDevParams->pEnumParams->pParam1)(hDevInfo,
+                                                        pDevInfoData,
+                                                        pDevParams->pEnumParams->pRebootRequired,
+                                                        pDevParams->pEnumParams->pParam2))
+    {
+      res = IDCANCEL;
+    }
+  }
 
   pDevParams->pEnumParams->count++;
 
-  return IDCONTINUE;
+  return res;
 }
 
-int CountDevices(
+int EnumDevices(
     InfFile &infFile,
-    const char *pDevId)
+    const char *pDevId,
+    BOOL *pRebootRequired,
+    PDEVCALLBACK pDevCallBack,
+    void *pCallBackParam)
 {
   EnumParams enumParams;
 
   enumParams.pDevId = pDevId;
+  enumParams.pRebootRequired = pRebootRequired;
+  enumParams.pParam1 = pDevCallBack;
+  enumParams.pParam2 = pCallBackParam;
 
-  if (EnumDevices(infFile, DIGCF_PRESENT, CountDevice, &enumParams) != IDCONTINUE)
+  if (EnumDevices(infFile, DIGCF_PRESENT, EnumDevice, &enumParams) != IDCONTINUE)
     return -1;
 
   return enumParams.count;
@@ -371,7 +396,11 @@ BOOL RemoveDevices(
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-BOOL InstallDevice(InfFile &infFile, const char *pDevId)
+BOOL InstallDevice(
+    InfFile &infFile,
+    const char *pDevId,
+    PDEVCALLBACK pDevCallBack,
+    void *pCallBackParam)
 {
   GUID classGUID;
   char className[32];
@@ -427,19 +456,24 @@ BOOL InstallDevice(InfFile &infFile, const char *pDevId)
     goto err;
   }
 
+  if (pDevCallBack) {
+    res = pDevCallBack(hDevInfo, &devInfoData, NULL, pCallBackParam);
+
+    if (!res)
+      goto err1;
+  }
+
   BOOL rebootRequired;
   res = UpdateDriverForPlugAndPlayDevices(0, pDevId, infFile.Path(), INSTALLFLAG_FORCE, &rebootRequired);
 
   if (!res) {
     ShowLastError(MB_OK|MB_ICONSTOP, "UpdateDriverForPlugAndPlayDevices()");
 
+err1:
+
     if (!SetupDiCallClassInstaller(DIF_REMOVE, hDevInfo, &devInfoData))
       ShowLastError(MB_OK|MB_ICONWARNING, "SetupDiCallClassInstaller()");
-
-    goto err;
   }
-
-  res = TRUE;
 
 err:
 
