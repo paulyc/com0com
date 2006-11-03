@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2006/11/02 16:20:44  vfrolov
+ * Added usage the fixed port numbers
+ *
  * Revision 1.6  2006/10/27 13:23:49  vfrolov
  * Added check if port name is already used for other device
  * Fixed incorrect port restart
@@ -226,10 +229,10 @@ static BOOL SetPortNum(
   do {
     res = IDCONTINUE;
 
-    LONG err = SetPortNum(hDevInfo, pDevInfoData, (int)pParam);
+    LONG err = SetPortNum(hDevInfo, pDevInfoData, *(int *)pParam);
 
     if (err != ERROR_SUCCESS)
-      res = ShowError(MB_CANCELTRYCONTINUE, err, "SetPortNum(%d)", (int)pParam);
+      res = ShowError(MB_CANCELTRYCONTINUE, err, "SetPortNum(%d)", *(int *)pParam);
 
   } while (res == IDTRYAGAIN);
 
@@ -237,6 +240,11 @@ static BOOL SetPortNum(
     return FALSE;
 
   return TRUE;
+}
+
+static BOOL InstallBusDevice(InfFile &infFile, int num)
+{
+  return InstallDevice(infFile, C0C_BUS_DEVICE_ID, SetPortNum, &num);
 }
 
 static BOOL AddDeviceToBusyMask(
@@ -247,8 +255,12 @@ static BOOL AddDeviceToBusyMask(
 {
   int i = GetPortNum(hDevInfo, pDevInfoData);
 
-  if (i >= 0)
-    ((BusyMask *)pParam)->AddNum(i);
+  if (i >= 0) {
+    if (!((BusyMask *)pParam)->AddNum(i)) {
+      if (ShowLastError(MB_OKCANCEL|MB_ICONWARNING, "AddDeviceToBusyMask(%d)", i) == IDCANCEL)
+        return FALSE;
+    }
+  }
 
   return TRUE;
 }
@@ -257,7 +269,8 @@ static int AllocPortNum(InfFile &infFile, int num)
 {
   BusyMask busyMask;
 
-  EnumDevices(infFile, C0C_BUS_DEVICE_ID, NULL, AddDeviceToBusyMask, &busyMask);
+  if (EnumDevices(infFile, C0C_BUS_DEVICE_ID, NULL, AddDeviceToBusyMask, &busyMask) < 0)
+    return -1;
 
   return busyMask.IsFreeNum(num) ? num : busyMask.GetFirstFreeNum();
 }
@@ -271,6 +284,9 @@ int Install(InfFile &infFile, const char *pParametersA, const char *pParametersB
     res = IDCONTINUE;
 
     i = AllocPortNum(infFile, num >= 0 ? num : 0);
+
+    if (i < 0)
+      goto err;
 
     if (num >= 0 && num != i) {
       res = ShowMsg(MB_CANCELTRYCONTINUE|MB_ICONWARNING,
@@ -325,7 +341,7 @@ int Install(InfFile &infFile, const char *pParametersA, const char *pParametersB
     Trace("       %s %s\n", phPortName, buf);
   }
 
-  if (!InstallDevice(infFile, C0C_BUS_DEVICE_ID, SetPortNum, (void *)i))
+  if (!InstallBusDevice(infFile, i))
     goto err;
 
   return  0;
