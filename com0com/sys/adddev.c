@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.21  2006/11/02 16:04:50  vfrolov
+ * Added using fixed port numbers
+ *
  * Revision 1.20  2006/10/16 08:30:45  vfrolov
  * Added the device interface registration
  *
@@ -104,7 +107,7 @@ NTSTATUS InitCommonExt(
 {
   pDevExt->pDevObj = pDevObj;
   pDevExt->doType = doType;
-  return CopyStrW(pDevExt->portName, sizeof(pDevExt->portName), pPortName);
+  return CopyStrW(pDevExt->portName, sizeof(pDevExt->portName)/sizeof(pDevExt->portName[0]), pPortName);
 }
 
 VOID RemoveFdoPort(IN PC0C_FDOPORT_EXTENSION pDevExt)
@@ -191,7 +194,7 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
     StrAppendStr0(&status, &portRegistryPath, pPortName);
 
     if (NT_SUCCESS(status)) {
-      WCHAR portNameBuf[C0C_PORT_NAME_LEN];
+      WCHAR portNameBuf[C0C_PORT_NAME_LEN + 1];
       UNICODE_STRING portNameTmp;
       RTL_QUERY_REGISTRY_TABLE queryTable[2];
 
@@ -609,7 +612,7 @@ ULONG GetPortNum(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   if (status == STATUS_SUCCESS) {
     UNICODE_STRING keyName;
     PKEY_VALUE_PARTIAL_INFORMATION pInfo;
-    SIZE_T len;
+    ULONG len;
 
     RtlInitUnicodeString(&keyName, C0C_REGSTR_VAL_PORT_NUM);
 
@@ -689,7 +692,7 @@ NTSTATUS AddFdoBus(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   status = InitCommonExt((PC0C_COMMON_EXTENSION)pDevExt, pNewDevObj, C0C_DOTYPE_FB, portName.Buffer);
 
   if (!NT_SUCCESS(status)) {
-    SysLog(pDrvObj, status, L"AddFdoBus FAIL");
+    SysLog(pDrvObj, status, L"AddFdoBus InitCommonExt FAIL");
     goto clean;
   }
 

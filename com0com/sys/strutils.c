@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2006/03/27 09:37:28  vfrolov
+ * Added StrAppendDeviceProperty()
+ *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
  *
@@ -27,10 +30,10 @@
 #include "precomp.h"
 #include "strutils.h"
 
-NTSTATUS CopyStrW(OUT PWCHAR pDestStr, IN SIZE_T size, IN PWCHAR pStr)
+NTSTATUS CopyStrW(OUT PWCHAR pDestStr, IN LONG size, IN PWCHAR pStr)
 {
   NTSTATUS status;
-  SIZE_T len;
+  LONG len;
   PWCHAR pStrTmp;
 
   pStrTmp = pStr;
@@ -38,18 +41,18 @@ NTSTATUS CopyStrW(OUT PWCHAR pDestStr, IN SIZE_T size, IN PWCHAR pStr)
   while (*(pStrTmp++))
     ;
 
-  len = (pStrTmp - pStr) * sizeof(WCHAR);
+  len = (LONG)(pStrTmp - pStr);
 
   if (len > size) {
-    len = (size/sizeof(WCHAR)) * sizeof(WCHAR);
+    len = size;
     status = STATUS_BUFFER_TOO_SMALL;
   } else {
     status = STATUS_SUCCESS;
   }
 
-  if (len) {
-    RtlCopyMemory(pDestStr, pStr, len);
-    pDestStr[(len / sizeof(WCHAR)) - 1] = 0;
+  if (len > 0) {
+    RtlCopyMemory(pDestStr, pStr, len * sizeof(WCHAR));
+    pDestStr[len - 1] = 0;
   }
 
   return status;
@@ -112,7 +115,7 @@ VOID StrAppendStr(
   status = *pStatus;
 
   if (!NT_SUCCESS(status) || !pSrc || !lenSrc)
-	  return;
+    return;
 
   old = *pDest;
 
@@ -126,7 +129,7 @@ VOID StrAppendStr(
   if (pDest->Buffer) {
     RtlZeroMemory(pDest->Buffer, pDest->MaximumLength + sizeof(WCHAR));
     status = RtlAppendUnicodeStringToString(pDest, &old);
-	  if (NT_SUCCESS(status)) {
+    if (NT_SUCCESS(status)) {
       PWCHAR pSrc0;
 
       pSrc0 = ExAllocatePool(PagedPool, lenSrc + sizeof(WCHAR));
@@ -167,7 +170,7 @@ VOID StrAppendNum(
   WCHAR numStrBuf[20];
 
   if (!NT_SUCCESS(*pStatus))
-	  return;
+    return;
 
   RtlInitUnicodeString(&numStr, NULL);
   numStr.MaximumLength = sizeof(numStrBuf);
@@ -175,7 +178,7 @@ VOID StrAppendNum(
   *pStatus = RtlIntegerToUnicodeString(num, base, &numStr);
 
   if (StrFreeBad(*pStatus, pDest))
-	  return;
+    return;
 
   StrAppendStr(pStatus, pDest, numStr.Buffer, numStr.Length);
 }
@@ -192,11 +195,11 @@ VOID StrAppendDeviceProperty(
   status = *pStatus;
 
   if (!NT_SUCCESS(status))
-	  return;
+    return;
 
   status = IoGetDeviceProperty(pDevObj,
                                deviceProperty,
-	                             0,
+                               0,
                                NULL,
                                &len);
 
@@ -208,7 +211,7 @@ VOID StrAppendDeviceProperty(
     if (pStrTmp) {
       status = IoGetDeviceProperty(pDevObj,
                                    deviceProperty,
-	                                 len,
+                                   len,
                                    pStrTmp,
                                    &len);
 

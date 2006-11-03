@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2006/03/27 09:37:28  vfrolov
+ * Added StrAppendDeviceProperty()
+ *
  * Revision 1.2  2005/05/17 15:07:36  vfrolov
  * Fixed parameter type typo
  *
@@ -30,7 +33,7 @@
 #ifndef _C0C_STRUTILS_H_
 #define _C0C_STRUTILS_H_
 
-NTSTATUS CopyStrW(OUT PWCHAR pDestStr, IN SIZE_T size, IN PWCHAR pStr);
+NTSTATUS CopyStrW(OUT PWCHAR pDestStr, IN LONG size, IN PWCHAR pStr);
 
 NTSTATUS DupStrW(OUT PWCHAR *ppDestStr, IN PWCHAR pStr, IN BOOLEAN multiStr);
 VOID StrFree(IN OUT PUNICODE_STRING  pDest);
