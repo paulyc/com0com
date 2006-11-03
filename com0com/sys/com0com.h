@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.30  2006/10/16 08:30:45  vfrolov
+ * Added the device interface registration
+ *
  * Revision 1.29  2006/10/13 10:15:02  vfrolov
  * Some defines moved to ../include/com0com.h
  * Changed defines of C0C_DOTYPE_* to more unique values
@@ -125,15 +128,13 @@
 #define C0C_PORT_COMPATIBLE_IDS     L"\0"
 
 #define C0C_DOTYPE_FB     ((unsigned)0xC0C1)
-#define C0C_DOTYPE_PP	    ((unsigned)0xC0C2)
+#define C0C_DOTYPE_PP     ((unsigned)0xC0C2)
 #define C0C_DOTYPE_FP     ((unsigned)0xC0C3)
-
-#define C0C_PORT_NAME_LEN 12
 
 #define COMMON_EXTENSION                \
   unsigned short          doType;       \
   PDEVICE_OBJECT          pDevObj;      \
-  WCHAR                   portName[C0C_PORT_NAME_LEN]; \
+  WCHAR                   portName[C0C_PORT_NAME_LEN + 1]; \
 
 #define FDO_EXTENSION                   \
   COMMON_EXTENSION                      \
