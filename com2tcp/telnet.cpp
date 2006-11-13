@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2005 Vyacheslav Frolov
+ * Copyright (c) 2005-2006 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,14 @@
  *
  *
  * $Log$
+ * Revision 1.3  2005/10/03 13:44:17  vfrolov
+ * Added Clean() method
+ *
  * Revision 1.2  2005/06/10 15:55:10  vfrolov
  * Implemented --terminal option
  *
  * Revision 1.1  2005/06/06 15:19:02  vfrolov
  * Initial revision
- *
  *
  */
 
@@ -263,8 +265,10 @@ void TelnetProtocol::SendSubNegotiation(int option, const BYTE_vector &params)
 
   printf("  ");
   for (BYTE_vector::const_iterator i = params.begin() ; i != params.end() ; i++) {
-    printf("%u ", (unsigned)*i);
-    SendRaw(i, 1);
+    BYTE b = *i;
+
+    printf("%u ", (unsigned)b);
+    SendRaw(&b, sizeof(b));
   }
   printf("SE\n");
 
