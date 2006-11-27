@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.28  2006/06/21 16:23:57  vfrolov
+ * Fixed possible BSOD after one port of pair removal
+ *
  * Revision 1.27  2006/05/17 15:31:14  vfrolov
  * Implemented SERIAL_TRANSMIT_TOGGLE
  *
@@ -756,7 +759,7 @@ NTSTATUS TryReadWrite(
 
   /* get first pIrpRead */
 
-  dataIrpRead.data.irp.status = STATUS_SUCCESS;
+  dataIrpRead.data.irp.status = STATUS_PENDING;
   doneRead = 0;
   firstRead = TRUE;
 
@@ -948,6 +951,7 @@ NTSTATUS TryReadWrite(
     /* get next pIrpRead */
 
     if (dataIrpRead.data.irp.status != STATUS_PENDING) {
+      dataIrpRead.data.irp.status = STATUS_PENDING;
       doneRead = 0;
       firstRead = FALSE;
       dataIrpRead.data.irp.pIrp =
