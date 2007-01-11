@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2006 Vyacheslav Frolov
+ * Copyright (c) 2004-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.23  2006/11/23 11:10:10  vfrolov
+ * Strict usage fixed port numbers
+ *
  * Revision 1.22  2006/11/03 13:13:26  vfrolov
  * CopyStrW() now gets size in characters (not in bytes)
  *
@@ -558,10 +561,10 @@ ULONG AllocPortNum(IN PDRIVER_OBJECT pDrvObj, ULONG num)
 
   busyMaskLen = (numNext + (sizeof(*pBusyMask)*8 - 1))/(sizeof(*pBusyMask)*8);
 
-  pBusyMask = ExAllocatePool(PagedPool, busyMaskLen);
+  pBusyMask = C0C_ALLOCATE_POOL(PagedPool, busyMaskLen);
 
   if (!pBusyMask) {
-    SysLog(pDrvObj, STATUS_INSUFFICIENT_RESOURCES, L"AllocPortNum ExAllocatePool FAIL");
+    SysLog(pDrvObj, STATUS_INSUFFICIENT_RESOURCES, L"AllocPortNum C0C_ALLOCATE_POOL FAIL");
     return numNext;
   }
 
@@ -593,7 +596,7 @@ ULONG AllocPortNum(IN PDRIVER_OBJECT pDrvObj, ULONG num)
     }
   }
 
-  ExFreePool(pBusyMask);
+  C0C_FREE_POOL(pBusyMask);
 
   return num;
 }
@@ -621,7 +624,7 @@ ULONG GetPortNum(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
 
     len = sizeof(KEY_VALUE_FULL_INFORMATION) + sizeof(ULONG);
 
-    pInfo = ExAllocatePool(PagedPool, len);
+    pInfo = C0C_ALLOCATE_POOL(PagedPool, len);
 
     if (pInfo) {
       status = ZwQueryValueKey(hKey, &keyName, KeyValuePartialInformation, pInfo, len, &len);
@@ -629,7 +632,7 @@ ULONG GetPortNum(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
       if (NT_SUCCESS(status) && pInfo->DataLength == sizeof(ULONG))
         numPref = *(PULONG)pInfo->Data;
 
-      ExFreePool(pInfo);
+      C0C_FREE_POOL(pInfo);
     }
 
     if (numPref == (ULONG)-1)

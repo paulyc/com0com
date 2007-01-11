@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2006 Vyacheslav Frolov
+ * Copyright (c) 2004-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2006/11/03 13:13:26  vfrolov
+ * CopyStrW() now gets size in characters (not in bytes)
+ *
  * Revision 1.2  2006/03/27 09:37:28  vfrolov
  * Added StrAppendDeviceProperty()
  *
@@ -75,7 +78,7 @@ NTSTATUS DupStrW(OUT PWCHAR *ppDestStr, IN PWCHAR pStr, IN BOOLEAN multiStr)
   }
 
   len = (ULONG)(pStrTmp - pStr) * sizeof(WCHAR);
-  pStrTmp = (PWCHAR)ExAllocatePool(PagedPool, len);
+  pStrTmp = (PWCHAR)C0C_ALLOCATE_POOL(PagedPool, len);
 
   if (!pStrTmp)
     return STATUS_INSUFFICIENT_RESOURCES;
@@ -89,7 +92,7 @@ NTSTATUS DupStrW(OUT PWCHAR *ppDestStr, IN PWCHAR pStr, IN BOOLEAN multiStr)
 VOID StrFree(IN OUT PUNICODE_STRING  pDest)
 {
   if (pDest->Buffer)
-    ExFreePool(pDest->Buffer);
+    C0C_FREE_POOL(pDest->Buffer);
   RtlZeroMemory(pDest, sizeof(*pDest));
 }
 
@@ -124,7 +127,7 @@ VOID StrAppendStr(
   pDest->MaximumLength = (USHORT)(old.Length + lenSrc);
 
   if (pDest->MaximumLength == (old.Length + lenSrc))
-    pDest->Buffer = ExAllocatePool(PagedPool, pDest->MaximumLength + sizeof(WCHAR));
+    pDest->Buffer = C0C_ALLOCATE_POOL(PagedPool, pDest->MaximumLength + sizeof(WCHAR));
 
   if (pDest->Buffer) {
     RtlZeroMemory(pDest->Buffer, pDest->MaximumLength + sizeof(WCHAR));
@@ -132,7 +135,7 @@ VOID StrAppendStr(
     if (NT_SUCCESS(status)) {
       PWCHAR pSrc0;
 
-      pSrc0 = ExAllocatePool(PagedPool, lenSrc + sizeof(WCHAR));
+      pSrc0 = C0C_ALLOCATE_POOL(PagedPool, lenSrc + sizeof(WCHAR));
 
       if (pSrc0) {
         RtlZeroMemory(pSrc0, lenSrc + sizeof(WCHAR));
@@ -140,7 +143,7 @@ VOID StrAppendStr(
 
         status = RtlAppendUnicodeToString(pDest, pSrc0);
 
-        ExFreePool(pSrc0);
+        C0C_FREE_POOL(pSrc0);
       } else
         status = STATUS_INSUFFICIENT_RESOURCES;
     }
@@ -150,7 +153,7 @@ VOID StrAppendStr(
   StrFreeBad(status, pDest);
 
   if (old.Buffer)
-    ExFreePool(old.Buffer);
+    C0C_FREE_POOL(old.Buffer);
 
   *pStatus = status;
 }
@@ -206,7 +209,7 @@ VOID StrAppendDeviceProperty(
   if (status == STATUS_BUFFER_TOO_SMALL && len) {
     PWCHAR pStrTmp;
 
-    pStrTmp = (PWCHAR)ExAllocatePool(PagedPool, len);
+    pStrTmp = (PWCHAR)C0C_ALLOCATE_POOL(PagedPool, len);
 
     if (pStrTmp) {
       status = IoGetDeviceProperty(pDevObj,
@@ -218,7 +221,7 @@ VOID StrAppendDeviceProperty(
       if (NT_SUCCESS(status))
         StrAppendStr0(&status, pDest, pStrTmp);
 
-      ExFreePool(pStrTmp);
+      C0C_FREE_POOL(pStrTmp);
     } else {
       status = STATUS_INSUFFICIENT_RESOURCES;
     }

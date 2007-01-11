@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2006 Vyacheslav Frolov
+ * Copyright (c) 2004-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.26  2006/08/23 13:16:50  vfrolov
+ * Moved code for IOCTL_SERIAL_GET_PROPERTIES to commprop.c
+ *
  * Revision 1.25  2006/07/17 09:58:21  vfrolov
  * Added #if DBG
  *
@@ -609,7 +612,7 @@ NTSTATUS FdoPortIoCtl(
       KeReleaseSpinLock(pIoPortLocal->pIoLock, oldIrql);
 
       try {
-        pBase = ExAllocatePoolWithQuota(NonPagedPool, pSysBuf->InSize);
+        pBase = C0C_ALLOCATE_POOL_WITH_QUOTA(NonPagedPool, pSysBuf->InSize);
       } except (EXCEPTION_EXECUTE_HANDLER) {
         pBase = NULL;
         status = GetExceptionCode();

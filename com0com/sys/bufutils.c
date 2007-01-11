@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2006 Vyacheslav Frolov
+ * Copyright (c) 2004-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2006/06/21 16:23:57  vfrolov
+ * Fixed possible BSOD after one port of pair removal
+ *
  * Revision 1.6  2006/05/17 15:28:03  vfrolov
  * Implemented SERIAL_DSR_SENSITIVITY
  *
@@ -441,7 +444,7 @@ BOOLEAN SetNewBufferBase(PC0C_BUFFER pBuf, PUCHAR pBase, SIZE_T size)
   C0C_BUFFER newBuf;
 
   if (size <= C0C_BUFFER_SIZE(pBuf)) {
-    ExFreePool(pBase);
+    C0C_FREE_POOL(pBase);
     return FALSE;
   }
 
@@ -468,7 +471,7 @@ BOOLEAN SetNewBufferBase(PC0C_BUFFER pBuf, PUCHAR pBase, SIZE_T size)
       newBuf.pFree += length;
     }
 
-    ExFreePool(pBuf->pBase);
+    C0C_FREE_POOL(pBuf->pBase);
   }
 
   newBuf.escape = pBuf->escape;
@@ -497,7 +500,7 @@ VOID InitBuffer(PC0C_BUFFER pBuf, PUCHAR pBase, SIZE_T size)
 VOID FreeBuffer(PC0C_BUFFER pBuf)
 {
   if (pBuf->pBase)
-    ExFreePool(pBuf->pBase);
+    C0C_FREE_POOL(pBuf->pBase);
 
   RtlZeroMemory(pBuf, sizeof(*pBuf));
 }

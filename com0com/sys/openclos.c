@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2006 Vyacheslav Frolov
+ * Copyright (c) 2004-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2006/06/23 11:44:52  vfrolov
+ * Mass replacement pDevExt by pIoPort
+ *
  * Revision 1.14  2006/06/21 16:23:57  vfrolov
  * Fixed possible BSOD after one port of pair removal
  *
@@ -89,17 +92,17 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
   switch (MmQuerySystemSize()) {
   case MmLargeSystem:
     size = 4096;
-    pBase = (PUCHAR)ExAllocatePool(NonPagedPool, size);
+    pBase = (PUCHAR)C0C_ALLOCATE_POOL(NonPagedPool, size);
     if (pBase)
       break;
   case MmMediumSystem:
     size = 1024;
-    pBase = (PUCHAR)ExAllocatePool(NonPagedPool, size);
+    pBase = (PUCHAR)C0C_ALLOCATE_POOL(NonPagedPool, size);
     if (pBase)
       break;
   case MmSmallSystem:
     size = 128;
-    pBase = (PUCHAR)ExAllocatePool(NonPagedPool, size);
+    pBase = (PUCHAR)C0C_ALLOCATE_POOL(NonPagedPool, size);
     if (pBase)
       break;
   default:
