@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006 Vyacheslav Frolov
+ * Copyright (c) 2006-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2006/11/21 11:36:06  vfrolov
+ * Added --output option
+ *
  * Revision 1.10  2006/11/10 14:07:40  vfrolov
  * Implemented remove command
  *
@@ -855,7 +858,9 @@ static int ParseCmd(char *pCmd, const char* argv[], int sizeArgv)
 
   argc = 0;
 
-  for (char *pArg = strtok(pCmd, " \t\r\n") ; pArg ; pArg = strtok(NULL, " \t\r\n")) {
+  char *pSave;
+
+  for (char *pArg = STRTOK_R(pCmd, " \t\r\n", &pSave) ; pArg ; pArg = STRTOK_R(NULL, " \t\r\n", &pSave)) {
     if ((argc + 2) > sizeArgv)
       break;
 
