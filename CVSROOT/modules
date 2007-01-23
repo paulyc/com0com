@@ -30,3 +30,5 @@ com0com	com0com
 com2tcp	com2tcp
 #M	homepage	The homepage for com0com project
 homepage	homepage
+#M	hub4com	HUB for COM ports
+hub4com	hub4com
