@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2007/01/23 09:13:10  vfrolov
+ * Initial revision
+ *
  *
  */
 
@@ -80,10 +83,10 @@ HANDLE OpenComPort(const char *pPath, const ComParams &comParams)
     return INVALID_HANDLE_VALUE;
   }
 
-  if (comParams.BaudRate() > 0)
+  if (comParams.BaudRate() >= 0)
     dcb.BaudRate = (DWORD)comParams.BaudRate();
 
-  if (comParams.ByteSize() > 0)
+  if (comParams.ByteSize() >= 0)
     dcb.ByteSize = (BYTE)comParams.ByteSize();
 
   if (comParams.Parity() >= 0)
@@ -92,8 +95,12 @@ HANDLE OpenComPort(const char *pPath, const ComParams &comParams)
   if (comParams.StopBits() >= 0)
     dcb.StopBits = (BYTE)comParams.StopBits();
 
-  dcb.fOutxCtsFlow = FALSE;
-  dcb.fOutxDsrFlow = FALSE;
+  if (comParams.OutCts() >= 0)
+    dcb.fOutxCtsFlow = comParams.OutCts();
+
+  if (comParams.OutDsr() >= 0)
+    dcb.fOutxDsrFlow = comParams.OutDsr();
+
   dcb.fDsrSensitivity = FALSE;
   dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
   dcb.fDtrControl = DTR_CONTROL_ENABLE;
@@ -132,10 +139,12 @@ HANDLE OpenComPort(const char *pPath, const ComParams &comParams)
 
   cout
       << "Open("
-      << "\"" << pPath << "\", baud=" << (unsigned)dcb.BaudRate
-      << ", data=" << (unsigned)dcb.ByteSize
+      << "\"" << pPath << "\", baud=" << ComParams::BaudRateStr(dcb.BaudRate)
+      << ", data=" << ComParams::ByteSizeStr(dcb.ByteSize)
       << ", parity=" << ComParams::ParityStr(dcb.Parity)
       << ", stop=" << ComParams::StopBitsStr(dcb.StopBits)
+      << ", octs=" << ComParams::OutCtsStr(dcb.fOutxCtsFlow)
+      << ", odsr=" << ComParams::OutDsrStr(dcb.fOutxDsrFlow)
       << ") - OK" << endl;
   return handle;
 }

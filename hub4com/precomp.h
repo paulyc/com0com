@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2007/01/23 09:13:10  vfrolov
+ * Initial revision
+ *
  *
  */
 
@@ -31,6 +34,7 @@
 #include <vector>
 #include <iostream>
 #include <map>
+#include <sstream>
 
 using namespace std;
 
