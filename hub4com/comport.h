@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2007/01/23 09:13:10  vfrolov
+ * Initial revision
+ *
  *
  */
 
@@ -28,6 +31,8 @@
 ///////////////////////////////////////////////////////////////
 class ComHub;
 class ComParams;
+class WriteOverlapped;
+class ReadOverlapped;
 ///////////////////////////////////////////////////////////////
 class ComPort
 {
@@ -37,18 +42,23 @@ class ComPort
     BOOL Open(const char *pPath, const ComParams &comParams);
     BOOL Start();
     BOOL Write(LPCVOID pData, DWORD len);
-    void OnRead(LPCVOID pBuf, DWORD done);
+    void OnWrite(WriteOverlapped *pOverlapped, DWORD len, DWORD done);
+    void OnRead(ReadOverlapped *pOverlapped, LPCVOID pBuf, DWORD done);
+    void AddXoff(int count);
     const string &Name() const { return name; }
     HANDLE Handle() const { return handle; }
-    DWORD &WriteQueued() { return writeQueued; }
-    DWORD &WriteLost() { return writeLost; }
     void LostReport();
 
   private:
+    BOOL StartRead();
+
     string name;
     HANDLE handle;
     ComHub &hub;
+    int countReadOverlapped;
+    int countXoff;
 
+    DWORD writeQueueLimit;
     DWORD writeQueued;
     DWORD writeLost;
     DWORD writeLostTotal;
