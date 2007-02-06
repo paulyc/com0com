@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2007/02/05 09:33:20  vfrolov
+ * Implemented internal flow control
+ *
  * Revision 1.2  2007/02/01 12:14:59  vfrolov
  * Redesigned COM port params
  *
@@ -104,11 +107,18 @@ HANDLE OpenComPort(const char *pPath, const ComParams &comParams)
   if (comParams.OutDsr() >= 0)
     dcb.fOutxDsrFlow = comParams.OutDsr();
 
-  dcb.fDsrSensitivity = FALSE;
+  if (comParams.OutX() >= 0)
+    dcb.fOutX = comParams.OutX();
+
+  if (comParams.InX() >= 0)
+    dcb.fInX = comParams.InX();
+
+  if (comParams.InDsr() >= 0)
+    dcb.fDsrSensitivity = comParams.InDsr();
+
   dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
   dcb.fDtrControl = DTR_CONTROL_ENABLE;
-  dcb.fOutX = FALSE;
-  dcb.fInX = FALSE;
+
   dcb.fParity = FALSE;
   dcb.fNull = FALSE;
   dcb.fAbortOnError = FALSE;
@@ -148,6 +158,9 @@ HANDLE OpenComPort(const char *pPath, const ComParams &comParams)
       << ", stop=" << ComParams::StopBitsStr(dcb.StopBits)
       << ", octs=" << ComParams::OutCtsStr(dcb.fOutxCtsFlow)
       << ", odsr=" << ComParams::OutDsrStr(dcb.fOutxDsrFlow)
+      << ", ox=" << ComParams::OutXStr(dcb.fOutX)
+      << ", ix=" << ComParams::InXStr(dcb.fInX)
+      << ", idsr=" << ComParams::InDsrStr(dcb.fDsrSensitivity)
       << ") - OK" << endl;
   return handle;
 }
@@ -167,6 +180,21 @@ WriteOverlapped::~WriteOverlapped()
 {
   if (pBuf)
     delete [] pBuf;
+}
+
+DWORD WriteOverlapped::FilterX()
+{
+  BYTE *pSrc = pBuf;
+  BYTE *pDst = pBuf;
+
+  for (DWORD i = 0 ; i < len ; i++) {
+    if (*pSrc == 0x11 || *pSrc == 0x13)
+      pSrc++;
+    else
+      *pDst++ = *pSrc++;
+  }
+
+  return len = DWORD(pDst - pBuf);
 }
 
 VOID CALLBACK WriteOverlapped::OnWrite(

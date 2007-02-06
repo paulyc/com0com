@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2007/02/05 09:33:20  vfrolov
+ * Implemented internal flow control
+ *
  * Revision 1.1  2007/01/23 09:13:10  vfrolov
  * Initial revision
  *
@@ -57,6 +60,7 @@ class ComPort
     ComHub &hub;
     int countReadOverlapped;
     int countXoff;
+    BOOL filterX;
 
     DWORD writeQueueLimit;
     DWORD writeQueued;

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2007/02/05 09:33:20  vfrolov
+ * Implemented internal flow control
+ *
  * Revision 1.1  2007/01/23 09:13:10  vfrolov
  * Initial revision
  *
@@ -56,6 +59,7 @@ class WriteOverlapped : private OVERLAPPED
     WriteOverlapped(ComPort &_port, const void *_pBuf, DWORD _len);
     ~WriteOverlapped();
     BOOL StartWrite();
+    DWORD FilterX();
 
   private:
     static VOID CALLBACK OnWrite(
