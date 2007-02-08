@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2005-2006 Vyacheslav Frolov
+ * Copyright (c) 2005-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2006/11/13 10:37:14  vfrolov
+ * Fixed type casting
+ *
  * Revision 1.3  2005/10/03 13:44:17  vfrolov
  * Added Clean() method
  *
@@ -115,6 +118,20 @@ void TelnetProtocol::Clean()
   Protocol::Clean();
 }
 
+int TelnetProtocol::Send(const void *pBuf, int count)
+{
+  for (int i = 0 ; i < count ; i++) {
+    BYTE ch = ((const BYTE *)pBuf)[i];
+
+    if (ch == cdIAC)
+          SendRaw(&ch, 1);
+
+    SendRaw(&ch, 1);
+  }
+
+  return count;
+}
+
 int TelnetProtocol::Write(const void *pBuf, int count)
 {
   for (int i = 0 ; i < count ; i++) {
@@ -131,6 +148,7 @@ int TelnetProtocol::Write(const void *pBuf, int count)
         switch (ch) {
           case cdIAC:
             WriteRaw(&ch, 1);
+            state = stData;
             break;
           case cdSB:
           case cdWILL:
