@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.28  2007/01/15 16:07:12  vfrolov
+ * Fixed non zero Information for IOCTL_SERIAL_PURGE and IOCTL_SERIAL_LSRMST_INSERT
+ *
  * Revision 1.27  2007/01/11 14:50:29  vfrolov
  * Pool functions replaced by
  *   C0C_ALLOCATE_POOL()
@@ -311,6 +314,9 @@ NTSTATUS FdoPortIoCtl(
       break;
     case IOCTL_SERIAL_IMMEDIATE_CHAR:
       status = FdoPortImmediateChar(pIoPortLocal, pIrp, pIrpStack);
+      break;
+    case IOCTL_SERIAL_XOFF_COUNTER:
+      status = FdoPortXoffCounter(pIoPortLocal, pIrp, pIrpStack);
       break;
     case IOCTL_SERIAL_PURGE: {
       LIST_ENTRY queueToComplete;
