@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2006 Vyacheslav Frolov
+ * Copyright (c) 2004-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2006/09/27 07:24:51  vfrolov
+ * Added IRP_MN_REGINFO_EX
+ *
  * Revision 1.9  2006/08/23 12:56:20  vfrolov
  * Added codeNameTableWmi
  *
@@ -256,6 +259,8 @@ CODE2NAME codeNameTableStatus[] = {
   TOCODE2NAME(STATUS_, OBJECT_NAME_NOT_FOUND),
   TOCODE2NAME(STATUS_, DEVICE_BUSY),
   TOCODE2NAME(STATUS_, WMI_GUID_NOT_FOUND),
+  TOCODE2NAME(STATUS_, SERIAL_COUNTER_TIMEOUT),
+  TOCODE2NAME(STATUS_, SERIAL_MORE_WRITES),
   {0, NULL}
 };
 
