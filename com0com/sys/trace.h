@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2006 Vyacheslav Frolov
+ * Copyright (c) 2004-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2006/08/23 12:56:20  vfrolov
+ * Added codeNameTableWmi
+ *
  * Revision 1.9  2006/05/19 15:02:03  vfrolov
  * Implemented IOCTL_SERIAL_GET_MODEM_CONTROL
  *
@@ -118,6 +121,10 @@ CODE2NAME codeNameTablePurgeMask[];
 CODE2NAME codeNameTableIoctl[];
 CODE2NAME codeNameTablePnp[];
 CODE2NAME codeNameTablePower[];
+CODE2NAME codeNameTablePowerType[];
+CODE2NAME codeNameTableSystemPowerState[];
+CODE2NAME codeNameTableDevicePowerState[];
+CODE2NAME codeNameTablePowerAction[];
 CODE2NAME codeNameTableWmi[];
 CODE2NAME codeNameTableDoType[];
 CODE2NAME codeNameTableModemStatus[];
