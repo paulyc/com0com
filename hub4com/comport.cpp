@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.3  2007/02/06 11:53:33  vfrolov
+ * Added options --odsr, --ox, --ix and --idsr
+ * Added communications error reporting
+ *
  * Revision 1.2  2007/02/05 09:33:20  vfrolov
  * Implemented internal flow control
  *
@@ -195,10 +199,13 @@ void ComPort::LostReport()
   if (ClearCommError(handle, &errors, NULL) && errors) {
     cout << "Error " << name << ":";
 
-    if (errors & CE_RXOVER) { cout << " RXOVER"; }
-    if (errors & CE_OVERRUN) { cout << " OVERRUN"; }
-    if (errors & CE_RXPARITY) { cout << " RXPARITY"; }
-    if (errors & CE_FRAME) { cout << " FRAME"; }
+    if (errors & CE_RXOVER) { cout << " RXOVER"; errors &= ~CE_RXOVER; }
+    if (errors & CE_OVERRUN) { cout << " OVERRUN"; errors &= ~CE_OVERRUN; }
+    if (errors & CE_RXPARITY) { cout << " RXPARITY"; errors &= ~CE_RXPARITY; }
+    if (errors & CE_FRAME) { cout << " FRAME"; errors &= ~CE_FRAME; }
+    if (errors & CE_BREAK) { cout << " BREAK"; errors &= ~CE_BREAK; }
+    if (errors & CE_TXFULL) { cout << " TXFULL"; errors &= ~CE_TXFULL; }
+    if (errors) { cout << " 0x" << hex << errors; }
 
     #define IOCTL_SERIAL_GET_STATS CTL_CODE(FILE_DEVICE_SERIAL_PORT,35,METHOD_BUFFERED,FILE_ANY_ACCESS)
 
