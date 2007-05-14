@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.3  2007/02/06 11:53:33  vfrolov
+ * Added options --odsr, --ox, --ix and --idsr
+ * Added communications error reporting
+ *
  * Revision 1.2  2007/02/01 12:14:59  vfrolov
  * Redesigned COM port params
  *
@@ -46,6 +50,7 @@ class ComParams
     BOOL SetOutX(const char *pOutX) { return SetFlag(pOutX, &outX); }
     BOOL SetInX(const char *pInX) { return SetFlag(pInX, &inX); }
     BOOL SetInDsr(const char *pInDsr) { return SetFlag(pInDsr, &inDsr); }
+    BOOL SetIntervalTimeout(const char *pIntervalTimeout);
  
     static string BaudRateStr(long baudRate);
     static string ByteSizeStr(int byteSize);
@@ -56,6 +61,7 @@ class ComParams
     static string OutXStr(int outX) { return FlagStr(outX); }
     static string InXStr(int inX) { return FlagStr(inX); }
     static string InDsrStr(int inDsr) { return FlagStr(inDsr); }
+    static string IntervalTimeoutStr(long intervalTimeout);
 
     string BaudRateStr() const { return BaudRateStr(baudRate); }
     string ByteSizeStr() const { return ByteSizeStr(byteSize); }
@@ -66,6 +72,7 @@ class ComParams
     string OutXStr() const { return OutXStr(outX); }
     string InXStr() const { return InXStr(inX); }
     string InDsrStr() const { return InDsrStr(inDsr); }
+    string IntervalTimeoutStr() const { return IntervalTimeoutStr(intervalTimeout); }
 
     static const char *BaudRateLst();
     static const char *ByteSizeLst();
@@ -76,6 +83,7 @@ class ComParams
     static const char *OutXLst() { return FlagLst(); }
     static const char *InXLst() { return FlagLst(); }
     static const char *InDsrLst() { return FlagLst(); }
+    static const char *IntervalTimeoutLst();
 
     long BaudRate() const { return baudRate; }
     int ByteSize() const { return byteSize; }
@@ -86,6 +94,7 @@ class ComParams
     int OutX() const { return outX; }
     int InX() const { return inX; }
     int InDsr() const { return inDsr; }
+    long IntervalTimeout() const { return intervalTimeout; }
 
   private:
     BOOL SetFlag(const char *pFlagStr, int *pFlag);
@@ -101,6 +110,7 @@ class ComParams
     int outX;
     int inX;
     int inDsr;
+    long intervalTimeout;
 };
 ///////////////////////////////////////////////////////////////
 

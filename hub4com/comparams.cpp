@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.3  2007/02/06 11:53:33  vfrolov
+ * Added options --odsr, --ox, --ix and --idsr
+ * Added communications error reporting
+ *
  * Revision 1.2  2007/02/01 12:14:59  vfrolov
  * Redesigned COM port params
  *
@@ -41,7 +45,8 @@ ComParams::ComParams()
     outDsr(0),
     outX(0),
     inX(0),
-    inDsr(0)
+    inDsr(0),
+    intervalTimeout(0)
 {
 }
 
@@ -103,6 +108,16 @@ BOOL ComParams::SetStopBits(const char *pStopBits)
     default : return FALSE;
   }
   return TRUE;
+}
+
+BOOL ComParams::SetIntervalTimeout(const char *pIntervalTimeout)
+{
+  if (isdigit(*pIntervalTimeout)) {
+    intervalTimeout = atol(pIntervalTimeout);
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
 BOOL ComParams::SetFlag(const char *pFlagStr, int *pFlag)
@@ -170,6 +185,17 @@ string ComParams::StopBitsStr(int stopBits)
   return "?";
 }
 
+string ComParams::IntervalTimeoutStr(long intervalTimeout)
+{
+  if (intervalTimeout > 0) {
+    stringstream buf;
+    buf << intervalTimeout;
+    return buf.str();
+  }
+
+  return "0";
+}
+
 string ComParams::FlagStr(int flag)
 {
   switch (flag) {
@@ -198,6 +224,11 @@ const char *ComParams::ParityLst()
 const char *ComParams::StopBitsLst()
 {
   return "1, 1.5, 2 or c[urrent]";
+}
+
+const char *ComParams::IntervalTimeoutLst()
+{
+  return "a positive number or 0 milliseconds";
 }
 
 const char *ComParams::FlagLst()
