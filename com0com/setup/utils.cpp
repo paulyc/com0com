@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2007/01/11 15:03:43  vfrolov
+ * Added STRTOK_R()
+ *
  * Revision 1.3  2006/11/03 13:17:28  vfrolov
  * Fixed LocalReAlloc() usage
  * Added return value to BusyMask::AddNum()
@@ -37,7 +40,7 @@
 ///////////////////////////////////////////////////////////////
 int VSNPRINTF(char *pBuf, int size, const char *pFmt, va_list va)
 {
-  char buf[1024];
+  char buf[1025];
 
   int res1 = wvsprintf(buf, pFmt, va);
   buf[sizeof(buf)/sizeof(buf[0]) - 1] = 0;
