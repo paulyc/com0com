@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2007/01/11 15:05:03  vfrolov
+ * Replaced strtok() by STRTOK_R()
+ *
  * Revision 1.11  2006/11/21 11:36:06  vfrolov
  * Added --output option
  *
@@ -725,9 +728,19 @@ int Help(const char *pCmdPref)
     "  help                         - print this help\n"
     );
   ConsoleWrite(
-    "\n"
-    "%s",
-    PortParameters::GetHelp());
+    "\n");
+
+  const char *pStr = PortParameters::GetHelp();
+
+  while (*pStr) {
+    char buf[100];
+
+    lstrcpyn(buf, pStr, sizeof(buf)/sizeof(buf[0]));
+    pStr += lstrlen(buf);
+
+    ConsoleWrite("%s", buf);
+  }
+
   ConsoleWrite(
     "\n"
     "Examples:\n"
