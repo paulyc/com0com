@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.6  2007/01/11 14:50:29  vfrolov
+ * Pool functions replaced by
+ *   C0C_ALLOCATE_POOL()
+ *   C0C_ALLOCATE_POOL_WITH_QUOTA()
+ *   C0C_FREE_POOL()
+ *
  * Revision 1.5  2006/06/23 07:37:24  vfrolov
  * Disabled usage pDevExt after deleting device
  * Added check of openCount to IRP_MN_QUERY_REMOVE_DEVICE
@@ -39,8 +45,9 @@
  */
 
 #include "precomp.h"
-#include "strutils.h"
 #include <initguid.h>
+#include "strutils.h"
+#include "showport.h"
 
 /*
  * FILE_ID used by HALT_UNLESS to put it on BSOD
@@ -307,6 +314,18 @@ NTSTATUS FdoPortPnp(
   status = STATUS_SUCCESS;
 
   switch (minorFunction) {
+  case IRP_MN_QUERY_DEVICE_RELATIONS: {
+    PC0C_IO_PORT pIoPort = pDevExt->pIoPortLocal;
+
+    if ((pIoPort->exclusiveMode && pIoPort->isOpen) ||
+        (pIoPort->plugInMode && !pIoPort->pIoPortRemote->isOpen))
+    {
+      HidePort(pDevExt);
+    } else {
+      ShowPort(pDevExt);
+    }
+    break;
+  }
   case IRP_MN_QUERY_REMOVE_DEVICE:
     if (pDevExt->openCount)
       status = STATUS_DEVICE_BUSY;

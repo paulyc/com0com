@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.16  2007/01/11 14:50:29  vfrolov
+ * Pool functions replaced by
+ *   C0C_ALLOCATE_POOL()
+ *   C0C_ALLOCATE_POOL_WITH_QUOTA()
+ *   C0C_FREE_POOL()
+ *
  * Revision 1.15  2006/06/23 11:44:52  vfrolov
  * Mass replacement pDevExt by pIoPort
  *
@@ -89,6 +95,14 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   pIoPort = pDevExt->pIoPortLocal;
 
+  if (pIoPort->plugInMode && !pIoPort->pIoPortRemote->isOpen) {
+    InterlockedDecrement(&pDevExt->openCount);
+    return STATUS_ACCESS_DENIED;
+  }
+
+  if (pIoPort->exclusiveMode)
+    IoInvalidateDeviceRelations(pIoPort->pPhDevObj, BusRelations);
+
   switch (MmQuerySystemSize()) {
   case MmLargeSystem:
     size = 4096;
@@ -146,6 +160,11 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
 
+  pIoPort->isOpen = TRUE;
+
+  if (pIoPort->pIoPortRemote->plugInMode)
+    IoInvalidateDeviceRelations(pIoPort->pIoPortRemote->pPhDevObj, BusRelations);
+
   FdoPortCompleteQueue(&queueToComplete);
 
   return STATUS_SUCCESS;
@@ -159,6 +178,11 @@ NTSTATUS FdoPortClose(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   pIoPort = pDevExt->pIoPortLocal;
 
+  pIoPort->isOpen = FALSE;
+
+  if (pIoPort->pIoPortRemote->plugInMode)
+    IoInvalidateDeviceRelations(pIoPort->pIoPortRemote->pPhDevObj, BusRelations);
+
   InitializeListHead(&queueToComplete);
 
   KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
@@ -170,6 +194,9 @@ NTSTATUS FdoPortClose(IN PC0C_FDOPORT_EXTENSION pDevExt)
   SetBreakHolding(pIoPort, FALSE);
 
   KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
+
+  if (pIoPort->exclusiveMode)
+    IoInvalidateDeviceRelations(pIoPort->pPhDevObj, BusRelations);
 
   FdoPortCompleteQueue(&queueToComplete);
 

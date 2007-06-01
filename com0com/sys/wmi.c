@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006 Vyacheslav Frolov
+ * Copyright (c) 2006-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2006/10/27 12:44:14  vfrolov
+ * Fixed typecasting
+ *
  * Revision 1.2  2006/10/17 06:54:37  vfrolov
  * Disabled SERIAL_PORT_WMI_HW_GUID for binary compatibility with
  * both W2K and WXP
@@ -90,7 +93,7 @@ NTSTATUS QueryWmiRegInfo(
   *ppRegistryPath = &c0cGlobal.registryPath;
 
   *pRegFlags = WMIREG_FLAG_INSTANCE_PDO;
-  *ppPhDevObj = pDevExt->pPhDevObj;
+  *ppPhDevObj = pDevExt->pIoPortLocal->pPhDevObj;
 
   return STATUS_SUCCESS;
 }
