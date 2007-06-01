@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.24  2007/01/11 14:50:28  vfrolov
+ * Pool functions replaced by
+ *   C0C_ALLOCATE_POOL()
+ *   C0C_ALLOCATE_POOL_WITH_QUOTA()
+ *   C0C_FREE_POOL()
+ *
  * Revision 1.23  2006/11/23 11:10:10  vfrolov
  * Strict usage fixed port numbers
  *
@@ -352,7 +358,7 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   pDevExt->lineControl.StopBits      = STOP_BIT_1;
   pDevExt->baudRate.BaudRate         = 1200;
 
-  SetWriteDelay(pDevExt->pIoPortLocal);
+  SetWriteDelay(pDevExt);
 
   pDevExt->pPhDevObj = pPhDevObj;
   pDevExt->pLowDevObj = IoAttachDeviceToDeviceStack(pNewDevObj, pPhDevObj);

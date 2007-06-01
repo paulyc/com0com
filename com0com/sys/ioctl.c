@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.29  2007/02/20 12:05:11  vfrolov
+ * Implemented IOCTL_SERIAL_XOFF_COUNTER
+ * Fixed cancel and timeout routines
+ *
  * Revision 1.28  2007/01/15 16:07:12  vfrolov
  * Fixed non zero Information for IOCTL_SERIAL_PURGE and IOCTL_SERIAL_LSRMST_INSERT
  *
@@ -539,7 +543,7 @@ NTSTATUS FdoPortIoCtl(
       pDevExt->lineControl = *(PSERIAL_LINE_CONTROL)pIrp->AssociatedIrp.SystemBuffer;
       KeReleaseSpinLock(&pDevExt->controlLock, oldIrql);
 
-      SetWriteDelay(pIoPortLocal);
+      SetWriteDelay(pDevExt);
       break;
     case IOCTL_SERIAL_GET_LINE_CONTROL:
       if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(SERIAL_LINE_CONTROL)) {
@@ -564,7 +568,7 @@ NTSTATUS FdoPortIoCtl(
       pDevExt->baudRate = *(PSERIAL_BAUD_RATE)pIrp->AssociatedIrp.SystemBuffer;
       KeReleaseSpinLock(&pDevExt->controlLock, oldIrql);
 
-      SetWriteDelay(pIoPortLocal);
+      SetWriteDelay(pDevExt);
       break;
     case IOCTL_SERIAL_GET_BAUD_RATE:
       if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(SERIAL_BAUD_RATE)) {
