@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.34  2007/06/01 16:22:40  vfrolov
+ * Implemented plug-in and exclusive modes
+ *
  * Revision 1.33  2007/02/20 12:05:11  vfrolov
  * Implemented IOCTL_SERIAL_XOFF_COUNTER
  * Fixed cancel and timeout routines
@@ -210,8 +213,9 @@ typedef struct _C0C_IO_PORT {
   #define C0C_QUEUE_READ  0
   #define C0C_QUEUE_WRITE 1
   #define C0C_QUEUE_WAIT  2
+  #define C0C_QUEUE_CLOSE 3
 
-  #define C0C_QUEUE_SIZE  3
+  #define C0C_QUEUE_SIZE  4
 
   C0C_IRP_QUEUE           irpQueues[C0C_QUEUE_SIZE];
 
@@ -224,6 +228,9 @@ typedef struct _C0C_IO_PORT {
 
   KTIMER                  timerWriteTotal;
   KDPC                    timerWriteTotalDpc;
+
+  KTIMER                  timerClose;
+  KDPC                    timerCloseDpc;
 
   struct _C0C_ADAPTIVE_DELAY *pWriteDelay;
 
@@ -395,6 +402,7 @@ typedef struct _C0C_IRP_STATE {
 PC0C_IRP_STATE GetIrpState(IN PIRP pIrp);
 ULONG GetWriteLength(IN PIRP pIrp);
 
+#define C0C_IO_TYPE_CLOSE_COMPLETE     2
 #define C0C_IO_TYPE_WAIT_COMPLETE      3
 #define C0C_IO_TYPE_INSERT             4
 

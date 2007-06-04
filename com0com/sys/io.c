@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.30  2007/02/20 12:05:11  vfrolov
+ * Implemented IOCTL_SERIAL_XOFF_COUNTER
+ * Fixed cancel and timeout routines
+ *
  * Revision 1.29  2006/11/27 11:58:27  vfrolov
  * Fixed unexpected completing all queued read requests when
  * completing the first one
@@ -670,10 +674,8 @@ NTSTATUS FdoPortIo(
   BOOLEAN firstCurrent;
   PIRP pIrpCurrent;
   PDRIVER_CANCEL pCancelRoutineCurrent;
-  SIZE_T done;
 
   first = TRUE;
-  done = 0;
 
   status = STATUS_PENDING;
 
@@ -695,6 +697,11 @@ NTSTATUS FdoPortIo(
     case C0C_IO_TYPE_INSERT:
       HALT_UNLESS(pParam);
       InsertDirect((PC0C_RAW_DATA)pParam, pIrpCurrent, &status, &statusCurrent, &doneCurrent);
+      break;
+    case C0C_IO_TYPE_CLOSE_COMPLETE:
+      InterlockedDecrement(&pIoPort->pDevExt->openCount);
+      pIrpCurrent->IoStatus.Information = 0;
+      statusCurrent = STATUS_SUCCESS;
       break;
     }
 

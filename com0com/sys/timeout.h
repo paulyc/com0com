@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.5  2007/02/20 12:05:11  vfrolov
+ * Implemented IOCTL_SERIAL_XOFF_COUNTER
+ * Fixed cancel and timeout routines
+ *
  * Revision 1.4  2006/06/21 16:23:57  vfrolov
  * Fixed possible BSOD after one port of pair removal
  *
@@ -41,6 +45,8 @@ VOID AllocTimeouts(PC0C_IO_PORT pIoPort);
 VOID FreeTimeouts(PC0C_IO_PORT pIoPort);
 
 VOID SetIntervalTimeout(PC0C_IO_PORT pIoPort);
+
+VOID SetCloseTimeout(PC0C_IO_PORT pIoPort);
 
 VOID SetXoffCounterTimeout(
     PC0C_IO_PORT pIoPort,

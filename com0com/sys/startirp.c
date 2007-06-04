@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.16  2007/02/20 12:05:11  vfrolov
+ * Implemented IOCTL_SERIAL_XOFF_COUNTER
+ * Fixed cancel and timeout routines
+ *
  * Revision 1.15  2007/01/22 17:05:16  vfrolov
  * Added missing IoMarkIrpPending()
  *
@@ -95,6 +99,7 @@ PC0C_IRP_STATE GetIrpState(IN PIRP pIrp)
     }
     break;
   case IRP_MJ_FLUSH_BUFFERS:
+  case IRP_MJ_CLOSE:
     return (PC0C_IRP_STATE)&pIrpStack->Parameters.Others.Argument1;
   }
 
