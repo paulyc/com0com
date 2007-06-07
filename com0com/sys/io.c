@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.31  2007/06/04 15:24:32  vfrolov
+ * Fixed open reject just after close in exclusiveMode
+ *
  * Revision 1.30  2007/02/20 12:05:11  vfrolov
  * Implemented IOCTL_SERIAL_XOFF_COUNTER
  * Fixed cancel and timeout routines
@@ -631,12 +634,11 @@ VOID StartXoffCounter(PC0C_IO_PORT pIoPortWrite, PLIST_ENTRY pQueueToComplete)
   PC0C_IRP_QUEUE pQueue;
 
   pQueue = &pIoPortWrite->irpQueues[C0C_QUEUE_WRITE];
-
-#if DBG
   HALT_UNLESS(!pQueue->started);
-#endif /* DBG */
 
   pIrpXoffCounter = pQueue->pCurrent;
+  HALT_UNLESS(pIrpXoffCounter);
+
   ShiftQueue(pQueue);
 
   while (pQueue->pCurrent) {
