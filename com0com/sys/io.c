@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.32  2007/06/07 14:51:47  vfrolov
+ * Added check for NULL of pIrpXoffCounter
+ *
  * Revision 1.31  2007/06/04 15:24:32  vfrolov
  * Fixed open reject just after close in exclusiveMode
  *
@@ -941,8 +944,10 @@ NTSTATUS TryReadWrite(
                             &doneRead, &done);
 
             if (done) {
-              if (pWriteDelay)
+              if (pWriteDelay) {
                 pWriteDelay->sentFrames += done;
+                pWriteDelay->idleCount = 0;
+              }
             }
           }
         }
@@ -979,8 +984,10 @@ NTSTATUS TryReadWrite(
                 doneWrite += done;
                 wasWrite = TRUE;
 
-                if (pWriteDelay)
+                if (pWriteDelay) {
                   pWriteDelay->sentFrames += done;
+                  pWriteDelay->idleCount = 0;
+                }
               }
             }
           }
@@ -1098,8 +1105,10 @@ NTSTATUS TryReadWrite(
         }
 
         if (done) {
-          if (pWriteDelay)
+          if (pWriteDelay) {
             pWriteDelay->sentFrames += done;
+            pWriteDelay->idleCount = 0;
+          }
         }
       }
       else
@@ -1176,8 +1185,10 @@ NTSTATUS TryReadWrite(
             doneWrite += done;
             wasWrite = TRUE;
 
-            if (pWriteDelay)
+            if (pWriteDelay) {
               pWriteDelay->sentFrames += done;
+              pWriteDelay->idleCount = 0;
+            }
           }
         }
         else
