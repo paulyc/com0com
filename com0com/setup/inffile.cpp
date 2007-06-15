@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2007/06/14 16:11:01  vfrolov
+ * Added Scan INF files progress indication
+ *
  * Revision 1.2  2006/10/19 13:28:48  vfrolov
  * Added InfFile::UninstallAllInfFiles()
  *
@@ -416,6 +419,7 @@ BOOL InfFile::UninstallAllInfFiles(
 
   Trace("...");
 
+  size += 256; // possible new INF files were added since
   char *pList = (char *)LocalAlloc(LPTR, size*sizeof(pList[0]));
 
   if (pList) {
@@ -424,7 +428,7 @@ BOOL InfFile::UninstallAllInfFiles(
 
       Trace("\n");
 
-      ShowError(MB_OK|MB_ICONSTOP, err, "SetupGetInfFileList()");
+      ShowError(MB_OK|MB_ICONSTOP, err, "SetupGetInfFileList(%lu)", (unsigned long)size);
       LocalFree(pList);
       return FALSE;
     }
@@ -433,7 +437,7 @@ BOOL InfFile::UninstallAllInfFiles(
 
     Trace("\n");
 
-    ShowError(MB_OK|MB_ICONSTOP, err, "LocalAlloc()");
+    ShowError(MB_OK|MB_ICONSTOP, err, "LocalAlloc(%lu)", (unsigned long)size);
     return FALSE;
   }
 
