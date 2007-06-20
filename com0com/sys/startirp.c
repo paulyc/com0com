@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.17  2007/06/04 15:24:33  vfrolov
+ * Fixed open reject just after close in exclusiveMode
+ *
  * Revision 1.16  2007/02/20 12:05:11  vfrolov
  * Implemented IOCTL_SERIAL_XOFF_COUNTER
  * Fixed cancel and timeout routines
@@ -156,11 +159,6 @@ VOID CancelRoutine(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
   InitializeListHead(&queueToComplete);
 
   KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
-
-  if (pState->iQueue == C0C_QUEUE_WRITE) {
-    pIoPort->amountInWriteQueue -=
-        GetWriteLength(pIrp) - (ULONG)pIrp->IoStatus.Information;
-  }
 
   if (pState->flags & C0C_IRP_FLAG_IN_QUEUE) {
     RemoveEntryList(&pIrp->Tail.Overlay.ListEntry);
