@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.33  2007/06/09 08:49:47  vfrolov
+ * Improved baudrate emulation
+ *
  * Revision 1.32  2007/06/07 14:51:47  vfrolov
  * Added check for NULL of pIrpXoffCounter
  *
@@ -877,13 +880,6 @@ NTSTATUS TryReadWrite(
         StartCurrentIrp(pQueueRead, &pCancelRoutineRead, &firstRead);
   }
 
-  readBufBusyEnd = C0C_BUFFER_BUSY(&pIoPortRead->readBuf);
-
-  if (readBufBusyBeg > readBufBusyEnd) {
-    UpdateHandFlow(pIoPortRead, TRUE, pQueueToComplete);
-    readBufBusyBeg = readBufBusyEnd;
-  }
-
   /* get char */
 
   if (pIoPortWrite->sendBreak) {
@@ -1080,21 +1076,6 @@ NTSTATUS TryReadWrite(
         WriteBuffer(&dataChar, pIoPortRead,
                     pQueueToComplete, pWriteLimit, &done);
 
-        readBufBusyEnd = C0C_BUFFER_BUSY(&pIoPortRead->readBuf);
-
-        if (readBufBusyBeg < readBufBusyEnd) {
-          if ((pIoPortRead->waitMask & SERIAL_EV_RX80FULL) &&
-              readBufBusyEnd > pIoPortRead->readBuf.size80 &&
-              readBufBusyBeg <= pIoPortRead->readBuf.size80)
-          {
-            pIoPortRead->eventMask |= SERIAL_EV_RX80FULL;
-            WaitComplete(pIoPortRead, pQueueToComplete);
-          }
-
-          UpdateHandFlow(pIoPortRead, FALSE, pQueueToComplete);
-          readBufBusyBeg = readBufBusyEnd;
-        }
-
         if (pIoPortRead->emuOverrun &&
             dataChar.data.chr.isChr &&
             CAN_WRITE_RW_DATA_CHR(pIoPortWrite, dataChar) &&
@@ -1156,21 +1137,6 @@ NTSTATUS TryReadWrite(
 
           WriteBuffer(&dataIrpWrite, pIoPortRead,
                       pQueueToComplete, pWriteLimit, &done);
-
-          readBufBusyEnd = C0C_BUFFER_BUSY(&pIoPortRead->readBuf);
-
-          if (readBufBusyBeg < readBufBusyEnd) {
-            if ((pIoPortRead->waitMask & SERIAL_EV_RX80FULL) &&
-                readBufBusyEnd > pIoPortRead->readBuf.size80 &&
-                readBufBusyBeg <= pIoPortRead->readBuf.size80)
-            {
-              pIoPortRead->eventMask |= SERIAL_EV_RX80FULL;
-              WaitComplete(pIoPortRead, pQueueToComplete);
-            }
-
-            UpdateHandFlow(pIoPortRead, FALSE, pQueueToComplete);
-            readBufBusyBeg = readBufBusyEnd;
-          }
 
           if (pIoPortRead->emuOverrun &&
               dataIrpWrite.data.irp.status == STATUS_PENDING &&
@@ -1246,6 +1212,24 @@ NTSTATUS TryReadWrite(
     }
   }
 
+  readBufBusyEnd = C0C_BUFFER_BUSY(&pIoPortRead->readBuf);
+
+  if (readBufBusyBeg > readBufBusyEnd) {
+    UpdateHandFlow(pIoPortRead, TRUE, pQueueToComplete);
+  }
+  else
+  if (readBufBusyBeg < readBufBusyEnd) {
+    if ((pIoPortRead->waitMask & SERIAL_EV_RX80FULL) &&
+        readBufBusyEnd > pIoPortRead->readBuf.size80 &&
+        readBufBusyBeg <= pIoPortRead->readBuf.size80)
+    {
+      pIoPortRead->eventMask |= SERIAL_EV_RX80FULL;
+      WaitComplete(pIoPortRead, pQueueToComplete);
+    }
+
+    UpdateHandFlow(pIoPortRead, FALSE, pQueueToComplete);
+  }
+
   if (wasWrite && !pQueueWrite->pCurrent &&
       pIoPortWrite->waitMask & SERIAL_EV_TXEMPTY)
   {
@@ -1267,29 +1251,28 @@ NTSTATUS ReadWrite(
 {
   NTSTATUS status;
 
+  pIoPortWrite->tryWrite = FALSE;
+
   status = TryReadWrite(
       pIoPortRead, startRead,
       pIoPortWrite, startWrite,
       pQueueToComplete);
 
-  pIoPortWrite->tryWrite = FALSE;
+  while (pIoPortWrite->tryWrite || pIoPortRead->tryWrite) {
+    if (!pIoPortWrite->tryWrite) {
+      PC0C_IO_PORT pIoPortTmp;
 
-  while (pIoPortRead->tryWrite) {
-    PC0C_IO_PORT pIoPortTmp;
+      pIoPortTmp = pIoPortRead;
+      pIoPortRead = pIoPortWrite;
+      pIoPortWrite = pIoPortTmp;
+    }
 
-    pIoPortTmp = pIoPortRead;
-    pIoPortRead = pIoPortWrite;
-    pIoPortWrite = pIoPortTmp;
+    pIoPortWrite->tryWrite = FALSE;
 
     TryReadWrite(
         pIoPortRead, FALSE,
         pIoPortWrite, FALSE,
         pQueueToComplete);
-
-    pIoPortWrite->tryWrite = FALSE;
-
-    if (status == STATUS_PENDING && (startRead || startWrite))
-      break;
   }
 
   return status;
@@ -1297,27 +1280,24 @@ NTSTATUS ReadWrite(
 
 VOID SetModemStatus(
     IN PC0C_IO_PORT pIoPort,
-    IN ULONG bits,
-    IN ULONG mask,
+    IN UCHAR bits,
+    IN UCHAR mask,
     PLIST_ENTRY pQueueToComplete)
 {
-  ULONG modemStatusOld;
-  ULONG modemStatusChanged;
+  UCHAR modemStatusOld;
+  UCHAR modemStatusNew;
+  UCHAR modemStatusChanged;
 
-  modemStatusOld = pIoPort->modemStatus;
+  modemStatusOld = modemStatusNew = pIoPort->modemStatus;
 
-  pIoPort->modemStatus |= bits & mask;
-  pIoPort->modemStatus &= ~(~bits & mask);
+  modemStatusNew |= bits & mask;
+  modemStatusNew &= ~(~bits & mask);
 
-  /* DCD = DSR */
-  if (pIoPort->modemStatus & C0C_MSB_DSR)
-    pIoPort->modemStatus |= C0C_MSB_RLSD;
-  else
-    pIoPort->modemStatus &= ~C0C_MSB_RLSD;
-
-  modemStatusChanged = modemStatusOld ^ pIoPort->modemStatus;
+  modemStatusChanged = modemStatusOld ^ modemStatusNew;
 
   if (modemStatusChanged) {
+    pIoPort->modemStatus = modemStatusNew;
+
     TraceModemStatus(pIoPort);
 
     SetModemStatusHolding(pIoPort);

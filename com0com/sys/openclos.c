@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.18  2007/06/04 15:24:32  vfrolov
+ * Fixed open reject just after close in exclusiveMode
+ *
  * Revision 1.17  2007/06/01 16:22:40  vfrolov
  * Implemented plug-in and exclusive modes
  *
@@ -215,7 +218,7 @@ NTSTATUS FdoPortClose(IN PC0C_FDOPORT_EXTENSION pDevExt, IN PIRP pIrp)
 
   pIoPort->writeHoldingRemote = 0;
   pIoPort->sendXonXoff = 0;
-  SetModemStatus(pIoPort->pIoPortRemote, 0, C0C_MSB_CTS | C0C_MSB_DSR, &queueToComplete);
+  SetModemControl(pIoPort, 0, C0C_MCR_RTS | C0C_MCR_DTR, &queueToComplete);
   FreeBuffer(&pIoPort->readBuf);
   SetBreakHolding(pIoPort, FALSE);
 

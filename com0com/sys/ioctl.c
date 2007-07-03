@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.30  2007/06/01 08:36:26  vfrolov
+ * Changed parameter type for SetWriteDelay()
+ *
  * Revision 1.29  2007/02/20 12:05:11  vfrolov
  * Implemented IOCTL_SERIAL_XOFF_COUNTER
  * Fixed cancel and timeout routines
@@ -158,10 +161,10 @@ NTSTATUS FdoPortIoCtl(
 
           InitializeListHead(&queueToComplete);
 
-          SetModemStatus(
-            pIoPortLocal->pIoPortRemote,
-            code == IOCTL_SERIAL_SET_RTS ? C0C_MSB_CTS : 0,
-            C0C_MSB_CTS,
+          SetModemControl(
+            pIoPortLocal,
+            code == IOCTL_SERIAL_SET_RTS ? C0C_MCR_RTS : 0,
+            C0C_MCR_RTS,
             &queueToComplete);
 
           if (pIoPortLocal->pIoPortRemote->tryWrite) {
@@ -189,10 +192,10 @@ NTSTATUS FdoPortIoCtl(
 
           InitializeListHead(&queueToComplete);
 
-          SetModemStatus(
-            pIoPortLocal->pIoPortRemote,
-            code == IOCTL_SERIAL_SET_DTR ? C0C_MSB_DSR : 0,
-            C0C_MSB_DSR,
+          SetModemControl(
+            pIoPortLocal,
+            code == IOCTL_SERIAL_SET_DTR ? C0C_MCR_DTR : 0,
+            C0C_MCR_DTR,
             &queueToComplete);
 
           if (pIoPortLocal->pIoPortRemote->tryWrite) {
@@ -209,7 +212,7 @@ NTSTATUS FdoPortIoCtl(
       break;
     case IOCTL_SERIAL_GET_MODEM_CONTROL:
     case IOCTL_SERIAL_GET_DTRRTS: {
-      ULONG modemStatusRemote;
+      ULONG modemControl;
 
       if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(ULONG)) {
         status = STATUS_BUFFER_TOO_SMALL;
@@ -217,16 +220,13 @@ NTSTATUS FdoPortIoCtl(
       }
 
       KeAcquireSpinLock(pIoPortLocal->pIoLock, &oldIrql);
-      modemStatusRemote = pIoPortLocal->pIoPortRemote->modemStatus;
+      modemControl = pIoPortLocal->modemControl;
       KeReleaseSpinLock(pIoPortLocal->pIoLock, oldIrql);
 
-      *(PULONG)pIrp->AssociatedIrp.SystemBuffer =
-          ((modemStatusRemote & C0C_MSB_DSR) ? SERIAL_DTR_STATE : 0) |
-          ((modemStatusRemote & C0C_MSB_CTS) ? SERIAL_RTS_STATE : 0);
+      if (code == IOCTL_SERIAL_GET_DTRRTS)
+        modemControl &= SERIAL_DTR_STATE | SERIAL_RTS_STATE;
 
-      if (code == IOCTL_SERIAL_GET_MODEM_CONTROL)
-        *(PULONG)pIrp->AssociatedIrp.SystemBuffer |= 0x8;
-
+      *(PULONG)pIrp->AssociatedIrp.SystemBuffer = modemControl;
       pIrp->IoStatus.Information = sizeof(ULONG);
 
       TraceIrp("FdoPortIoCtl", pIrp, &status, TRACE_FLAG_RESULTS);
