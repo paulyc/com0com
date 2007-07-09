@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.31  2007/07/03 14:35:17  vfrolov
+ * Implemented pinout customization
+ *
  * Revision 1.30  2007/06/01 08:36:26  vfrolov
  * Changed parameter type for SetWriteDelay()
  *
@@ -174,6 +177,13 @@ NTSTATUS FdoPortIoCtl(
                 &queueToComplete);
           }
 
+          if (pIoPortLocal->tryWrite) {
+            ReadWrite(
+                pIoPortLocal->pIoPortRemote, FALSE,
+                pIoPortLocal, FALSE,
+                &queueToComplete);
+          }
+
           KeReleaseSpinLock(pIoPortLocal->pIoLock, oldIrql);
           FdoPortCompleteQueue(&queueToComplete);
         }
@@ -205,11 +215,53 @@ NTSTATUS FdoPortIoCtl(
                 &queueToComplete);
           }
 
+          if (pIoPortLocal->tryWrite) {
+            ReadWrite(
+                pIoPortLocal->pIoPortRemote, FALSE,
+                pIoPortLocal, FALSE,
+                &queueToComplete);
+          }
+
           KeReleaseSpinLock(pIoPortLocal->pIoLock, oldIrql);
           FdoPortCompleteQueue(&queueToComplete);
         }
       }
       break;
+    case IOCTL_SERIAL_SET_MODEM_CONTROL: {
+      LIST_ENTRY queueToComplete;
+
+      if (pIrpStack->Parameters.DeviceIoControl.InputBufferLength < sizeof(ULONG)) {
+        status = STATUS_BUFFER_TOO_SMALL;
+        break;
+      }
+
+      InitializeListHead(&queueToComplete);
+      KeAcquireSpinLock(pIoPortLocal->pIoLock, &oldIrql);
+
+      SetModemControl(
+        pIoPortLocal,
+        (UCHAR)*(PULONG)pIrp->AssociatedIrp.SystemBuffer,
+        (UCHAR)~0,
+        &queueToComplete);
+
+      if (pIoPortLocal->pIoPortRemote->tryWrite) {
+        ReadWrite(
+            pIoPortLocal, FALSE,
+            pIoPortLocal->pIoPortRemote, FALSE,
+            &queueToComplete);
+      }
+
+      if (pIoPortLocal->tryWrite) {
+        ReadWrite(
+            pIoPortLocal->pIoPortRemote, FALSE,
+            pIoPortLocal, FALSE,
+            &queueToComplete);
+      }
+
+      KeReleaseSpinLock(pIoPortLocal->pIoLock, oldIrql);
+      FdoPortCompleteQueue(&queueToComplete);
+      break;
+    }
     case IOCTL_SERIAL_GET_MODEM_CONTROL:
     case IOCTL_SERIAL_GET_DTRRTS: {
       ULONG modemControl;
