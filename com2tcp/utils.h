@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2005-2006 Vyacheslav Frolov
+ * Copyright (c) 2005-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2006/11/16 12:51:43  vfrolov
+ * Added ability to set COM port parameters
+ *
  * Revision 1.4  2005/10/03 13:44:17  vfrolov
  * Added Clean() method
  *
@@ -99,6 +102,7 @@ class Protocol
   public:
     Protocol(int _thresholdSend = 0, int _thresholdWrite = 0)
       : streamSendRead(_thresholdSend), streamWriteRecv(_thresholdWrite) {}
+    virtual ~Protocol() {}
 
     virtual int Send(const void *pBuf, int count);
     int SendRaw(const void *pBuf, int count) { return streamSendRead.PutData(pBuf, count); }
