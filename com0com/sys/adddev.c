@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.28  2007/07/03 14:35:17  vfrolov
+ * Implemented pinout customization
+ *
  * Revision 1.27  2007/06/05 12:15:08  vfrolov
  * Fixed memory leak
  *
@@ -113,6 +116,7 @@
 #include <ntddser.h>
 #include "timeout.h"
 #include "delay.h"
+#include "bufutils.h"
 #include "strutils.h"
 #include "showport.h"
 
@@ -140,6 +144,7 @@ VOID RemoveFdoPort(IN PC0C_FDOPORT_EXTENSION pDevExt)
     pDevExt->pIoPortLocal->plugInMode = FALSE;
     pDevExt->pIoPortLocal->exclusiveMode = FALSE;
     pDevExt->pIoPortLocal->pDevExt = NULL;
+    FreeTxBuffer(&pDevExt->pIoPortLocal->txBuf);
   }
 
   if (!HidePort(pDevExt))
@@ -382,6 +387,8 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   pDevExt->baudRate.BaudRate         = 1200;
 
   SetWriteDelay(pDevExt);
+
+  SetTxBuffer(&pDevExt->pIoPortLocal->txBuf, 1, TRUE);
 
   pDevExt->pIoPortLocal->modemControl |= C0C_MCR_OUT2;
 

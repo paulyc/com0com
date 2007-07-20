@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.36  2007/07/03 14:35:17  vfrolov
+ * Implemented pinout customization
+ *
  * Revision 1.35  2007/06/04 15:24:32  vfrolov
  * Fixed open reject just after close in exclusiveMode
  *
@@ -189,8 +192,8 @@ typedef struct _C0C_BUFFER {
   PUCHAR                  pBusy;
   PUCHAR                  pFree;
   PUCHAR                  pEnd;
-  SIZE_T                  limit;
   SIZE_T                  busy;
+  SIZE_T                  limit;
   SIZE_T                  size80;
   BOOLEAN                 escape;
   C0C_RAW_DATA            insertData;
@@ -201,6 +204,24 @@ typedef struct _C0C_BUFFER {
 
 #define C0C_BUFFER_SIZE(pBuf) \
   ((SIZE_T)((pBuf)->pEnd - (pBuf)->pBase))
+
+typedef struct _C0C_TX_BUFFER {
+  PUCHAR                  pBase;
+  PUCHAR                  pBusy;
+  PUCHAR                  pFree;
+  PUCHAR                  pEnd;
+  SIZE_T                  busy;
+  UCHAR                   leastBuf[1 + 1];  /* transmitter holding and shift registers */
+} C0C_TX_BUFFER, *PC0C_TX_BUFFER;
+
+#define C0C_TX_BUFFER_BUSY(pTxBuf) \
+  ((pTxBuf)->busy)
+
+#define C0C_TX_BUFFER_THR_EMPTY(pTxBuf) \
+  ((pTxBuf)->busy <= 1)
+
+#define C0C_TX_BUFFER_SIZE(pTxBuf) \
+  ((SIZE_T)((pTxBuf)->pEnd - (pTxBuf)->pBase))
 
 struct _C0C_FDOPORT_EXTENSION;
 struct _C0C_ADAPTIVE_DELAY;
@@ -277,6 +298,7 @@ typedef struct _C0C_IO_PORT {
   UCHAR                   modemControl;
 
   C0C_BUFFER              readBuf;
+  C0C_TX_BUFFER           txBuf;
 
   short                   sendXonXoff;
   ULONG                   writeHolding;
