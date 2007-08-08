@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2007/01/22 17:10:32  vfrolov
+ * Partially added support for non i386 CPUs
+ *
  * Revision 1.4  2006/12/14 08:25:44  vfrolov
  * Added ReadMe.lnk
  *
@@ -204,6 +207,9 @@ SectionEnd
 ; Uninstaller
 
 Section "Uninstall"
+
+  ; Set output path to the installation directory.
+  SetOutPath $INSTDIR
 
   GetTempFileName $0
   ExecWait "RunDll32 setup,RunDll --output $0 uninstall"
