@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.5  2007/02/15 08:48:45  vfrolov
+ * Fixed 1658441 - Installation Failed
+ * Thanks to Michael A. Smith
+ *
  * Revision 1.4  2006/11/10 14:07:40  vfrolov
  * Implemented remove command
  *
@@ -529,12 +533,32 @@ static int TryInstallDevice(
       goto err1;
   }
 
-  BOOL rebootRequired;
-  res = UpdateDriverForPlugAndPlayDevices(0, pDevId, infFile.Path(), INSTALLFLAG_FORCE, &rebootRequired);
+  int i;
 
-  if (!res) {
-    updateErr = GetLastError();
+  for (i = 0 ; i < 10 ; i++) {
+    BOOL rebootRequired;
 
+    res = UpdateDriverForPlugAndPlayDevices(0, pDevId, infFile.Path(), 0, &rebootRequired);
+
+    if (res) {
+      updateErr = ERROR_SUCCESS;
+    } else {
+      updateErr = GetLastError();
+
+      if (updateErr == ERROR_SHARING_VIOLATION) {
+        Trace(".");
+        Sleep(1000);
+        continue;
+      }
+    }
+
+    if (i)
+      Trace("\n");
+
+    break;
+  }
+
+  if (updateErr != ERROR_SUCCESS) {
 err1:
 
     if (!SetupDiCallClassInstaller(DIF_REMOVE, hDevInfo, &devInfoData))
@@ -580,7 +604,7 @@ err:
       }
     }
 
-    ShowError(MB_OK|MB_ICONSTOP, updateErr, "UpdateDriverForPlugAndPlayDevices()");
+    return ShowError(MB_CANCELTRYCONTINUE, updateErr, "UpdateDriverForPlugAndPlayDevices()");
   }
 
   return res ? IDCONTINUE : IDCANCEL;
