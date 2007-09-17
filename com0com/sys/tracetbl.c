@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2007/02/21 16:52:34  vfrolov
+ * Added tracing of IRP_MJ_POWER with more details
+ *
  * Revision 1.11  2007/02/20 11:57:59  vfrolov
  * Added STATUS_SERIAL_COUNTER_TIMEOUT and STATUS_SERIAL_MORE_WRITES
  *
@@ -253,11 +256,12 @@ CODE2NAME codeNameTableModemStatus[] = {
 };
 
 CODE2NAME codeNameTableModemControl[] = {
-  {SERIAL_DTR_STATE, "DTR"},
-  {SERIAL_RTS_STATE, "RTS"},
-  {0x04, "OUT1"},
-  {0x08, "OUT2"},
-  {0x10, "LOOP"},
+  TOCODE2NAME(C0C_MCR_, DTR),
+  TOCODE2NAME(C0C_MCR_, RTS),
+  TOCODE2NAME(C0C_MCR_, OUT1),
+  TOCODE2NAME(C0C_MCR_, OUT2),
+  TOCODE2NAME(C0C_MCR_, LOOP),
+  TOCODE2NAME(C0C_MCR_, OPEN),
   {0, NULL}
 };
 

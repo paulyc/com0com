@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2007/07/03 14:39:49  vfrolov
+ * Implemented pinout customization
+ *
  * Revision 1.5  2007/06/01 16:32:04  vfrolov
  * Implemented plug-in and exclusive modes
  *
@@ -230,6 +233,10 @@ BOOL PortParameters::SetPin(const char *pNewVal, DWORD bit)
     newPin |= C0C_PIN_ROUT1;
   }
   else
+  if (!lstrcmpi(pNewVal, "ropen")) {
+    newPin |= C0C_PIN_ROPEN;
+  }
+  else
   if (!lstrcmpi(pNewVal, "lrts")) {
     newPin |= C0C_PIN_LRTS;
   }
@@ -240,6 +247,10 @@ BOOL PortParameters::SetPin(const char *pNewVal, DWORD bit)
   else
   if (!lstrcmpi(pNewVal, "lout1")) {
     newPin |= C0C_PIN_LOUT1;
+  }
+  else
+  if (!lstrcmpi(pNewVal, "lopen")) {
+    newPin |= C0C_PIN_LOPEN;
   }
   else
   if (!lstrcmpi(pNewVal, "on")) {
@@ -613,9 +624,11 @@ BOOL PortParameters::FillParametersStr(char *pParameters, int size)
         case C0C_PIN_RRTS:  pVal = "rrts";  break;
         case C0C_PIN_RDTR:  pVal = "rdtr";  break;
         case C0C_PIN_ROUT1: pVal = "rout1"; break;
+        case C0C_PIN_ROPEN: pVal = "ropen"; break;
         case C0C_PIN_LRTS:  pVal = "lrts";  break;
         case C0C_PIN_LDTR:  pVal = "ldtr";  break;
         case C0C_PIN_LOUT1: pVal = "lout1"; break;
+        case C0C_PIN_LOPEN: pVal = "lopen"; break;
         case C0C_PIN_ON:    pVal = "on";    break;
       }
 
@@ -670,8 +683,9 @@ const char *PortParameters::GetHelp()
     "  ri=[!]<p>               - wire RI pin to <p> (!on by default)\n"
     "\n"
     "The possible values of <p> above can be rrts, lrts, rdtr, ldtr, rout1, lout1\n"
-    "(remote/local RTS/DTR/OUT1) or on (logical ON). The exclamation sign (!) can\n"
-    "be used to invert the value.\n"
+    "(remote/local RTS/DTR/OUT1), ropen, lopen (logical ON if remote/local port is\n"
+    "open) or on (logical ON). The exclamation sign (!) can be used to invert the\n"
+    "value.\n"
     "\n"
     "Special values:\n"
     "  -                       - use driver's default value\n"

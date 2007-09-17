@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.37  2007/07/20 08:00:22  vfrolov
+ * Implemented TX buffer
+ *
  * Revision 1.36  2007/07/03 14:35:17  vfrolov
  * Implemented pinout customization
  *
@@ -268,8 +271,9 @@ typedef struct _C0C_IO_PORT {
   #define C0C_PIN_OUTS_RTS  0
   #define C0C_PIN_OUTS_DTR  1
   #define C0C_PIN_OUTS_OUT1 2
+  #define C0C_PIN_OUTS_OPEN 3
 
-  C0C_PIN_OUTS            pinOuts[3];
+  C0C_PIN_OUTS            pinOuts[4];
 
   SERIAL_HANDFLOW         handFlow;
   SERIAL_CHARS            specialChars;
@@ -294,6 +298,8 @@ typedef struct _C0C_IO_PORT {
   #define C0C_MCR_OUT1    0x04
   #define C0C_MCR_OUT2    0x08
   #define C0C_MCR_LOOP    0x10
+  #define C0C_MCR_OPEN    0x80
+  #define C0C_MCR_MASK    (~(C0C_MCR_OPEN))
 
   UCHAR                   modemControl;
 
