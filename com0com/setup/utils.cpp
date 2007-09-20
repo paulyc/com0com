@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2007/05/29 15:22:00  vfrolov
+ * Fixed buffer overflow
+ *
  * Revision 1.4  2007/01/11 15:03:43  vfrolov
  * Added STRTOK_R()
  *
@@ -167,6 +170,7 @@ BOOL BusyMask::AddNum(int num)
       pBusyMask = pNewBusyMask;
       busyMaskLen = newBusyMaskLen;
     } else {
+      SetLastError(ERROR_NOT_ENOUGH_MEMORY);
       return FALSE;
     }
   }
