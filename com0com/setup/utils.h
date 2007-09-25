@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2007/01/11 15:03:43  vfrolov
+ * Added STRTOK_R()
+ *
  * Revision 1.3  2006/11/03 13:17:28  vfrolov
  * Fixed LocalReAlloc() usage
  * Added return value to BusyMask::AddNum()
@@ -50,6 +53,40 @@ public:
 private:
   PBYTE pBusyMask;
   SIZE_T busyMaskLen;
+};
+
+class StackEl {
+public:
+  StackEl(PVOID _pData) : pData(_pData), pNext(NULL) {}
+  PVOID pData;
+private:
+  StackEl *pNext;
+
+  friend class Stack;
+};
+
+class Stack {
+public:
+  Stack() : pFirst(NULL) {}
+  BOOL Push(StackEl *pElem)
+  {
+    if (!pElem)
+      return FALSE;
+    pElem->pNext = pFirst;
+    pFirst = pElem;
+    return TRUE;
+  }
+  StackEl *Pop()
+  {
+    StackEl *pTop = pFirst;
+    if (pTop) {
+      pFirst = pTop->pNext;
+      pTop->pNext = NULL;
+    }
+    return pTop;
+  }
+private:
+  StackEl *pFirst;
 };
 
 #endif /* _C0C_UTILS_H_ */
