@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.5  2007/09/25 12:42:49  vfrolov
+ * Fixed update command (bug if multiple pairs active)
+ * Fixed uninstall command (restore active ports on cancell)
+ *
  * Revision 1.4  2007/09/17 14:35:06  vfrolov
  * Fixed typo
  *
@@ -123,6 +127,7 @@ BOOL RemoveDevices(
 BOOL InstallDevice(
     InfFile &infFile,
     const char *pDevId,
+    const char *pDevInstID,
     PDEVCALLBACK pDevCallBack,
     void *pCallBackParam);
 
