@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006 Vyacheslav Frolov
+ * Copyright (c) 2006-2007 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2006/07/28 12:16:43  vfrolov
+ * Initial revision
  *
  */
 
@@ -31,6 +33,7 @@
 #include <regstr.h>
 #pragma warning(push, 3)
 #include <setupapi.h>
+#include <shlwapi.h>
 #pragma warning(pop)
 
 #endif /* _PRECOMP_H_ */
