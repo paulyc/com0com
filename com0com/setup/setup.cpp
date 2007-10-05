@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.18  2007/10/01 15:44:19  vfrolov
+ * Added check for install two ports with the same name
+ *
  * Revision 1.17  2007/10/01 15:01:35  vfrolov
  * Added pDevInstID parameter to InstallDevice()
  *
@@ -356,6 +359,9 @@ static BOOL ChangeDevice(
         ShowError(MB_OK|MB_ICONWARNING, err, "portParameters.Load(%s)", phPortName);
       }
     }
+  } else {
+    Trace("       " C0C_PREF_PORT_NAME_A "?\n");
+    Trace("       " C0C_PREF_PORT_NAME_B "?\n");
   }
 
   return TRUE;
