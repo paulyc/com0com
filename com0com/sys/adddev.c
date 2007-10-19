@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.30  2007/09/26 10:12:13  vfrolov
+ * Added checks of DeviceExtension for zero
+ *
  * Revision 1.29  2007/07/20 08:00:22  vfrolov
  * Implemented TX buffer
  *
@@ -248,7 +251,10 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
       }
     }
 
-    emuBR = emuOverrun = plugInMode = exclusiveMode = 0;
+    emuBR = C0C_DEFAULT_EMUBR;
+    emuOverrun = C0C_DEFAULT_EMUOVERRUN;
+    plugInMode = C0C_DEFAULT_PLUGINMODE;
+    exclusiveMode = C0C_DEFAULT_EXCLUSIVEMODE;
     pinCTS = pinDSR = pinDCD = pinRI = 0;
 
     if (NT_SUCCESS(status)) {
@@ -268,18 +274,22 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
       i = 0;
       queryTable[i].Name          = L"EmuBR";
       queryTable[i].EntryContext  = &emuBR;
+      queryTable[i].DefaultData   = &emuBR;
 
       i++;
       queryTable[i].Name          = L"EmuOverrun";
       queryTable[i].EntryContext  = &emuOverrun;
+      queryTable[i].DefaultData   = &emuOverrun;
 
       i++;
       queryTable[i].Name          = L"PlugInMode";
       queryTable[i].EntryContext  = &plugInMode;
+      queryTable[i].DefaultData   = &plugInMode;
 
       i++;
       queryTable[i].Name          = L"ExclusiveMode";
       queryTable[i].EntryContext  = &exclusiveMode;
+      queryTable[i].DefaultData   = &exclusiveMode;
 
       i++;
       queryTable[i].Name          = L"cts";
