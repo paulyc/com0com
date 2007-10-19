@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2007/09/20 12:29:03  vfrolov
+ * Added return value to SetOutputFile()
+ *
  * Revision 1.4  2006/11/21 11:34:55  vfrolov
  * Added
  *   ConsoleWrite()
@@ -65,8 +68,14 @@ static void ConsoleWriteReadDefault(LPSTR pReadBuf, DWORD lenReadBuf, LPCSTR pTe
     isConsoleOpen = TRUE;
   }
 
-  if (pText)
-    WriteConsole(handle, pText, lstrlen(pText), NULL, NULL);
+  if (pText) {
+    DWORD cnt;
+
+    if (GetFileType(handle) == FILE_TYPE_CHAR)
+      WriteConsole(handle, pText, lstrlen(pText), &cnt, NULL);
+    else
+      WriteFile(handle, pText, lstrlen(pText), &cnt, NULL);
+  }
 
   if (pReadBuf && lenReadBuf > 0) {
     if (lenReadBuf > 1 &&
