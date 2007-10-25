@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2007/08/08 14:15:16  vfrolov
+ * Added missing SetOutPath
+ *
  * Revision 1.5  2007/01/22 17:10:32  vfrolov
  * Partially added support for non i386 CPUs
  *
@@ -65,7 +68,7 @@
 
 Function LaunchSetupCommandPrompt
 
-  Exec "RunDll32 setup,RunDll"
+  Exec "setupc.exe"
 
 FunctionEnd
 
@@ -162,7 +165,7 @@ Section "com0com" sec_com0com
   File "..\com0com.inf"
   File "..\${TARGET_CPU}\com0com.sys"
   File "..\${TARGET_CPU}\setup.dll"
-  File "..\setup\setup.bat"
+  File "..\${TARGET_CPU}\setupc.exe"
 
   ; Write the installation path into the registry
   WriteRegStr HKLM SOFTWARE\com0com "Install_Dir" "$INSTDIR"
@@ -186,7 +189,7 @@ SectionEnd
 Section "Start Menu Shortcuts" sec_shortcuts
 
   CreateDirectory "$SMPROGRAMS\com0com"
-  CreateShortCut "$SMPROGRAMS\com0com\Setup Command Prompt.lnk" "$INSTDIR\setup.bat"
+  CreateShortCut "$SMPROGRAMS\com0com\Setup Command Prompt.lnk" "$INSTDIR\setupc.exe"
   CreateShortCut "$SMPROGRAMS\com0com\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
   CreateShortCut "$SMPROGRAMS\com0com\ReadMe.lnk" "$INSTDIR\ReadMe.txt"
 
@@ -197,7 +200,7 @@ SectionEnd
 Section "CNCA0<->CNCB0" sec_ports
 
   GetTempFileName $0
-  ExecWait "RunDll32 setup,RunDll --output $0 install 0 - -"
+  ExecWait "setupc.exe --output $0 install 0 - -"
   !insertmacro MoveFileToDetails $0
 
 SectionEnd
@@ -212,7 +215,7 @@ Section "Uninstall"
   SetOutPath $INSTDIR
 
   GetTempFileName $0
-  ExecWait "RunDll32 setup,RunDll --output $0 uninstall"
+  ExecWait "setupc.exe --output $0 uninstall"
   !insertmacro MoveFileToDetails $0
 
   ; Remove registry keys
@@ -224,7 +227,7 @@ Section "Uninstall"
   Delete $INSTDIR\com0com.inf
   Delete $INSTDIR\com0com.sys
   Delete $INSTDIR\setup.dll
-  Delete $INSTDIR\setup.bat
+  Delete $INSTDIR\setupc.exe
   Delete $INSTDIR\uninstall.exe
 
   ; Remove shortcuts, if any
