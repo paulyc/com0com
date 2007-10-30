@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2007/10/25 14:30:27  vfrolov
+ * Replaced setup.bat by setupc.exe
+ *
  * Revision 1.6  2007/08/08 14:15:16  vfrolov
  * Added missing SetOutPath
  *
@@ -235,6 +238,7 @@ Section "Uninstall"
 
   ; Remove directories used
   RMDir "$SMPROGRAMS\com0com"
+  SetOutPath $TEMP
   RMDir "$INSTDIR"
 
 SectionEnd
