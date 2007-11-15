@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2007/10/30 15:06:14  vfrolov
+ * Added changing working directory before removing $INSTDIR
+ *
  * Revision 1.7  2007/10/25 14:30:27  vfrolov
  * Replaced setup.bat by setupc.exe
  *
@@ -66,14 +69,6 @@
   !define TARGET_CPU i386
   !Warning "TARGET_CPU=${TARGET_CPU}"
 !endif
-
-;--------------------------------
-
-Function LaunchSetupCommandPrompt
-
-  Exec "setupc.exe"
-
-FunctionEnd
 
 ;--------------------------------
 
@@ -132,9 +127,12 @@ ShowUninstDetails show
 ;--------------------------------
 ; Pages
 
-  !define MUI_FINISHPAGE_RUN
-  !define MUI_FINISHPAGE_RUN_FUNCTION LaunchSetupCommandPrompt
+  !define MUI_FINISHPAGE_RUN setupc.exe
   !define MUI_FINISHPAGE_RUN_TEXT "Launch Setup Command Prompt"
+
+  !define MUI_FINISHPAGE_LINK "Visit com0com homepage"
+  !define MUI_FINISHPAGE_LINK_LOCATION http://com0com.sourceforge.net/
+
   !define MUI_FINISHPAGE_NOAUTOCLOSE
   !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
