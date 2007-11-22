@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.9  2007/11/15 12:12:04  vfrolov
+ * Removed Function LaunchSetupCommandPrompt
+ * Added MUI_FINISHPAGE_LINK
+ *
  * Revision 1.8  2007/10/30 15:06:14  vfrolov
  * Added changing working directory before removing $INSTDIR
  *
@@ -112,7 +116,7 @@
 Name "Null-modem emulator (com0com)"
 
 ; The file to write
-OutFile "setup.exe"
+OutFile "..\${TARGET_CPU}\setup.exe"
 
 ; The default installation directory
 InstallDir $PROGRAMFILES\com0com
@@ -121,20 +125,29 @@ InstallDir $PROGRAMFILES\com0com
 ; overwrite the old one automatically)
 InstallDirRegKey HKLM "Software\com0com" "Install_Dir"
 
+;Vista redirects $SMPROGRAMS to all users without this
+RequestExecutionLevel admin
+
 ShowInstDetails show
 ShowUninstDetails show
 
 ;--------------------------------
 ; Pages
 
+  !define MUI_WELCOMEPAGE_TITLE_3LINES
+  !define MUI_FINISHPAGE_TITLE_3LINES
+
   !define MUI_FINISHPAGE_RUN setupc.exe
   !define MUI_FINISHPAGE_RUN_TEXT "Launch Setup Command Prompt"
+  !define MUI_FINISHPAGE_RUN_NOTCHECKED
+
+  !define MUI_FINISHPAGE_SHOWREADME ReadMe.txt
+  !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
 
   !define MUI_FINISHPAGE_LINK "Visit com0com homepage"
   !define MUI_FINISHPAGE_LINK_LOCATION http://com0com.sourceforge.net/
 
   !define MUI_FINISHPAGE_NOAUTOCLOSE
-  !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
   !insertmacro MUI_PAGE_WELCOME
   !insertmacro MUI_PAGE_COMPONENTS
@@ -142,13 +155,17 @@ ShowUninstDetails show
   !insertmacro MUI_PAGE_INSTFILES
   !insertmacro MUI_PAGE_FINISH
 
+  !define MUI_WELCOMEPAGE_TITLE_3LINES
+  !define MUI_FINISHPAGE_TITLE_3LINES
+  !define MUI_UNFINISHPAGE_NOAUTOCLOSE
+
   !insertmacro MUI_UNPAGE_WELCOME
   !insertmacro MUI_UNPAGE_CONFIRM
   !insertmacro MUI_UNPAGE_INSTFILES
   !insertmacro MUI_UNPAGE_FINISH
 
 ;--------------------------------
-;Languages
+; Languages
 
   !insertmacro MUI_LANGUAGE "English"
 
@@ -167,6 +184,7 @@ Section "com0com" sec_com0com
   File "..\${TARGET_CPU}\com0com.sys"
   File "..\${TARGET_CPU}\setup.dll"
   File "..\${TARGET_CPU}\setupc.exe"
+  File "..\setupg\Release\setupg.exe"
 
   ; Write the installation path into the registry
   WriteRegStr HKLM SOFTWARE\com0com "Install_Dir" "$INSTDIR"
@@ -191,6 +209,7 @@ Section "Start Menu Shortcuts" sec_shortcuts
 
   CreateDirectory "$SMPROGRAMS\com0com"
   CreateShortCut "$SMPROGRAMS\com0com\Setup Command Prompt.lnk" "$INSTDIR\setupc.exe"
+  CreateShortCut "$SMPROGRAMS\com0com\Setup.lnk" "$INSTDIR\setupg.exe"
   CreateShortCut "$SMPROGRAMS\com0com\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
   CreateShortCut "$SMPROGRAMS\com0com\ReadMe.lnk" "$INSTDIR\ReadMe.txt"
 
@@ -229,6 +248,7 @@ Section "Uninstall"
   Delete $INSTDIR\com0com.sys
   Delete $INSTDIR\setup.dll
   Delete $INSTDIR\setupc.exe
+  Delete $INSTDIR\setupg.exe
   Delete $INSTDIR\uninstall.exe
 
   ; Remove shortcuts, if any
