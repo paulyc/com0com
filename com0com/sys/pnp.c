@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2007/06/04 15:24:33  vfrolov
+ * Fixed open reject just after close in exclusiveMode
+ *
  * Revision 1.7  2007/06/01 16:22:40  vfrolov
  * Implemented plug-in and exclusive modes
  *
@@ -43,7 +46,6 @@
  *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
- *
  *
  */
 
@@ -185,6 +187,8 @@ NTSTATUS PdoPortQueryCaps(
 
   if (pCaps->Version != 1 || pCaps->Size < sizeof(DEVICE_CAPABILITIES))
     return STATUS_UNSUCCESSFUL;
+
+  pCaps->UniqueID = TRUE;
 
   return STATUS_SUCCESS;
 }
