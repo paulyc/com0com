@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2007/10/01 15:01:35  vfrolov
+ * Added pDevInstID parameter to InstallDevice()
+ *
  * Revision 1.7  2007/09/25 12:42:49  vfrolov
  * Fixed update command (bug if multiple pairs active)
  * Fixed uninstall command (restore active ports on cancell)
@@ -281,6 +284,17 @@ static BOOL IsDisabled(PSP_DEVINFO_DATA pDevInfoData)
   return (status & DN_HAS_PROBLEM) != 0 && problem == CM_PROB_DISABLED;
 }
 ///////////////////////////////////////////////////////////////
+static BOOL IsEnabled(PSP_DEVINFO_DATA pDevInfoData)
+{
+  ULONG status = 0;
+  ULONG problem = 0;
+
+  if (CM_Get_DevNode_Status(&status, &problem, pDevInfoData->DevInst, 0) != CR_SUCCESS)
+    return FALSE;
+
+  return (status & DN_HAS_PROBLEM) == 0;
+}
+///////////////////////////////////////////////////////////////
 static int EnumDevice(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, PDevParams pDevParams)
 {
   /*
@@ -435,6 +449,9 @@ BOOL DisableDevices(
 ///////////////////////////////////////////////////////////////
 static int EnableDevice(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, PDevParams pDevParams)
 {
+  if (IsEnabled(pDevInfoData))
+    return IDCONTINUE;
+
   if (ChangeState(hDevInfo, pDevInfoData, DICS_ENABLE)) {
     Trace("Enabled %s %s %s\n",
           pDevParams->devProperties.Location(),
