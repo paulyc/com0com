@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2007/11/23 08:23:29  vfrolov
+ * Added popup for uncompatible CPU
+ *
  * Revision 1.10  2007/11/22 11:36:41  vfrolov
  * Moved output file to target CPU directory
  * Disabled moving Start Menu shortcuts to all users for Vista
@@ -181,6 +184,7 @@ ShowUninstDetails show
   !define MUI_FINISHPAGE_NOAUTOCLOSE
 
   !insertmacro MUI_PAGE_WELCOME
+  !insertmacro MUI_PAGE_LICENSE "..\license.txt"
   !insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_DIRECTORY
   !insertmacro MUI_PAGE_INSTFILES
