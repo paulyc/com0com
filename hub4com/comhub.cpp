@@ -19,12 +19,14 @@
  *
  *
  * $Log$
+ * Revision 1.3  2007/02/05 09:33:20  vfrolov
+ * Implemented internal flow control
+ *
  * Revision 1.2  2007/02/01 12:14:58  vfrolov
  * Redesigned COM port params
  *
  * Revision 1.1  2007/01/23 09:13:10  vfrolov
  * Initial revision
- *
  *
  */
 
@@ -128,24 +130,24 @@ void ComHub::RouteFlowControl(BOOL fromAnyDataReceiver)
   }
 }
 
-void ComHub::Route(ComPortMap &map, int iFrom, int iTo, BOOL noRoute) const
+void ComHub::Route(ComPortMap &map, int iFrom, int iTo, BOOL noRoute, BOOL noEcho) const
 {
   if (iFrom < 0) {
     for (int iF = 0 ; iF < (int)ports.size() ; iF++) {
       if(iTo < 0) {
         for (int iT = 0 ; iT < (int)ports.size() ; iT++)
-          Route(map, iF, iT, noRoute);
+          Route(map, iF, iT, noRoute, noEcho);
       } else {
-        Route(map, iF, iTo, noRoute);
+        Route(map, iF, iTo, noRoute, noEcho);
       }
     }
   } else {
     if(iTo < 0) {
       for (int iT = 0 ; iT < (int)ports.size() ; iT++)
-        Route(map, iFrom, iT, noRoute);
+        Route(map, iFrom, iT, noRoute, noEcho);
     }
     else
-    if (iFrom != iTo || noRoute) {
+    if (iFrom != iTo || !noEcho || noRoute) {
       ComPortPair pair(ports.at(iFrom), ports.at(iTo));
 
       for (;;) {

@@ -19,12 +19,14 @@
  *
  *
  * $Log$
+ * Revision 1.3  2007/02/05 09:33:20  vfrolov
+ * Implemented internal flow control
+ *
  * Revision 1.2  2007/02/01 12:14:58  vfrolov
  * Redesigned COM port params
  *
  * Revision 1.1  2007/01/23 09:13:10  vfrolov
  * Initial revision
- *
  *
  */
 
@@ -50,12 +52,12 @@ class ComHub
     void AddXoff(ComPort *pFromPort, int count);
     void LostReport() const;
 
-    void RouteData(int iFrom, int iTo, BOOL noRoute) {
-      Route(routeDataMap, iFrom, iTo, noRoute);
+    void RouteData(int iFrom, int iTo, BOOL noRoute, BOOL noEcho) {
+      Route(routeDataMap, iFrom, iTo, noRoute, noEcho);
     }
 
-    void RouteFlowControl(int iFrom, int iTo, BOOL noRoute) {
-      Route(routeFlowControlMap, iFrom, iTo, noRoute);
+    void RouteFlowControl(int iFrom, int iTo, BOOL noRoute, BOOL noEcho) {
+      Route(routeFlowControlMap, iFrom, iTo, noRoute, noEcho);
     }
 
     void RouteFlowControl(BOOL fromAnyDataReceiver);
@@ -63,7 +65,7 @@ class ComHub
     int NumPorts() const { return (int)ports.size(); }
 
   private:
-    void Route(ComPortMap &map, int iFrom, int iTo, BOOL noRoute) const;
+    void Route(ComPortMap &map, int iFrom, int iTo, BOOL noRoute, BOOL noEcho) const;
 
     ComPorts ports;
     ComPortMap routeDataMap;
