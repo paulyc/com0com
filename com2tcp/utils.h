@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/02/08 16:40:56  vfrolov
+ * Protected SendRaw() and WriteRaw() Protocol's methods
+ *
  * Revision 1.6  2007/07/20 09:23:48  vfrolov
  * Added virtual ~Protocol()
  * Thanks to wurfholz
@@ -139,6 +142,7 @@ class ComParams
     BOOL SetParity(const char *pParity);
     BOOL SetStopBits(const char *pStopBits);
     void SetIgnoreDSR(BOOL val) { ignoreDSR = val; }
+    void SetConnectDTR(BOOL val) { connectDTR = val; }
 
     static const char *ParityStr(int parity);
     static const char *StopBitsStr(int stopBits);
@@ -153,6 +157,7 @@ class ComParams
     int Parity() const { return parity; }
     int StopBits() const { return stopBits; }
     BOOL IgnoreDSR() const { return ignoreDSR; }
+    BOOL ConnectDTR() const { return connectDTR; }
 
   private:
     long baudRate;
@@ -160,6 +165,7 @@ class ComParams
     int parity;
     int stopBits;
     BOOL ignoreDSR;
+    BOOL connectDTR;
 };
 ///////////////////////////////////////////////////////////////
 
