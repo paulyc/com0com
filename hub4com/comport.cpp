@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2007 Vyacheslav Frolov
+ * Copyright (c) 2006-2008 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2007/04/16 07:33:38  vfrolov
+ * Fixed LostReport()
+ *
  * Revision 1.3  2007/02/06 11:53:33  vfrolov
  * Added options --odsr, --ox, --ix and --idsr
  * Added communications error reporting
@@ -205,7 +208,7 @@ void ComPort::LostReport()
     if (errors & CE_FRAME) { cout << " FRAME"; errors &= ~CE_FRAME; }
     if (errors & CE_BREAK) { cout << " BREAK"; errors &= ~CE_BREAK; }
     if (errors & CE_TXFULL) { cout << " TXFULL"; errors &= ~CE_TXFULL; }
-    if (errors) { cout << " 0x" << hex << errors; }
+    if (errors) { cout << " 0x" << hex << errors << dec; }
 
     #define IOCTL_SERIAL_GET_STATS CTL_CODE(FILE_DEVICE_SERIAL_PORT,35,METHOD_BUFFERED,FILE_ANY_ACCESS)
 
