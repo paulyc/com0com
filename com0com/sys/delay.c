@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2005-2007 Vyacheslav Frolov
+ * Copyright (c) 2005-2008 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2007/07/20 07:59:20  vfrolov
+ * Fixed idleCount
+ *
  * Revision 1.8  2007/06/09 08:49:47  vfrolov
  * Improved baudrate emulation
  *
@@ -154,29 +157,22 @@ VOID FreeWriteDelay(PC0C_IO_PORT pIoPort)
   }
 }
 
-VOID SetWriteDelay(PC0C_FDOPORT_EXTENSION pDevExt)
+VOID SetWriteDelay(PC0C_IO_PORT pIoPort)
 {
   PC0C_ADAPTIVE_DELAY pWriteDelay;
-  KIRQL oldIrql;
   C0C_DELAY_PARAMS params;
-  SERIAL_LINE_CONTROL lineControl;
 
-  pWriteDelay = pDevExt->pIoPortLocal->pWriteDelay;
+  pWriteDelay = pIoPort->pWriteDelay;
 
   if (!pWriteDelay)
     return;
 
-  KeAcquireSpinLock(pDevExt->pIoPortLocal->pIoLock, &oldIrql);
-
-  KeAcquireSpinLockAtDpcLevel(&pDevExt->controlLock);
-  lineControl = pDevExt->lineControl;
-  params.baudRate = pDevExt->baudRate.BaudRate;
-  KeReleaseSpinLockFromDpcLevel(&pDevExt->controlLock);
+  params.baudRate = pIoPort->baudRate.BaudRate;
 
   /* Startbit + WordLength */
-  params.decibits_per_frame = (1 + lineControl.WordLength) * 10;
+  params.decibits_per_frame = (1 + pIoPort->lineControl.WordLength) * 10;
 
-  switch (lineControl.Parity) {
+  switch (pIoPort->lineControl.Parity) {
   case NO_PARITY:
     break;
   default:
@@ -188,7 +184,7 @@ VOID SetWriteDelay(PC0C_FDOPORT_EXTENSION pDevExt)
     break;
   }
 
-  switch (lineControl.StopBits) {
+  switch (pIoPort->lineControl.StopBits) {
   default:
   case STOP_BIT_1:
     params.decibits_per_frame += 10;
@@ -210,8 +206,6 @@ VOID SetWriteDelay(PC0C_FDOPORT_EXTENSION pDevExt)
       StartWriteDelayTimer(pWriteDelay);
     }
   }
-
-  KeReleaseSpinLock(pDevExt->pIoPortLocal->pIoLock, oldIrql);
 }
 
 VOID StartWriteDelayTimer(PC0C_ADAPTIVE_DELAY pWriteDelay)

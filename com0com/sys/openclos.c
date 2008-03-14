@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2007 Vyacheslav Frolov
+ * Copyright (c) 2004-2008 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.20  2007/09/17 14:31:06  vfrolov
+ * Implemented pseudo pin OPEN
+ *
  * Revision 1.19  2007/07/03 14:35:17  vfrolov
  * Implemented pinout customization
  *
@@ -161,7 +164,6 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
   pIoPort->errors = 0;
   pIoPort->waitMask = 0;
   pIoPort->eventMask = 0;
-  pIoPort->escapeChar = 0;
   RtlZeroMemory(&pIoPort->perfStats, sizeof(pIoPort->perfStats));
   pIoPort->handFlow.XoffLimit = size >> 3;
   pIoPort->handFlow.XonLimit = size >> 1;
@@ -220,6 +222,7 @@ NTSTATUS FdoPortClose(IN PC0C_FDOPORT_EXTENSION pDevExt, IN PIRP pIrp)
 
   KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
 
+  pIoPort->escapeChar = 0;
   pIoPort->writeHoldingRemote = 0;
   pIoPort->sendXonXoff = 0;
   SetModemControl(pIoPort, 0, C0C_MCR_RTS | C0C_MCR_DTR | C0C_MCR_OPEN, &queueToComplete);

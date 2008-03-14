@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2007 Vyacheslav Frolov
+ * Copyright (c) 2004-2008 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.31  2007/10/19 16:03:41  vfrolov
+ * Added default values
+ *
  * Revision 1.30  2007/09/26 10:12:13  vfrolov
  * Added checks of DeviceExtension for zero
  *
@@ -385,8 +388,6 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
 
   AllocTimeouts(pDevExt->pIoPortLocal);
 
-  KeInitializeSpinLock(&pDevExt->controlLock);
-
   RtlZeroMemory(&pDevExt->pIoPortLocal->specialChars, sizeof(pDevExt->pIoPortLocal->specialChars));
   pDevExt->pIoPortLocal->specialChars.XonChar      = 0x11;
   pDevExt->pIoPortLocal->specialChars.XoffChar     = 0x13;
@@ -395,12 +396,12 @@ NTSTATUS AddFdoPort(IN PDRIVER_OBJECT pDrvObj, IN PDEVICE_OBJECT pPhDevObj)
   pDevExt->pIoPortLocal->handFlow.ControlHandShake = SERIAL_DTR_CONTROL;
   pDevExt->pIoPortLocal->handFlow.FlowReplace      = SERIAL_RTS_CONTROL;
 
-  pDevExt->lineControl.WordLength    = 7;
-  pDevExt->lineControl.Parity        = EVEN_PARITY;
-  pDevExt->lineControl.StopBits      = STOP_BIT_1;
-  pDevExt->baudRate.BaudRate         = 1200;
+  pDevExt->pIoPortLocal->lineControl.WordLength    = 7;
+  pDevExt->pIoPortLocal->lineControl.Parity        = EVEN_PARITY;
+  pDevExt->pIoPortLocal->lineControl.StopBits      = STOP_BIT_1;
+  pDevExt->pIoPortLocal->baudRate.BaudRate         = 1200;
 
-  SetWriteDelay(pDevExt);
+  SetWriteDelay(pDevExt->pIoPortLocal);
 
   SetTxBuffer(&pDevExt->pIoPortLocal->txBuf, 1, TRUE);
 

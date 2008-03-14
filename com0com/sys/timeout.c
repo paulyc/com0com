@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2007 Vyacheslav Frolov
+ * Copyright (c) 2004-2008 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2007/06/04 15:24:33  vfrolov
+ * Fixed open reject just after close in exclusiveMode
+ *
  * Revision 1.8  2007/02/20 12:05:11  vfrolov
  * Implemented IOCTL_SERIAL_XOFF_COUNTER
  * Fixed cancel and timeout routines
@@ -103,7 +106,6 @@ NTSTATUS SetReadTimeout(PC0C_IO_PORT pIoPort, PIRP pIrp)
   ULONG multiplier;
   ULONG constant;
   PC0C_IRP_STATE pState;
-  PC0C_FDOPORT_EXTENSION pDevExt;
 
   KeCancelTimer(&pIoPort->timerReadTotal);
   KeCancelTimer(&pIoPort->timerReadInterval);
@@ -111,12 +113,7 @@ NTSTATUS SetReadTimeout(PC0C_IO_PORT pIoPort, PIRP pIrp)
   pState = GetIrpState(pIrp);
   HALT_UNLESS(pState);
 
-  pDevExt = pIoPort->pDevExt;
-  HALT_UNLESS(pDevExt);
-
-  KeAcquireSpinLockAtDpcLevel(&pDevExt->controlLock);
-  timeouts = pDevExt->timeouts;
-  KeReleaseSpinLockFromDpcLevel(&pDevExt->controlLock);
+  timeouts = pIoPort->timeouts;
 
   if (timeouts.ReadIntervalTimeout == MAXULONG &&
       !timeouts.ReadTotalTimeoutMultiplier &&
@@ -183,16 +180,10 @@ NTSTATUS SetWriteTimeout(PC0C_IO_PORT pIoPort, PIRP pIrp)
   BOOLEAN setTotal;
   ULONG multiplier;
   ULONG constant;
-  PC0C_FDOPORT_EXTENSION pDevExt;
 
   KeCancelTimer(&pIoPort->timerWriteTotal);
 
-  pDevExt = pIoPort->pDevExt;
-  HALT_UNLESS(pDevExt);
-
-  KeAcquireSpinLockAtDpcLevel(&pDevExt->controlLock);
-  timeouts = pDevExt->timeouts;
-  KeReleaseSpinLockFromDpcLevel(&pDevExt->controlLock);
+  timeouts = pIoPort->timeouts;
 
   setTotal = FALSE;
   multiplier = 0;
@@ -366,9 +357,9 @@ NTSTATUS SetIrpTimeout(
 }
 
 NTSTATUS FdoPortSetTimeouts(
-    IN PC0C_FDOPORT_EXTENSION pDevExt,
-    IN PIRP pIrp,
-    IN PIO_STACK_LOCATION pIrpStack)
+    PC0C_IO_PORT pIoPort,
+    PIRP pIrp,
+    PIO_STACK_LOCATION pIrpStack)
 {
   KIRQL oldIrql;
   PSERIAL_TIMEOUTS pSysBuf;
@@ -383,17 +374,17 @@ NTSTATUS FdoPortSetTimeouts(
       pSysBuf->ReadTotalTimeoutConstant == MAXULONG)
     return STATUS_INVALID_PARAMETER;
 
-  KeAcquireSpinLock(&pDevExt->controlLock, &oldIrql);
-  pDevExt->timeouts = *pSysBuf;
-  KeReleaseSpinLock(&pDevExt->controlLock, oldIrql);
+  KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
+  pIoPort->timeouts = *pSysBuf;
+  KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
 
   return STATUS_SUCCESS;
 }
 
 NTSTATUS FdoPortGetTimeouts(
-    IN PC0C_FDOPORT_EXTENSION pDevExt,
-    IN PIRP pIrp,
-    IN PIO_STACK_LOCATION pIrpStack)
+    PC0C_IO_PORT pIoPort,
+    PIRP pIrp,
+    PIO_STACK_LOCATION pIrpStack)
 {
   KIRQL oldIrql;
   PSERIAL_TIMEOUTS pSysBuf;
@@ -403,9 +394,9 @@ NTSTATUS FdoPortGetTimeouts(
 
   pSysBuf = (PSERIAL_TIMEOUTS)pIrp->AssociatedIrp.SystemBuffer;
 
-  KeAcquireSpinLock(&pDevExt->controlLock, &oldIrql);
-  *pSysBuf = pDevExt->timeouts;
-  KeReleaseSpinLock(&pDevExt->controlLock, oldIrql);
+  KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
+  *pSysBuf = pIoPort->timeouts;
+  KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
 
   pIrp->IoStatus.Information = sizeof(SERIAL_TIMEOUTS);
 
