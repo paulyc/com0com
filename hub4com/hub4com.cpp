@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2008/03/26 08:48:18  vfrolov
+ * Initial revision
+ *
  * Revision 1.7  2008/02/04 10:08:49  vfrolov
  * Fixed <LstR>:<LstL> parsing bug
  *
@@ -55,7 +58,7 @@ static void Usage(const char *pProgPath, Plugins &plugins)
 {
   cerr
   << "Usage:" << endl
-  << "  " << pProgPath << " [options] \\\\.\\<port0> [options] [\\\\.\\<port1> ...]" << endl
+  << "  " << pProgPath << " [options] <port0> [options] [<port1> ...]" << endl
   << endl
   << "Common options:" << endl
   << "  --load=<file>[:<prms>]   - load arguments from a file (one argument per line)" << endl
@@ -114,7 +117,11 @@ static void Usage(const char *pProgPath, Plugins &plugins)
   << endl
   << "Examples:" << endl
   << "  " << pProgPath << " --route=All:All \\\\.\\CNCB0 \\\\.\\CNCB1 \\\\.\\CNCB2" << endl
-  << "  " << pProgPath << " --echo-route=0 \\\\.\\COM2" << endl
+  << "    - receive data from CNCB0 and send it to CNCB1 and CNCB2," << endl
+  << "      receive data from CNCB1 and send it to CNCB0 and CNCB2," << endl
+  << "      receive data from CNCB2 and send it to CNCB0 and CNCB1." << endl
+  << "  " << pProgPath << " --echo-route=0 COM2" << endl
+  << "    - receive data from COM2 and send it back to COM2." << endl
   ;
 }
 ///////////////////////////////////////////////////////////////
