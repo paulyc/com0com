@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/27 17:18:27  vfrolov
+ * Initial revision
  *
  */
 
@@ -92,6 +94,7 @@ ComPort::ComPort(
   : pListener(NULL),
     hSock(INVALID_SOCKET),
     isConnected(FALSE),
+    connectionCounter(0),
     name("TCP"),
     hMasterPort(NULL),
     hHub(NULL),
@@ -298,10 +301,18 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
   else
   if (pMsg->type == HUB_MSG_TYPE_CONNECT) {
     if (pMsg->u.val) {
+      connectionCounter++;
+
+      _ASSERTE(connectionCounter > 0);
+
       if (!pListener)
         StartConnect();
     } else {
-      if (hSock != INVALID_SOCKET && !permanent) {
+      _ASSERTE(connectionCounter > 0);
+
+      connectionCounter--;
+
+      if (hSock != INVALID_SOCKET && !permanent && connectionCounter <= 0) {
         Disconnect(hSock);
 
         isConnected = FALSE;
