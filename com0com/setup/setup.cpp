@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2007 Vyacheslav Frolov
+ * Copyright (c) 2006-2008 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.22  2007/11/27 16:32:54  vfrolov
+ * Added disable and enable options
+ *
  * Revision 1.21  2007/10/19 16:09:55  vfrolov
  * Implemented --detail-prms option
  *
@@ -492,7 +495,7 @@ int Preinstall(InfFile &infFile)
   return 0;
 }
 ///////////////////////////////////////////////////////////////
-int Update(InfFile &infFile)
+int Reload(InfFile &infFile, BOOL update)
 {
   Stack stack;
   BOOL rebootRequired = FALSE;
@@ -506,11 +509,13 @@ int Update(InfFile &infFile)
     return 1;
   }
 
-  BOOL rr;
+  BOOL rr = FALSE;
 
-  if (!UpdateDriverForPlugAndPlayDevices(0, C0C_BUS_DEVICE_ID, infFile.Path(), INSTALLFLAG_FORCE, &rr)) {
-    CleanDevPropertiesStack(infFile, stack, TRUE, &rebootRequired);
-    return 1;
+  if (update) {
+    if (!UpdateDriverForPlugAndPlayDevices(0, C0C_BUS_DEVICE_ID, infFile.Path(), INSTALLFLAG_FORCE, &rr)) {
+      CleanDevPropertiesStack(infFile, stack, TRUE, &rebootRequired);
+      return 1;
+    }
   }
 
   CleanDevPropertiesStack(infFile, stack, TRUE, &rebootRequired);
@@ -965,6 +970,7 @@ int Help(const char *pProgName)
     "                                 parameters\n"
     "  preinstall                   - preinstall driver\n"
     "  update                       - update driver\n"
+    "  reload                       - reload driver\n"
     "  uninstall                    - uninstall all ports and the driver\n"
     "  quit                         - quit\n"
     "  help                         - print this help\n"
@@ -1119,7 +1125,12 @@ int Main(int argc, const char* argv[])
   else
   if (argc == 2 && !lstrcmpi(argv[1], "update")) {
     SetTitle(C0C_SETUP_TITLE " (UPDATE)");
-    return Update(infFile);
+    return Reload(infFile, TRUE);
+  }
+  else
+  if (argc == 2 && !lstrcmpi(argv[1], "reload")) {
+    SetTitle(C0C_SETUP_TITLE " (RELOAD)");
+    return Reload(infFile, FALSE);
   }
   else
   if (argc == 2 && !lstrcmpi(argv[1], "uninstall")) {
