@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/26 08:44:34  vfrolov
+ * Redesigned for using plugins
+ *
  * Revision 1.4  2007/04/16 07:33:38  vfrolov
  * Fixed LostReport()
  *
@@ -50,6 +53,7 @@ ComPort::ComPort(
     countWaitCommEventOverlapped(0),
     countXoff(0),
     filterX(FALSE),
+    events(0),
     writeQueueLimit(256),
     writeQueued(0),
     writeLost(0),
@@ -82,18 +86,6 @@ BOOL ComPort::Start()
   _ASSERTE(handle != INVALID_HANDLE_VALUE);
 
   CheckComEvents(DWORD(-1));
-
-  DWORD events;
-
-  if (!::GetCommMask(handle, &events)) {
-    DWORD err = ::GetLastError();
-
-    cerr << "ComPort::Start(): GetCommMask() ERROR " << err << endl;
-    return FALSE;
-  }
-
-  if (events && !StartWaitCommEvent())
-    return FALSE;
 
   if (!StartRead())
     return FALSE;
@@ -208,6 +200,21 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
     if (!::EscapeCommFunction(handle, pMsg->u.val))
       return FALSE;
   }
+  else
+  if (pMsg->type == HUB_MSG_TYPE_SET_RT_EVENTS) {
+    if (events != pMsg->u.val) {
+      if (handle == INVALID_HANDLE_VALUE)
+        return FALSE;
+
+      events = pMsg->u.val;
+
+      if (!SetComEvents(handle, &events))
+        return FALSE;
+
+      if (events && !StartWaitCommEvent())
+        return FALSE;
+    }
+  }
 
   return TRUE;
 }
@@ -234,7 +241,8 @@ BOOL ComPort::StartWaitCommEvent()
 
   countWaitCommEventOverlapped++;
 
-  //cout << "Started WaitCommEvent " << name << " " << countReadOverlapped << endl;
+  //cout << "Started WaitCommEvent " << name << " " << countReadOverlapped
+  //     << " " << hex << events << dec << endl;
 
   return TRUE;
 }
@@ -274,11 +282,11 @@ void ComPort::OnCommEvent(WaitCommEventOverlapped *pOverlapped, DWORD eMask)
 {
   CheckComEvents(eMask);
 
-  if (!pOverlapped->StartWaitCommEvent()) {
+  if (!events || !pOverlapped->StartWaitCommEvent()) {
     delete pOverlapped;
     countWaitCommEventOverlapped--;
 
-    cout << "Stopped WaitCommEvent " << name << " " << countWaitCommEventOverlapped << endl;
+    //cout << "Stopped WaitCommEvent " << name << " " << countWaitCommEventOverlapped << endl;
   }
 }
 

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/26 08:44:34  vfrolov
+ * Redesigned for using plugins
+ *
  * Revision 1.3  2007/02/06 11:53:33  vfrolov
  * Added options --odsr, --ox, --ix and --idsr
  * Added communications error reporting
@@ -75,6 +78,7 @@ class ComPort
     int countWaitCommEventOverlapped;
     int countXoff;
     BOOL filterX;
+    DWORD events;
 
     DWORD writeQueueLimit;
     DWORD writeQueued;

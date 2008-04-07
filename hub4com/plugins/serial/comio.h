@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/26 08:43:50  vfrolov
+ * Redesigned for using plugins
+ *
  * Revision 1.3  2007/02/06 11:53:33  vfrolov
  * Added options --odsr, --ox, --ix and --idsr
  * Added communications error reporting
@@ -39,6 +42,7 @@ class ComPort;
 class ComParams;
 ///////////////////////////////////////////////////////////////
 extern HANDLE OpenComPort(const char *pPath, const ComParams &comParams);
+extern BOOL SetComEvents(HANDLE handle, DWORD *events);
 ///////////////////////////////////////////////////////////////
 class ReadOverlapped : private OVERLAPPED
 {
