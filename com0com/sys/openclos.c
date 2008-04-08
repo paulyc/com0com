@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.21  2008/03/14 15:28:39  vfrolov
+ * Implemented ability to get paired port settings with
+ * extended IOCTL_SERIAL_LSRMST_INSERT
+ *
  * Revision 1.20  2007/09/17 14:31:06  vfrolov
  * Implemented pseudo pin OPEN
  *
@@ -225,7 +229,7 @@ NTSTATUS FdoPortClose(IN PC0C_FDOPORT_EXTENSION pDevExt, IN PIRP pIrp)
   pIoPort->escapeChar = 0;
   pIoPort->writeHoldingRemote = 0;
   pIoPort->sendXonXoff = 0;
-  SetModemControl(pIoPort, 0, C0C_MCR_RTS | C0C_MCR_DTR | C0C_MCR_OPEN, &queueToComplete);
+  SetModemControl(pIoPort, C0C_MCR_OUT2, C0C_MCR_MASK | C0C_MCR_OPEN, &queueToComplete);
   FreeBuffer(&pIoPort->readBuf);
   SetBreakHolding(pIoPort, FALSE);
 
