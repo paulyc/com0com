@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.29  2008/03/14 15:28:39  vfrolov
+ * Implemented ability to get paired port settings with
+ * extended IOCTL_SERIAL_LSRMST_INSERT
+ *
  * Revision 1.28  2007/06/20 10:32:44  vfrolov
  * Added PID tracing on IRP_MJ_CREATE
  *
@@ -1418,12 +1422,33 @@ VOID TraceIrp(
                 codeNameTableModemStatus, *((PULONG)pSysBuf));
           }
           break;
+        case IOCTL_SERIAL_SET_MODEM_CONTROL:
+          if ((flags & TRACE_FLAG_PARAMS) && inLength >= sizeof(ULONG)) {
+            pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
+            pDestStr = AnsiStrCopyMask(pDestStr, &size,
+                codeNameTableModemControl, *((PULONG)pSysBuf));
+
+            if (inLength > sizeof(ULONG)) {
+              pDestStr = AnsiStrCopyStr(pDestStr, &size, ", ");
+              pDestStr = AnsiStrCopyDump(pDestStr, &size, ((PUCHAR)pSysBuf) + sizeof(ULONG), inLength - sizeof(ULONG));
+            }
+          }
+          break;
         case IOCTL_SERIAL_GET_MODEM_CONTROL:
         case IOCTL_SERIAL_GET_DTRRTS:
+          if ((flags & TRACE_FLAG_PARAMS) && inLength) {
+            pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
+            pDestStr = AnsiStrCopyDump(pDestStr, &size, pSysBuf, inLength);
+          }
           if ((flags & TRACE_FLAG_RESULTS) && inform >= sizeof(ULONG)) {
             pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
             pDestStr = AnsiStrCopyMask(pDestStr, &size,
                 codeNameTableModemControl, *((PULONG)pSysBuf));
+
+            if (inform > sizeof(ULONG)) {
+              pDestStr = AnsiStrCopyStr(pDestStr, &size, ", ");
+              pDestStr = AnsiStrCopyDump(pDestStr, &size, ((PUCHAR)pSysBuf) + sizeof(ULONG), inform - sizeof(ULONG));
+            }
           }
           break;
         case IOCTL_SERIAL_SET_WAIT_MASK:
@@ -1508,11 +1533,15 @@ VOID TraceIrp(
             pDestStr = AnsiStrCopyCommStatus(pDestStr, &size, (PSERIAL_STATUS)pSysBuf);
           break;
         case IOCTL_SERIAL_LSRMST_INSERT:
-          if (flags & TRACE_FLAG_PARAMS) {
-            pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
-            pDestStr = AnsiStrCopyDump(pDestStr, &size, pSysBuf, inLength);
+          if ((flags & TRACE_FLAG_PARAMS) && inLength >= sizeof(UCHAR)) {
+            pDestStr = AnsiStrFormat(pDestStr, &size, " escapeChar=0x%02X", (int)(*(PUCHAR)pSysBuf & 0xFF));
+
+            if (inLength > sizeof(UCHAR)) {
+              pDestStr = AnsiStrCopyStr(pDestStr, &size, ", ");
+              pDestStr = AnsiStrCopyDump(pDestStr, &size, ((PUCHAR)pSysBuf) + sizeof(UCHAR), inLength - sizeof(UCHAR));
+            }
           }
-          if (flags & TRACE_FLAG_RESULTS) {
+          if ((flags & TRACE_FLAG_RESULTS) && inform) {
             pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
             pDestStr = AnsiStrCopyDump(pDestStr, &size, pSysBuf, inform);
           }
