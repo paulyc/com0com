@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.41  2008/04/08 06:47:37  vfrolov
+ * Added pin OUT2
+ *
  * Revision 1.40  2008/03/14 15:28:39  vfrolov
  * Implemented ability to get paired port settings with
  * extended IOCTL_SERIAL_LSRMST_INSERT
@@ -315,7 +318,7 @@ typedef struct _C0C_IO_PORT {
   #define C0C_MCR_OUT2    0x08
   #define C0C_MCR_LOOP    0x10
   #define C0C_MCR_OPEN    0x80
-  #define C0C_MCR_MASK    (~(C0C_MCR_OPEN))
+  #define C0C_MCR_MASK    ((UCHAR)~(C0C_MCR_OPEN))
 
   UCHAR                   modemControl;
 
