@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2007 Vyacheslav Frolov
+ * Copyright (c) 2006-2008 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2007/10/19 15:58:18  vfrolov
+ * Added default values
+ *
  * Revision 1.5  2007/09/17 14:28:07  vfrolov
  * Implemented pseudo pin OPEN
  *
@@ -56,10 +59,12 @@
 #define C0C_PIN_RRTS                0x00000001
 #define C0C_PIN_RDTR                0x00000002
 #define C0C_PIN_ROUT1               0x00000004
+#define C0C_PIN_ROUT2               0x00000008
 #define C0C_PIN_ROPEN               0x00000080
 #define C0C_PIN_LRTS                0x00000100
 #define C0C_PIN_LDTR                0x00000200
 #define C0C_PIN_LOUT1               0x00000400
+#define C0C_PIN_LOUT2               0x00000800
 #define C0C_PIN_LOPEN               0x00008000
 #define C0C_PIN_ON                  0x10000000
 #define C0C_PIN_NEGATIVE            0x80000000
