@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/04/07 12:28:03  vfrolov
+ * Replaced --rt-events option by SET_RT_EVENTS message
+ *
  * Revision 1.1  2008/03/26 08:44:34  vfrolov
  * Redesigned for using plugins
  *
@@ -79,6 +82,8 @@ class ComPort
     int countXoff;
     BOOL filterX;
     DWORD events;
+    BYTE maskLsr;
+    BYTE maskMst;
 
     DWORD writeQueueLimit;
     DWORD writeQueued;

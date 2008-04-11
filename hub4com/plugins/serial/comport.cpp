@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/04/07 12:28:03  vfrolov
+ * Replaced --rt-events option by SET_RT_EVENTS message
+ *
  * Revision 1.1  2008/03/26 08:44:34  vfrolov
  * Redesigned for using plugins
  *
@@ -85,16 +88,62 @@ BOOL ComPort::Start()
   _ASSERTE(hHub != NULL);
   _ASSERTE(handle != INVALID_HANDLE_VALUE);
 
+  HUB_MSG msg;
+  DWORD mask;
+
+  mask = 0;
+  msg.type = HUB_MSG_TYPE_INIT_LSR_MASK;
+  msg.u.pVal = &mask;
+  pOnRead(hHub, hMasterPort, &msg);
+  maskLsr = (BYTE)mask;
+
+  mask = 0;
+  msg.type = HUB_MSG_TYPE_INIT_MST_MASK;
+  msg.u.pVal = &mask;
+  pOnRead(hHub, hMasterPort, &msg);
+  maskMst = (BYTE)mask;
+
   CheckComEvents(DWORD(-1));
+
+  if (maskLsr || maskMst) {
+    if ((maskMst & MODEM_STATUS_CTS) != 0)
+      events |= EV_CTS;
+
+    if ((maskMst & MODEM_STATUS_DSR) != 0)
+      events |= EV_DSR;
+
+    if ((maskMst & MODEM_STATUS_DCD) != 0)
+      events |= EV_RLSD;
+
+    if ((maskMst & MODEM_STATUS_RI) != 0)
+      events |= EV_RING;
+
+    if (maskMst & ~(MODEM_STATUS_CTS|MODEM_STATUS_DSR|MODEM_STATUS_DCD|MODEM_STATUS_RI)) {
+      cout << "WARNING: Changing of MODEM STATUS bits 0x" << hex
+           << (unsigned)(maskMst & ~(MODEM_STATUS_CTS|MODEM_STATUS_DSR|MODEM_STATUS_DCD|MODEM_STATUS_RI))
+           << dec << " will be ignored" << endl;
+    }
+
+    if (maskLsr) {
+      cout << "WARNING: Changing of LINE STATUS bits 0x" << hex
+           << (unsigned)maskLsr
+           << dec << " will be ignored" << endl;
+    }
+  }
+
+  if (events) {
+    if (!SetComEvents(handle, &events))
+      return FALSE;
+
+    if (!StartWaitCommEvent())
+      return FALSE;
+  }
 
   if (!StartRead())
     return FALSE;
 
-  HUB_MSG msg;
-
   msg.type = HUB_MSG_TYPE_CONNECT;
   msg.u.val = TRUE;
-
   pOnRead(hHub, hMasterPort, &msg);
 
   return TRUE;
@@ -200,21 +249,6 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
     if (!::EscapeCommFunction(handle, pMsg->u.val))
       return FALSE;
   }
-  else
-  if (pMsg->type == HUB_MSG_TYPE_SET_RT_EVENTS) {
-    if (events != pMsg->u.val) {
-      if (handle == INVALID_HANDLE_VALUE)
-        return FALSE;
-
-      events = pMsg->u.val;
-
-      if (!SetComEvents(handle, &events))
-        return FALSE;
-
-      if (events && !StartWaitCommEvent())
-        return FALSE;
-    }
-  }
 
   return TRUE;
 }
@@ -308,19 +342,8 @@ void ComPort::CheckComEvents(DWORD eMask)
   if ((eMask & (EV_BREAK|EV_ERR)) != 0) {
     DWORD errs;
 
-    if (!::ClearCommError(handle, &errs, NULL))
-      errs = 0;
-
-    if (errs) {
+    if (::ClearCommError(handle, &errs, NULL))
       errors |= errs;
-
-      HUB_MSG msg;
-
-      msg.type = HUB_MSG_TYPE_COM_ERRORS;
-      msg.u.val = errs;
-
-      pOnRead(hHub, hMasterPort, &msg);
-    }
   }
 }
 
