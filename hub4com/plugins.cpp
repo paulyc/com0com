@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/26 08:36:25  vfrolov
+ * Initial revision
  *
  */
 
@@ -107,7 +109,7 @@ static string type2str(PLUGIN_TYPE type)
 
   switch (type) {
     case PLUGIN_TYPE_FILTER: str << "filter"; break;
-    case PLUGIN_TYPE_PORT:   str << "port";   break;
+    case PLUGIN_TYPE_DRIVER: str << "driver"; break;
     default:                 str << type;
   }
 
@@ -370,8 +372,8 @@ void Plugins::Help(
           if (found)
             cerr << "-----------------------------" << endl;
 
-          cerr << "Type:        " << type2str(iPair->first) << endl;
           cerr << "Name:        " << (*i)->Name() << endl;
+          cerr << "Type:        " << type2str(iPair->first) << endl;
           cerr << "Copyright:   " << (*i)->Copyright() << endl;
           cerr << "License:     " << (*i)->License() << endl;
           cerr << "Description: " << (*i)->Description() << endl;

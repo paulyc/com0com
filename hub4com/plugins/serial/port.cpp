@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/04/07 12:28:03  vfrolov
+ * Replaced --rt-events option by SET_RT_EVENTS message
+ *
  * Revision 1.2  2008/03/28 15:55:09  vfrolov
  * Fixed help
  *
@@ -36,7 +39,7 @@
 ///////////////////////////////////////////////////////////////
 static PLUGIN_TYPE CALLBACK GetPluginType()
 {
-  return PLUGIN_TYPE_PORT;
+  return PLUGIN_TYPE_DRIVER;
 }
 ///////////////////////////////////////////////////////////////
 static const PLUGIN_ABOUT_A about = {
@@ -56,7 +59,7 @@ static void CALLBACK Help(const char *pProgPath)
 {
   cerr
   << "Usage:" << endl
-  << "  " << pProgPath << " ... [--use-port-module=" << GetPluginAbout()->pName << "] <com port> ..." << endl
+  << "  " << pProgPath << " ... [--use-driver=" << GetPluginAbout()->pName << "] <com port> ..." << endl
   << endl
   << "Options:" << endl
   << "  --baud=<b>               - set baud rate to <b> (" << ComParams().BaudRateStr() << " by default)," << endl
