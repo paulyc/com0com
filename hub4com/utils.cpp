@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/03/26 08:14:09  vfrolov
+ * Added
+ *   - class Args
+ *   - STRQTOK_R()
+ *   - CreateArgsVector()/FreeArgsVector()
+ *
  * Revision 1.1  2007/01/23 09:13:10  vfrolov
  * Initial revision
  *
@@ -177,7 +183,12 @@ char *STRTOK_R(char *pStr, const char *pDelims, char **ppSave)
   return pToken;
 }
 ///////////////////////////////////////////////////////////////
-char *STRQTOK_R(char *pStr, const char *pDelims, char **ppSave)
+char *STRQTOK_R(
+    char *pStr,
+    const char *pDelims,
+    char **ppSave,
+    const char *pQuotes,
+    BOOL discard)
 {
   if (!pStr)
     pStr = *ppSave;
@@ -195,9 +206,10 @@ char *STRQTOK_R(char *pStr, const char *pDelims, char **ppSave)
   int cntMask = 0;
 
   while (*pStr && (quoted || !IsDelim(*pStr, pDelims))) {
-    if (*pStr == '\"') {
+    if (quoted ? (*pStr == pQuotes[1]) : (*pStr == pQuotes[0])) {
       if (cntMask%2 == 0) {
-        memmove(pStr, pStr + 1, strlen(pStr + 1) + 1);
+        if (discard)
+          memmove(pStr, pStr + 1, strlen(pStr + 1) + 1);
         quoted = !quoted;
       } else {
         memmove(pStr - (cntMask/2 + 1), pStr, strlen(pStr) + 1);
