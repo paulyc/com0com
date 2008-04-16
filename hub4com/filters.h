@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/26 08:35:32  vfrolov
+ * Initial revision
  *
  */
 
@@ -50,7 +52,8 @@ class Filters
     BOOL AddFilter(
         int iPort,
         const char *pName,
-        BOOL isInMethod);
+        BOOL isInMethod,
+        const set<int> *pSrcPorts);
     void Report() const;
     BOOL Init() const;
     BOOL InMethod(
