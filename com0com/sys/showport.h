@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2007 Vyacheslav Frolov
+ * Copyright (c) 2007-2008 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2007/06/01 16:22:40  vfrolov
+ * Implemented plug-in and exclusive modes
  *
  */
 
@@ -28,5 +30,6 @@
 BOOLEAN HidePortName(IN PC0C_FDOPORT_EXTENSION pDevExt);
 BOOLEAN HidePort(IN PC0C_FDOPORT_EXTENSION pDevExt);
 BOOLEAN ShowPort(IN PC0C_FDOPORT_EXTENSION pDevExt);
+VOID SetHiddenMode(IN PC0C_FDOPORT_EXTENSION pDevExt, ULONG hiddenMode);
 
 #endif /* _C0C_SHOWPORT_H_ */

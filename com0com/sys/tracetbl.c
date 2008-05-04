@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2007 Vyacheslav Frolov
+ * Copyright (c) 2004-2008 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2007/09/17 14:31:06  vfrolov
+ * Implemented pseudo pin OPEN
+ *
  * Revision 1.12  2007/02/21 16:52:34  vfrolov
  * Added tracing of IRP_MJ_POWER with more details
  *
@@ -55,7 +58,6 @@
  *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
- *
  *
  */
 
@@ -433,6 +435,15 @@ CODE2NAME codeNameTableFileInformationClass[] = {
   TOCODE2NAME1(FileTrackingInformation),
   TOCODE2NAME1(FileMaximumInformation),
 #endif
+  {0, NULL}
+};
+
+CODE2NAME codeNameTableShowPort[] = {
+  TOCODE2NAME(C0C_SHOW_, SETNAME),
+  TOCODE2NAME(C0C_SHOW_, SYMLINK),
+  TOCODE2NAME(C0C_SHOW_, DEVICEMAP),
+  TOCODE2NAME(C0C_SHOW_, INTERFACE),
+  TOCODE2NAME(C0C_SHOW_, WMIREG),
   {0, NULL}
 };
 
