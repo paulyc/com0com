@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.30  2008/04/08 10:37:56  vfrolov
+ * Implemented ability to set individual pins with extended
+ * IOCTL_SERIAL_SET_MODEM_CONTROL and IOCTL_SERIAL_GET_MODEM_CONTROL
+ *
  * Revision 1.29  2008/03/14 15:28:39  vfrolov
  * Implemented ability to get paired port settings with
  * extended IOCTL_SERIAL_LSRMST_INSERT
@@ -1173,7 +1177,7 @@ VOID TraceOpen(
   QueryRegistryTrace(pRegistryPath);
   QueryRegistryTraceEnable(pRegistryPath);
 
-  if (!pTraceData->traceFileName.Buffer)
+  if (!pTraceData->traceFileName.Buffer || !pTraceData->traceFileName.Length)
     TraceDisable();
 
   if (TRACE_FILE_OK) {
