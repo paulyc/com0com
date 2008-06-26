@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.22  2008/04/08 10:30:35  vfrolov
+ * Fixed modem control setting on close
+ *
  * Revision 1.21  2008/03/14 15:28:39  vfrolov
  * Implemented ability to get paired port settings with
  * extended IOCTL_SERIAL_LSRMST_INSERT
@@ -96,6 +99,7 @@
 #include "bufutils.h"
 #include "strutils.h"
 #include "timeout.h"
+#include "delay.h"
 
 NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 {
@@ -171,9 +175,13 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
   RtlZeroMemory(&pIoPort->perfStats, sizeof(pIoPort->perfStats));
   pIoPort->handFlow.XoffLimit = size >> 3;
   pIoPort->handFlow.XonLimit = size >> 1;
+  pIoPort->pIoPortRemote->brokeIdleChars = 0;
 
   SetHandFlow(pIoPort, NULL, &queueToComplete);
   SetModemControl(pIoPort, C0C_MCR_OPEN, C0C_MCR_OPEN, &queueToComplete);
+
+  if (pIoPort->pIoPortRemote->pWriteDelay && pIoPort->pIoPortRemote->brokeCharsProbability > 0)
+    StartWriteDelayTimer(pIoPort->pIoPortRemote->pWriteDelay);
 
   KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);
 

@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.10  2008/03/14 15:28:39  vfrolov
+ * Implemented ability to get paired port settings with
+ * extended IOCTL_SERIAL_LSRMST_INSERT
+ *
  * Revision 1.9  2007/07/20 07:59:20  vfrolov
  * Fixed idleCount
  *
@@ -52,11 +56,11 @@
  * Revision 1.1  2005/08/23 15:30:22  vfrolov
  * Initial revision
  *
- *
  */
 
 #include "precomp.h"
 #include "delay.h"
+#include "noise.h"
 
 /*
  * FILE_ID used by HALT_UNLESS to put it on BSOD
@@ -95,8 +99,24 @@ VOID WriteDelayRoutine(
           pIoPort, FALSE,
           &queueToComplete);
 
-      if (pWriteDelay->idleCount > 3)
+      if (pWriteDelay->idleCount > 3) {
+        if (pIoPort->brokeCharsProbability > 0 && pIoPort->pIoPortRemote->isOpen) {
+          SIZE_T idleChars = GetWriteLimit(pWriteDelay);
+
+          pWriteDelay->idleCount = 0;
+          pIoPort->brokeIdleChars += GetBrokenChars(pIoPort->brokeCharsProbability, idleChars);
+          pWriteDelay->sentFrames += idleChars;
+
+          if (pIoPort->brokeIdleChars > 0) {
+            ReadWrite(
+                pIoPort->pIoPortRemote, FALSE,
+                pIoPort, FALSE,
+                &queueToComplete);
+          }
+        } else {
           StopWriteDelayTimer(pWriteDelay);
+        }
+      }
     }
 
     KeReleaseSpinLock(pIoPort->pIoLock, oldIrql);

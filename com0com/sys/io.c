@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.37  2008/03/14 15:28:39  vfrolov
+ * Implemented ability to get paired port settings with
+ * extended IOCTL_SERIAL_LSRMST_INSERT
+ *
  * Revision 1.36  2007/09/12 12:32:53  vfrolov
  * Fixed TX buffer
  *
@@ -140,6 +144,7 @@
 #include "delay.h"
 #include "bufutils.h"
 #include "handflow.h"
+#include "noise.h"
 #include "../include/cncext.h"
 
 /*
@@ -217,12 +222,8 @@ VOID OnRxChars(
 
   SetXonXoffHolding(pReadIoPort, pFlowFilter->lastXonXoff);
 
-  if (pFlowFilter->events & (C0C_FLOW_FILTER_EV_RXCHAR | C0C_FLOW_FILTER_EV_RXFLAG)) {
-    if (pFlowFilter->events & C0C_FLOW_FILTER_EV_RXCHAR)
-      pReadIoPort->eventMask |= SERIAL_EV_RXCHAR;
-
-    if (pFlowFilter->events & C0C_FLOW_FILTER_EV_RXFLAG)
-      pReadIoPort->eventMask |= SERIAL_EV_RXFLAG;
+  if (pFlowFilter->events) {
+    pReadIoPort->eventMask |= (pFlowFilter->events & pReadIoPort->waitMask);
 
     if (pReadIoPort->eventMask)
       WaitComplete(pReadIoPort, pQueueToComplete);
@@ -265,6 +266,7 @@ NTSTATUS ReadFromBuffers(
   C0C_FLOW_FILTER flowFilter;
   SIZE_T sendDone;
   SIZE_T readDone;
+  SIZE_T brokeIdleChars;
   PUCHAR pDestRest;
 
   information = pIrp->IoStatus.Information;
@@ -292,18 +294,41 @@ NTSTATUS ReadFromBuffers(
 
   FlowFilterInit(pReadIoPort, &flowFilter);
 
+  brokeIdleChars = pReadIoPort->pIoPortRemote->brokeIdleChars;
+
+  if (brokeIdleChars) {
+    CopyCharsWithEscape(&pReadIoPort->readBuf,
+                        &flowFilter,
+                        pDestRest, destRestLength,
+                        NULL, brokeIdleChars,
+                        &readDone,
+                        &sendDone);
+
+    if (sendDone) {
+      pReadIoPort->pIoPortRemote->brokeIdleChars -= sendDone;
+      OnRxChars(pReadIoPort, sendDone, &flowFilter, pQueueToComplete);
+    }
+
+    if (readDone) {
+      *pReadDone += readDone;
+      information += readDone;
+      destRestLength -= readDone;
+
+      if (destRestLength == 0) {
+        pIrp->IoStatus.Information = information;
+        return STATUS_SUCCESS;
+      }
+
+      pDestRest += readDone;
+    }
+  }
+
   readDone =  ReadFromTxBuffer(&pReadIoPort->readBuf,
                                &flowFilter,
                                pDestRest, destRestLength,
                                &pReadIoPort->pIoPortRemote->txBuf,
                                pWriteLimit ? *pWriteLimit : -1,
                                &sendDone);
-
-  if (readDone) {
-    *pReadDone += readDone;
-    information += readDone;
-    destRestLength -= readDone;
-  }
 
   if (sendDone) {
     if (pWriteLimit)
@@ -318,12 +343,59 @@ NTSTATUS ReadFromBuffers(
     *pSendDone += sendDone;
   }
 
+  if (readDone) {
+    *pReadDone += readDone;
+    information += readDone;
+    destRestLength -= readDone;
+  }
+
   pIrp->IoStatus.Information = information;
 
   if (destRestLength == 0)
     return STATUS_SUCCESS;
 
   return STATUS_PENDING;
+}
+
+VOID ReadBrokenIdleChars(
+    PIRP pIrp,
+    PNTSTATUS pStatusRead,
+    PC0C_IO_PORT pReadIoPort,
+    PLIST_ENTRY pQueueToComplete,
+    PSIZE_T pReadDone)
+{
+  SIZE_T destRestLength;
+  SIZE_T information;
+  C0C_FLOW_FILTER flowFilter;
+  SIZE_T sendDone;
+  SIZE_T readDone;
+
+  if (pReadIoPort->pIoPortRemote->brokeIdleChars == 0)
+    return;
+
+  information = pIrp->IoStatus.Information;
+  destRestLength = IoGetCurrentIrpStackLocation(pIrp)->Parameters.Read.Length - information;
+
+  FlowFilterInit(pReadIoPort, &flowFilter);
+
+  CopyCharsWithEscape(&pReadIoPort->readBuf,
+                      &flowFilter,
+                      GET_REST_BUFFER(pIrp, information), destRestLength,
+                      NULL, pReadIoPort->pIoPortRemote->brokeIdleChars,
+                      &readDone,
+                      &sendDone);
+
+  if (sendDone) {
+    pReadIoPort->pIoPortRemote->brokeIdleChars -= sendDone;
+    OnRxChars(pReadIoPort, sendDone, &flowFilter, pQueueToComplete);
+  }
+
+  if (readDone) {
+    *pReadDone += readDone;
+    pIrp->IoStatus.Information += readDone;
+    if (destRestLength <= readDone)
+      *pStatusRead = STATUS_SUCCESS;
+  }
 }
 
 VOID AlertOverrun(PC0C_IO_PORT pReadIoPort, PLIST_ENTRY pQueueToComplete)
@@ -337,6 +409,46 @@ VOID AlertOverrun(PC0C_IO_PORT pReadIoPort, PLIST_ENTRY pQueueToComplete)
     CancelQueue(&pReadIoPort->irpQueues[C0C_QUEUE_READ], pQueueToComplete);
     CancelQueue(&pReadIoPort->irpQueues[C0C_QUEUE_WRITE], pQueueToComplete);
   }
+}
+
+SIZE_T SendBrokenChars(
+    PC0C_IO_PORT pReadIoPort,
+    PLIST_ENTRY pQueueToComplete,
+    SIZE_T count)
+{
+  SIZE_T sendDone;
+  C0C_FLOW_FILTER flowFilter;
+
+  if (!count)
+    return 0;
+
+  FlowFilterInit(pReadIoPort, &flowFilter);
+
+  if (pReadIoPort->emuOverrun) {
+    SIZE_T overrun;
+
+    sendDone = WriteToBuffer(&pReadIoPort->readBuf,
+                             NULL,
+                             count,
+                             &flowFilter,
+                             &overrun);
+
+    if (overrun) {
+      AlertOverrun(pReadIoPort, pQueueToComplete);
+      pReadIoPort->perfStats.BufferOverrunErrorCount += (ULONG)overrun;
+    }
+  } else {
+    sendDone = WriteToBuffer(&pReadIoPort->readBuf,
+                             NULL,
+                             count,
+                             &flowFilter,
+                             NULL);
+  }
+
+  if (sendDone)
+    OnRxChars(pReadIoPort, sendDone, &flowFilter, pQueueToComplete);
+
+  return sendDone;
 }
 
 VOID SendTxBuffer(
@@ -960,10 +1072,11 @@ NTSTATUS TryReadWrite(
   status = STATUS_SUCCESS;
 
   if (pWriteDelay) {
-    if (C0C_TX_BUFFER_BUSY(&pIoPortWrite->txBuf) ||
+    if (!C0C_TX_BUFFER_EMPTY(&pIoPortWrite->txBuf) ||
         pQueueWrite->pCurrent ||
         pIoPortWrite->sendBreak ||
-        pIoPortWrite->sendXonXoff)
+        pIoPortWrite->sendXonXoff ||
+        pIoPortWrite->brokeIdleChars)
     {
       StartWriteDelayTimer(pWriteDelay);
       writeLimit = GetWriteLimit(pWriteDelay);
@@ -1033,8 +1146,12 @@ NTSTATUS TryReadWrite(
    * Move shifted data from TX buffer to RX buffer if RX QUEUE is empty         *
    ******************************************************************************/
 
-  if (!dataIrpRead.data.irp.pIrp)
+  if (!dataIrpRead.data.irp.pIrp) {
+    pIoPortWrite->brokeIdleChars -=
+        SendBrokenChars(pIoPortRead, pQueueToComplete, pIoPortWrite->brokeIdleChars);
+
     SendTxBuffer(pIoPortRead, pIoPortWrite, pQueueToComplete, pWriteLimit, pWriteDelay, &doneSend);
+  }
 
   /******************************************************************************
    * Prepare TX QUEUE                                                           *
@@ -1102,6 +1219,16 @@ NTSTATUS TryReadWrite(
         }
         else
         if (pWriteDelay) {
+          if (pIoPortWrite->brokeCharsProbability > 0) {
+            pIoPortWrite->brokeIdleChars += GetBrokenChars(pIoPortWrite->brokeCharsProbability, *pWriteLimit);
+
+            ReadBrokenIdleChars(dataIrpRead.data.irp.pIrp,
+                                &dataIrpRead.data.irp.status,
+                                pIoPortRead,
+                                pQueueToComplete,
+                                &doneRead);
+          }
+
           pWriteDelay->sentFrames += *pWriteLimit;
           *pWriteLimit = 0;
         }
@@ -1138,6 +1265,16 @@ NTSTATUS TryReadWrite(
           }
           else
           if (pWriteDelay) {
+            if (pIoPortWrite->brokeCharsProbability > 0) {
+              pIoPortWrite->brokeIdleChars += GetBrokenChars(pIoPortWrite->brokeCharsProbability, *pWriteLimit);
+
+              ReadBrokenIdleChars(dataIrpRead.data.irp.pIrp,
+                                  &dataIrpRead.data.irp.status,
+                                  pIoPortRead,
+                                  pQueueToComplete,
+                                  &doneRead);
+            }
+
             pWriteDelay->sentFrames += *pWriteLimit;
             *pWriteLimit = 0;
           }
@@ -1229,6 +1366,12 @@ NTSTATUS TryReadWrite(
     }
     else
     if (pWriteDelay) {
+      if (pIoPortWrite->brokeCharsProbability > 0) {
+        pIoPortWrite->brokeIdleChars += GetBrokenChars(pIoPortWrite->brokeCharsProbability, *pWriteLimit);
+        pIoPortWrite->brokeIdleChars -=
+            SendBrokenChars(pIoPortRead, pQueueToComplete, pIoPortWrite->brokeIdleChars);
+      }
+
       pWriteDelay->sentFrames += *pWriteLimit;
       *pWriteLimit = 0;
     }
@@ -1254,11 +1397,16 @@ NTSTATUS TryReadWrite(
         if (pIoPortRead->escapeChar && (pIoPortRead->insertMask & C0CE_INSERT_ENABLE_LSR)) {
           UCHAR lsr = 0x10;  /* break interrupt indicator */
 
-          if (!pIoPortRead->amountInWriteQueue || pIoPortRead->writeHolding)
-            lsr |= 0x60;  /* transmit holding register empty and transmitter empty indicators */
+          if (C0C_TX_BUFFER_THR_EMPTY(&pIoPortRead->txBuf)) {
+            lsr |= 0x20;  /* transmit holding register empty */
+
+            if (C0C_TX_BUFFER_EMPTY(&pIoPortRead->txBuf))
+              lsr |= 0x40;  /* transmit holding register empty and line is idle */
+          }
 
           InsertLsrMst(pIoPortRead, FALSE,  lsr, pQueueToComplete);
         }
+
         if (pIoPortRead->handFlow.FlowReplace & SERIAL_BREAK_CHAR)
           InsertChar(pIoPortRead, pIoPortRead->specialChars.BreakChar, pQueueToComplete);
       }
@@ -1280,6 +1428,12 @@ NTSTATUS TryReadWrite(
       }
       else
       if (pWriteDelay) {
+        if (pIoPortWrite->brokeCharsProbability > 0) {
+          pIoPortWrite->brokeIdleChars += GetBrokenChars(pIoPortWrite->brokeCharsProbability, *pWriteLimit);
+          pIoPortWrite->brokeIdleChars -=
+              SendBrokenChars(pIoPortRead, pQueueToComplete, pIoPortWrite->brokeIdleChars);
+        }
+
         pWriteDelay->sentFrames += *pWriteLimit;
         *pWriteLimit = 0;
       }
@@ -1358,6 +1512,9 @@ NTSTATUS TryReadWrite(
     pIoPortWrite->eventMask |= SERIAL_EV_TXEMPTY;
     WaitComplete(pIoPortWrite, pQueueToComplete);
   }
+
+  if (C0C_TX_BUFFER_EMPTY(&pIoPortWrite->txBuf))
+    pIoPortWrite->brokeChars = 0;  /* reset on idle */
 
   UpdateTransmitToggle(pIoPortWrite, pQueueToComplete);
 
