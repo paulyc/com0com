@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.44  2008/06/26 13:37:10  vfrolov
+ * Implemented noise emulation
+ *
  * Revision 1.43  2008/05/04 09:51:45  vfrolov
  * Implemented HiddenMode option
  *
@@ -523,6 +526,12 @@ VOID PinMap(
     IN ULONG pinDSR,
     IN ULONG pinDCD,
     IN ULONG pinRI);
+
+VOID InsertLsrMst(
+    PC0C_IO_PORT pIoPortRead,
+    BOOLEAN isMST,
+    UCHAR value,
+    PLIST_ENTRY pQueueToComplete);
 
 VOID InsertRemoteBr(
     PC0C_IO_PORT pIoPortRead,
