@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2008/06/26 13:37:10  vfrolov
+ * Implemented noise emulation
+ *
  * Revision 1.10  2007/10/05 07:34:21  vfrolov
  * Added missing *pOverrun initialization
  * Changed TX FIFO writing emulation to be interrupt driven
@@ -238,7 +241,7 @@ VOID CopyCharsWithEscape(
           SIZE_T length = sizeof(buf);
           SIZE_T len;
 
-          lsr |= 0x80;    /* errornous data in FIFO */
+          lsr |= 0x81;    /* errornous data in FIFO and data available */
 
           if (C0C_TX_BUFFER_THR_EMPTY(&pIoPort->txBuf)) {
             lsr |= 0x20;  /* transmit holding register empty */
