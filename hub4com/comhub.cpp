@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/03/26 08:48:18  vfrolov
+ * Initial revision
+ *
  * Revision 1.4  2007/12/19 13:46:36  vfrolov
  * Added ability to send data received from port to the same port
  *
@@ -76,6 +79,13 @@ BOOL ComHub::StartAll() const
   for (Ports::const_iterator i = ports.begin() ; i != ports.end() ; i++) {
     if (!(*i)->Init())
       return FALSE;
+  }
+
+  for (Ports::const_iterator i = ports.begin() ; i != ports.end() ; i++) {
+    HubMsg msg;
+
+    msg.type = HUB_MSG_TYPE_SET_OPTIONS;
+    OnRead(*i, &msg);
   }
 
   for (Ports::const_iterator i = ports.begin() ; i != ports.end() ; i++) {

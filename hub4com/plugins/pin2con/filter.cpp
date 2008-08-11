@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/04/14 07:32:04  vfrolov
+ * Renamed option --use-port-module to --use-driver
+ *
  * Revision 1.3  2008/04/11 14:48:42  vfrolov
  * Replaced SET_RT_EVENTS by INIT_LSR_MASK and INIT_MST_MASK
  * Replaced COM_ERRORS by LINE_STATUS
@@ -72,17 +75,17 @@ class Filter {
 
 static struct {
   const char *pName;
-  WORD val;
+  DWORD val;
 } pin_names[] = {
-  {"cts",  MODEM_STATUS_CTS},
-  {"dsr",  MODEM_STATUS_DSR},
-  {"dcd",  MODEM_STATUS_DCD},
-  {"ring", MODEM_STATUS_RI},
-  {"break", LINE_STATUS_BI << 8},
+  {"cts",  GO_V2O_MODEM_STATUS(MODEM_STATUS_CTS)},
+  {"dsr",  GO_V2O_MODEM_STATUS(MODEM_STATUS_DSR)},
+  {"dcd",  GO_V2O_MODEM_STATUS(MODEM_STATUS_DCD)},
+  {"ring", GO_V2O_MODEM_STATUS(MODEM_STATUS_RI)},
+  {"break", GO_V2O_LINE_STATUS(LINE_STATUS_BI)},
 };
 
 Filter::Filter(int argc, const char *const argv[])
-  : pin(MODEM_STATUS_DSR),
+  : pin(GO_V2O_MODEM_STATUS(MODEM_STATUS_DSR)),
     negative(FALSE)
 {
   for (const char *const *pArgs = &argv[1] ; argc > 1 ; pArgs++, argc--) {
@@ -166,10 +169,10 @@ static void CALLBACK Help(const char *pProgPath)
   << "                          default)." << endl
   << endl
   << "IN method input data stream description:" << endl
-  << "  INIT_LSR_MASK(<pval>) - the value pointed by <pval> will be or'ed with the" << endl
-  << "                          required line status mask." << endl
-  << "  INIT_MST_MASK(<pval>) - the value pointed by <pval> will be or'ed with the" << endl
-  << "                          required modem status mask." << endl
+  << "  HUB_MSG_TYPE_GET_OPTIONS(<pOptions>)" << endl
+  << "                        - the value pointed by <pOptions> will be or'ed with" << endl
+  << "                          the required mask to get line status and modem" << endl
+  << "                          status." << endl
   << "  CONNECT(TRUE/FALSE)   - will be discarded from stream." << endl
   << "  LINE_STATUS(<val>)    - current state of line" << endl
   << "  MODEM_STATUS(<val>)   - current state of modem" << endl
@@ -203,14 +206,9 @@ static BOOL CALLBACK InMethod(
   _ASSERTE(ppEchoMsg != NULL);
   _ASSERTE(*ppEchoMsg == NULL);
 
-  if (pInMsg->type == HUB_MSG_TYPE_INIT_LSR_MASK) {
-    _ASSERTE(pInMsg->u.pVal != NULL);
-    *pInMsg->u.pVal |= (((Filter *)hFilter)->pin >> 8);
-  }
-  else
-  if (pInMsg->type == HUB_MSG_TYPE_INIT_MST_MASK) {
-    _ASSERTE(pInMsg->u.pVal != NULL);
-    *pInMsg->u.pVal |= (((Filter *)hFilter)->pin & 0xFF);
+  if (pInMsg->type == HUB_MSG_TYPE_GET_OPTIONS) {
+    _ASSERTE(pInMsg->u.pv.pVal != NULL);
+    *pInMsg->u.pv.pVal |= (((Filter *)hFilter)->pin & pInMsg->u.pv.val);
   }
   else
   if (pInMsg->type == HUB_MSG_TYPE_CONNECT) {
@@ -224,9 +222,9 @@ static BOOL CALLBACK InMethod(
     BOOL connect;
 
     if (pInMsg->type == HUB_MSG_TYPE_LINE_STATUS)
-      connect = ((pInMsg->u.val & (((Filter *)hFilter)->pin >> 8)) != 0);
+      connect = ((pInMsg->u.val & GO_O2V_LINE_STATUS(((Filter *)hFilter)->pin)) != 0);
     else
-      connect = ((pInMsg->u.val & (((Filter *)hFilter)->pin & 0xFF)) != 0);
+      connect = ((pInMsg->u.val & GO_O2V_MODEM_STATUS(((Filter *)hFilter)->pin)) != 0);
 
     if (((Filter *)hFilter)->negative)
       connect = !connect;
