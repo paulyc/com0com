@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/26 08:36:47  vfrolov
+ * Initial revision
  *
  */
 
@@ -47,6 +49,7 @@ class Port
 
     BOOL Init();
     BOOL Start();
+    BOOL FakeReadFilter(HubMsg *pMsg);
     BOOL Write(HubMsg *pMsg);
     void AddXoff();
     void AddXon();
@@ -62,6 +65,7 @@ class Port
 
     PORT_INIT *pInit;
     PORT_START *pStart;
+    PORT_FAKE_READ_FILTER *pFakeReadFilter;
     PORT_WRITE *pWrite;
     PORT_ADD_XOFF *pAddXoff;
     PORT_ADD_XON *pAddXon;

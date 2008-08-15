@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/03/26 08:48:18  vfrolov
+ * Initial revision
+ *
  * Revision 1.4  2007/12/19 13:46:36  vfrolov
  * Added ability to send data received from port to the same port
  *
@@ -72,6 +75,7 @@ class ComHub
         HCONFIG hConfig,
         const char *pPath);
     BOOL StartAll() const;
+    BOOL OnFakeRead(Port *pFromPort, HubMsg *pMsg) const;
     void OnRead(Port *pFromPort, HubMsg *pMsg) const;
     void AddXoff(Port *pFromPort) const;
     void AddXon(Port *pFromPort) const;

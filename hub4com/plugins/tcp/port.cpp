@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/04/14 07:32:04  vfrolov
+ * Renamed option --use-port-module to --use-driver
+ *
  * Revision 1.2  2008/03/28 16:01:13  vfrolov
  * Fixed Help
  *
@@ -243,6 +246,7 @@ static const PORT_ROUTINES_A routines = {
   SetPortName,
   Init,
   Start,
+  NULL,      // FakeReadFilter
   Write,
   AddXoff,
   AddXon,

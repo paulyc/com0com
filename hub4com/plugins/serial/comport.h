@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/08/13 15:14:02  vfrolov
+ * Print bit values in readable form
+ *
  * Revision 1.4  2008/08/11 07:15:34  vfrolov
  * Replaced
  *   HUB_MSG_TYPE_COM_FUNCTION
@@ -71,6 +74,7 @@ class ComPort
 
     BOOL Init(HMASTERPORT _hMasterPort, HHUB _hHub);
     BOOL Start();
+    BOOL FakeReadFilter(HUB_MSG *pInMsg);
     BOOL Write(HUB_MSG *pMsg);
     void OnWrite(WriteOverlapped *pOverlapped, DWORD len, DWORD done);
     void OnRead(ReadOverlapped *pOverlapped, BYTE *pBuf, DWORD done);
@@ -97,6 +101,7 @@ class ComPort
     BOOL filterX;
     DWORD events;
     BYTE maskOutPins;
+    DWORD options;
 
     DWORD writeQueueLimit;
     DWORD writeQueued;

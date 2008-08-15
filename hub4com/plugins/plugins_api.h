@@ -19,6 +19,16 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/08/11 07:15:33  vfrolov
+ * Replaced
+ *   HUB_MSG_TYPE_COM_FUNCTION
+ *   HUB_MSG_TYPE_INIT_LSR_MASK
+ *   HUB_MSG_TYPE_INIT_MST_MASK
+ * by
+ *   HUB_MSG_TYPE_SET_PIN_STATE
+ *   HUB_MSG_TYPE_GET_OPTIONS
+ *   HUB_MSG_TYPE_SET_OPTIONS
+ *
  * Revision 1.4  2008/04/14 07:32:03  vfrolov
  * Renamed option --use-port-module to --use-driver
  *
@@ -255,6 +265,9 @@ typedef BOOL (CALLBACK PORT_INIT)(
         HHUB hHub);
 typedef BOOL (CALLBACK PORT_START)(
         HPORT hPort);
+typedef BOOL (CALLBACK PORT_FAKE_READ_FILTER)(
+        HPORT hPort,
+        HUB_MSG *pInMsg);
 typedef BOOL (CALLBACK PORT_WRITE)(
         HPORT hPort,
         HUB_MSG *pMsg);
@@ -272,6 +285,7 @@ typedef struct _PORT_ROUTINES_A {
   PORT_SET_NAME_A *pSetPortName;
   PORT_INIT *pInit;
   PORT_START *pStart;
+  PORT_FAKE_READ_FILTER *pFakeReadFilter;
   PORT_WRITE *pWrite;
   PORT_ADD_XOFF *pAddXoff;
   PORT_ADD_XON *pAddXon;

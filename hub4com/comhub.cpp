@@ -19,6 +19,16 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/08/11 07:15:33  vfrolov
+ * Replaced
+ *   HUB_MSG_TYPE_COM_FUNCTION
+ *   HUB_MSG_TYPE_INIT_LSR_MASK
+ *   HUB_MSG_TYPE_INIT_MST_MASK
+ * by
+ *   HUB_MSG_TYPE_SET_PIN_STATE
+ *   HUB_MSG_TYPE_GET_OPTIONS
+ *   HUB_MSG_TYPE_SET_OPTIONS
+ *
  * Revision 1.5  2008/03/26 08:48:18  vfrolov
  * Initial revision
  *
@@ -85,13 +95,42 @@ BOOL ComHub::StartAll() const
     HubMsg msg;
 
     msg.type = HUB_MSG_TYPE_SET_OPTIONS;
-    OnRead(*i, &msg);
+
+    if (!OnFakeRead(*i, &msg))
+      return FALSE;
+  }
+
+  for (Ports::const_iterator i = ports.begin() ; i != ports.end() ; i++) {
+    HubMsg msg;
+    DWORD options = 0;
+
+    msg.type = HUB_MSG_TYPE_GET_OPTIONS;
+    msg.u.pv.pVal = &options;
+    msg.u.pv.val = DWORD(-1);
+
+    if (!OnFakeRead(*i, &msg))
+      return FALSE;
+
+    if (options) {
+      cout << (*i)->Name() << " WARNING: Requested option(s) 0x"
+           << hex << options << dec << " not supported" << endl;
+    }
   }
 
   for (Ports::const_iterator i = ports.begin() ; i != ports.end() ; i++) {
     if (!(*i)->Start())
       return FALSE;
   }
+
+  return TRUE;
+}
+
+BOOL ComHub::OnFakeRead(Port *pFromPort, HubMsg *pMsg) const
+{
+  if (!pFromPort->FakeReadFilter(pMsg))
+    return FALSE;
+
+  OnRead(pFromPort, pMsg);
 
   return TRUE;
 }
