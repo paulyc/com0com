@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.37  2008/07/11 10:38:00  vfrolov
+ * Added nonstandard ability to enable LSR insertion on BREAK OFF
+ *
  * Revision 1.36  2008/06/10 11:32:35  vfrolov
  * Fixed break interrupt indicator for C0CE_INSERT_IOCTL_GET
  * Added parameter checking for IOCTL_SERIAL_SET_LINE_CONTROL
@@ -632,7 +635,7 @@ NTSTATUS FdoPortIoCtl(
             C0CE_INSERT_ENABLE_MST| \
             C0CE_INSERT_ENABLE_RBR| \
             C0CE_INSERT_ENABLE_RLC| \
-            C0CE_INSERT_ENABLE_LSR_NBI)
+            C0CE_INSERT_ENABLE_LSR_BI)
 
         #define C0CE_INSERT_CAPS (C0CE_INSERT_OPTS|C0CE_INSERT_BITS)
 
@@ -655,7 +658,7 @@ NTSTATUS FdoPortIoCtl(
           }
 
           if (optsAndBits & C0CE_INSERT_IOCTL_GET) {
-            if (optsAndBits & (C0CE_INSERT_ENABLE_LSR|C0CE_INSERT_ENABLE_LSR_NBI))
+            if (optsAndBits & (C0CE_INSERT_ENABLE_LSR|C0CE_INSERT_ENABLE_LSR_BI))
               Information += sizeof(UCHAR)*2 + sizeof(UCHAR);
             if (optsAndBits & C0CE_INSERT_ENABLE_MST)
               Information += sizeof(UCHAR)*2 + sizeof(UCHAR);
@@ -697,7 +700,7 @@ NTSTATUS FdoPortIoCtl(
         pIoPortRemote = pIoPortLocal->pIoPortRemote;
 
         if (optsAndBits & C0CE_INSERT_IOCTL_GET) {
-          if (optsAndBits & (C0CE_INSERT_ENABLE_LSR|C0CE_INSERT_ENABLE_LSR_NBI)) {
+          if (optsAndBits & (C0CE_INSERT_ENABLE_LSR|C0CE_INSERT_ENABLE_LSR_BI)) {
             UCHAR lsr = 0;
 
             if (C0C_TX_BUFFER_THR_EMPTY(&pIoPortLocal->txBuf)) {

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2008/07/11 10:38:00  vfrolov
+ * Added nonstandard ability to enable LSR insertion on BREAK OFF
+ *
  * Revision 1.8  2007/07/03 14:35:17  vfrolov
  * Implemented pinout customization
  *
@@ -401,7 +404,7 @@ VOID SetBreakHolding(PC0C_IO_PORT pIoPort, BOOLEAN on, PLIST_ENTRY pQueueToCompl
 
       pIoPortRead = pIoPort->pIoPortRemote;
 
-      if (pIoPortRead->escapeChar && (pIoPortRead->insertMask & C0CE_INSERT_ENABLE_LSR_NBI)) {
+      if (pIoPortRead->escapeChar && (pIoPortRead->insertMask & C0CE_INSERT_ENABLE_LSR_BI)) {
         UCHAR lsr = 0;
 
         if (C0C_TX_BUFFER_THR_EMPTY(&pIoPortRead->txBuf)) {

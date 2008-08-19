@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.38  2008/06/26 13:37:10  vfrolov
+ * Implemented noise emulation
+ *
  * Revision 1.37  2008/03/14 15:28:39  vfrolov
  * Implemented ability to get paired port settings with
  * extended IOCTL_SERIAL_LSRMST_INSERT
@@ -1394,7 +1397,9 @@ NTSTATUS TryReadWrite(
         if (pIoPortRead->eventMask)
           WaitComplete(pIoPortRead, pQueueToComplete);
 
-        if (pIoPortRead->escapeChar && (pIoPortRead->insertMask & C0CE_INSERT_ENABLE_LSR)) {
+        if (pIoPortRead->escapeChar &&
+            (pIoPortRead->insertMask & (C0CE_INSERT_ENABLE_LSR|C0CE_INSERT_ENABLE_LSR_BI)))
+        {
           UCHAR lsr = 0x10;  /* break interrupt indicator */
 
           if (C0C_TX_BUFFER_THR_EMPTY(&pIoPortRead->txBuf)) {
