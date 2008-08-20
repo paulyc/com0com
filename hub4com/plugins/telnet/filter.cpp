@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/04/14 07:32:04  vfrolov
+ * Renamed option --use-port-module to --use-driver
+ *
  * Revision 1.1  2008/03/28 16:05:44  vfrolov
  * Initial revision
  *
@@ -43,10 +46,16 @@ const char *GetParam(const char *pArg, const char *pPattern)
   return pArg + lenPattern;
 }
 ///////////////////////////////////////////////////////////////
-typedef map<int, TelnetProtocol*> PortsMap;
-typedef pair<int, TelnetProtocol*> PortPair;
-
-class Filter {
+class Valid {
+  public:
+    Valid() : isValid(TRUE) {}
+    void Invalidate() { isValid = FALSE; }
+    BOOL IsValid() const { return isValid; }
+  private:
+    BOOL isValid;
+};
+///////////////////////////////////////////////////////////////
+class Filter : public Valid {
   public:
     Filter(int argc, const char *const argv[]);
     void SetHub(HHUB _hHub) { hHub = _hHub; }
@@ -56,6 +65,10 @@ class Filter {
   private:
     HHUB hHub;
     string terminalType;
+
+    typedef map<int, TelnetProtocol*> PortsMap;
+    typedef pair<int, TelnetProtocol*> PortPair;
+
     PortsMap portsMap;
 };
 
@@ -68,6 +81,7 @@ Filter::Filter(int argc, const char *const argv[])
 
     if (!pArg) {
       cerr << "Unknown option " << *pArgs << endl;
+      Invalidate();
       continue;
     }
 
@@ -77,6 +91,7 @@ Filter::Filter(int argc, const char *const argv[])
       terminalType = pParam;
     } else {
       cerr << "Unknown option " << pArg << endl;
+      Invalidate();
     }
   }
 }
@@ -172,7 +187,17 @@ static HFILTER CALLBACK Create(
     int argc,
     const char *const argv[])
 {
-  return (HFILTER)new Filter(argc, argv);
+  Filter *pFilter = new Filter(argc, argv);
+
+  if (!pFilter)
+    return NULL;
+
+  if (!pFilter->IsValid()) {
+    delete pFilter;
+    return NULL;
+  }
+
+  return (HFILTER)pFilter;
 }
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK Init(
