@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/04/14 07:32:03  vfrolov
+ * Renamed option --use-port-module to --use-driver
+ *
  * Revision 1.1  2008/03/26 08:36:25  vfrolov
  * Initial revision
  *
@@ -110,7 +113,7 @@ static string type2str(PLUGIN_TYPE type)
   switch (type) {
     case PLUGIN_TYPE_FILTER: str << "filter"; break;
     case PLUGIN_TYPE_DRIVER: str << "driver"; break;
-    default:                 str << type;
+    default:                 str << "UNKNOWN(" << type << ")";
   }
 
   return str.str();
