@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/08/15 12:44:59  vfrolov
+ * Added fake read filter method to ports
+ *
  * Revision 1.5  2008/03/26 08:48:18  vfrolov
  * Initial revision
  *
@@ -97,6 +100,8 @@ class ComHub
 
       return ports.at(n);
     }
+
+    const char *FilterName(HFILTER hFilter) const;
 
   private:
     Ports ports;
