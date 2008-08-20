@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/08/14 15:19:07  vfrolov
+ * Execute OnCommEvent() in main thread context
+ *
  * Revision 1.3  2008/08/11 07:15:34  vfrolov
  * Replaced
  *   HUB_MSG_TYPE_COM_FUNCTION
@@ -59,6 +62,7 @@ extern BOOL SetManualRtsControl(HANDLE handle);
 extern BOOL SetManualDtrControl(HANDLE handle);
 extern BOOL SetComEvents(HANDLE handle, DWORD *events);
 extern BOOL CommFunction(HANDLE handle, DWORD func);
+extern DWORD SetEscMode(HANDLE handle, DWORD options, BYTE escapeChar, BYTE **ppBuf, DWORD *pDone);
 ///////////////////////////////////////////////////////////////
 class ReadOverlapped : private OVERLAPPED
 {
