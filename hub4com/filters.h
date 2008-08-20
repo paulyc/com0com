@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/04/16 14:13:59  vfrolov
+ * Added ability to specify source posts for OUT method
+ *
  * Revision 1.1  2008/03/26 08:35:32  vfrolov
  * Initial revision
  *
@@ -56,6 +59,7 @@ class Filters
         const set<int> *pSrcPorts);
     void Report() const;
     BOOL Init() const;
+    const char *FilterName(HFILTER hFilter) const;
     BOOL InMethod(
         int nFromPort,
         HubMsg *pInMsg,
