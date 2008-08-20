@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/04/14 07:32:03  vfrolov
+ * Renamed option --use-port-module to --use-driver
+ *
  * Revision 1.3  2008/04/07 12:29:11  vfrolov
  * Replaced --rt-events option by SET_RT_EVENTS message
  *
@@ -42,7 +45,7 @@
 ///////////////////////////////////////////////////////////////
 static ROUTINE_MSG_INSERT_VAL *pMsgReplaceVal = NULL;
 static ROUTINE_MSG_REPLACE_NONE *pMsgReplaceNone = NULL;
-static ROUTINE_MSG_REPLACE_NONE *pMsgInsertNone = NULL;
+static ROUTINE_MSG_INSERT_NONE *pMsgInsertNone = NULL;
 ///////////////////////////////////////////////////////////////
 const char *GetParam(const char *pArg, const char *pPattern)
 {
