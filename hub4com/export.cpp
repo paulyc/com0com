@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/08/19 16:45:27  vfrolov
+ * Added missing size setting to msg_insert_buf()
+ *
  * Revision 1.1  2008/03/26 08:35:03  vfrolov
  * Initial revision
  *
@@ -189,6 +192,14 @@ static const char * CALLBACK port_name(HHUB hHub, int n)
   return pPort->Name().c_str();
 }
 ///////////////////////////////////////////////////////////////
+static const char * CALLBACK filter_name(HHUB hHub, HFILTER hFilter)
+{
+  _ASSERTE(hHub != NULL);
+  _ASSERTE(((ComHub *)hHub)->IsValid());
+
+  return ((ComHub *)hHub)->FilterName(hFilter);
+}
+///////////////////////////////////////////////////////////////
 static void CALLBACK on_xoff(HHUB hHub, HMASTERPORT hMasterPort)
 {
   _ASSERTE(hHub != NULL);
@@ -236,6 +247,7 @@ HUB_ROUTINES_A hubRoutines = {
   msg_insert_none,
   num_ports,
   port_name,
+  filter_name,
   on_xoff,
   on_xon,
   on_read,
