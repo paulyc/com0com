@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/08/20 14:30:19  vfrolov
+ * Redesigned serial port options
+ *
  * Revision 1.6  2008/08/15 12:44:59  vfrolov
  * Added fake read filter method to ports
  *
@@ -102,14 +105,32 @@ class ComPort
     int countWaitCommEventOverlapped;
     int countXoff;
     BOOL filterX;
-    BYTE maskOutPins;
-    DWORD options;
+    WORD maskOutPins;
+    WORD maskMst;
+    DWORD intercepted_options;
 
     DWORD writeQueueLimit;
     DWORD writeQueued;
     DWORD writeLost;
     DWORD writeLostTotal;
     DWORD errors;
+
+  private:
+    DWORD _inOptions;
+
+    DWORD InOptions() const {
+      return _inOptions;
+    }
+
+    void InOptionsDel(DWORD opts) {
+      _inOptions &= ~opts;
+      maskMst = GO_O2V_MODEM_STATUS(_inOptions);
+    }
+
+    void InOptionsAdd(DWORD opts) {
+      _inOptions |= opts;
+      maskMst = GO_O2V_MODEM_STATUS(_inOptions);
+    }
 };
 ///////////////////////////////////////////////////////////////
 
