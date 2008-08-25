@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/04/16 14:09:41  vfrolov
+ * Included <set>
+ *
  * Revision 1.3  2008/03/26 08:15:24  vfrolov
  * Added more includes
  *
@@ -32,6 +35,8 @@
 
 #ifndef _PRECOMP_H_
 #define _PRECOMP_H_
+
+#define _WIN32_WINNT 0x0500
 
 #include <windows.h>
 #include <crtdbg.h>
