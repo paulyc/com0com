@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/08/22 16:57:11  vfrolov
+ * Added
+ *   HUB_MSG_TYPE_GET_ESC_OPTS
+ *   HUB_MSG_TYPE_FAIL_ESC_OPTS
+ *   HUB_MSG_TYPE_BREAK_STATUS
+ *
  * Revision 1.5  2008/08/22 12:45:34  vfrolov
  * Added masking to HUB_MSG_TYPE_MODEM_STATUS and HUB_MSG_TYPE_LINE_STATUS
  *
@@ -371,6 +377,15 @@ static BOOL CALLBACK OutMethod(
     case HUB_MSG_TYPE_SET_OUT_OPTS: {
       // or'e with the required mask to set pin state
       pOutMsg->u.val |= SO_V2O_PIN_STATE(((Filter *)hFilter)->outMask);
+
+      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+
+      if (!pState)
+        return FALSE;
+
+      // init pin state
+      InsertPinState(*(Filter *)hFilter, ((Filter *)hFilter)->lmInMask, pState->lmInVal, &pOutMsg);
+
       break;
     }
     case HUB_MSG_TYPE_GET_IN_OPTS: {
