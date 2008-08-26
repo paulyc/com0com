@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/27 17:17:27  vfrolov
+ * Initial revision
  *
  */
 
@@ -111,7 +113,7 @@ BOOL Connect(SOCKET hSock, const struct sockaddr_in &snRemote)
   u_long addr = ntohl(snRemote.sin_addr.s_addr);
   u_short port  = ntohs(snRemote.sin_port);
 
-  cout << "Connect(" << hex << hSock << dec << ", " 
+  cout << "Connect(" << hex << hSock << dec << ", "
        << ((addr >> 24) & 0xFF) << '.'
        << ((addr >> 16) & 0xFF) << '.'
        << ((addr >>  8) & 0xFF) << '.'
@@ -262,11 +264,44 @@ BOOL ReadOverlapped::StartRead()
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
+static HANDLE hThread = INVALID_HANDLE_VALUE;
+#ifdef _DEBUG
+static DWORD idThread;
+#endif  /* _DEBUG */
+///////////////////////////////////////////////////////////////
 WaitEventOverlapped::WaitEventOverlapped(ComPort &_port, SOCKET hSockWait)
   : port(_port),
     hSock(hSockWait),
     hWait(INVALID_HANDLE_VALUE)
 {
+#ifdef _DEBUG
+  if (hThread == INVALID_HANDLE_VALUE) {
+    idThread = ::GetCurrentThreadId();
+  } else {
+    _ASSERTE(idThread == ::GetCurrentThreadId());
+  }
+#endif  /* _DEBUG */
+
+  if (hThread == INVALID_HANDLE_VALUE) {
+    if (!::DuplicateHandle(::GetCurrentProcess(),
+                           ::GetCurrentThread(),
+                           ::GetCurrentProcess(),
+                           &hThread,
+                           0,
+                           FALSE,
+                           DUPLICATE_SAME_ACCESS))
+    {
+      hThread = INVALID_HANDLE_VALUE;
+
+      TraceError(
+          GetLastError(),
+          "WaitEventOverlapped::WaitEventOverlapped(): DuplicateHandle() %s",
+          port.Name().c_str());
+
+      return;
+    }
+  }
+
   hEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
 
   if (!hEvent) {
@@ -278,7 +313,7 @@ WaitEventOverlapped::WaitEventOverlapped(ComPort &_port, SOCKET hSockWait)
     return;
   }
 
-  if (!::RegisterWaitForSingleObject(&hWait, hEvent, OnEvent, this, INFINITE, WT_EXECUTEINIOTHREAD)) {
+  if (!::RegisterWaitForSingleObject(&hWait, hEvent, OnEvent, this, INFINITE, WT_EXECUTEINWAITTHREAD)) {
     TraceError(
         GetLastError(),
         "WaitEventOverlapped::StartWaitEvent(): RegisterWaitForSingleObject() %s",
@@ -331,6 +366,11 @@ VOID CALLBACK WaitEventOverlapped::OnEvent(
     PVOID pOverlapped,
     BOOLEAN /*timerOrWaitFired*/)
 {
+  ::QueueUserAPC(OnEvent, hThread, (ULONG_PTR)pOverlapped);
+}
+
+VOID CALLBACK WaitEventOverlapped::OnEvent(ULONG_PTR pOverlapped)
+{
   WaitEventOverlapped *pOver = (WaitEventOverlapped *)pOverlapped;
 
   WSANETWORKEVENTS events;
@@ -382,6 +422,33 @@ ListenOverlapped::ListenOverlapped(Listener &_listener, SOCKET hSockWait)
     hSock(hSockWait),
     hWait(INVALID_HANDLE_VALUE)
 {
+#ifdef _DEBUG
+  if (hThread == INVALID_HANDLE_VALUE) {
+    idThread = ::GetCurrentThreadId();
+  } else {
+    _ASSERTE(idThread == ::GetCurrentThreadId());
+  }
+#endif  /* _DEBUG */
+
+  if (hThread == INVALID_HANDLE_VALUE) {
+    if (!::DuplicateHandle(::GetCurrentProcess(),
+                           ::GetCurrentThread(),
+                           ::GetCurrentProcess(),
+                           &hThread,
+                           0,
+                           FALSE,
+                           DUPLICATE_SAME_ACCESS))
+    {
+      hThread = INVALID_HANDLE_VALUE;
+
+      TraceError(
+          GetLastError(),
+          "ListenOverlapped::ListenOverlapped(): DuplicateHandle()");
+
+      return;
+    }
+  }
+
   hEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
 
   if (!hEvent) {
@@ -392,7 +459,7 @@ ListenOverlapped::ListenOverlapped(Listener &_listener, SOCKET hSockWait)
     return;
   }
 
-  if (!::RegisterWaitForSingleObject(&hWait, hEvent, OnEvent, this, INFINITE, WT_EXECUTEINIOTHREAD)) {
+  if (!::RegisterWaitForSingleObject(&hWait, hEvent, OnEvent, this, INFINITE, WT_EXECUTEINWAITTHREAD)) {
     TraceError(
         GetLastError(),
         "ListenOverlapped::StartWaitEvent(): RegisterWaitForSingleObject() %s");
@@ -440,6 +507,11 @@ ListenOverlapped::~ListenOverlapped()
 VOID CALLBACK ListenOverlapped::OnEvent(
     PVOID pOverlapped,
     BOOLEAN /*timerOrWaitFired*/)
+{
+  ::QueueUserAPC(OnEvent, hThread, (ULONG_PTR)pOverlapped);
+}
+
+VOID CALLBACK ListenOverlapped::OnEvent(ULONG_PTR pOverlapped)
 {
   ListenOverlapped *pOver = (ListenOverlapped *)pOverlapped;
 
