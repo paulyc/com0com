@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/08/22 16:57:11  vfrolov
+ * Added
+ *   HUB_MSG_TYPE_GET_ESC_OPTS
+ *   HUB_MSG_TYPE_FAIL_ESC_OPTS
+ *   HUB_MSG_TYPE_BREAK_STATUS
+ *
  * Revision 1.5  2008/08/20 14:30:19  vfrolov
  * Redesigned serial port options
  *
@@ -346,25 +352,23 @@ DWORD SetEscMode(HANDLE handle, DWORD escOptions, BYTE **ppBuf, DWORD *pDone)
 
   DWORD lenOutBufIoctl = 0;
 
-  if (opts & C0CE_INSERT_IOCTL_GET) {
-    if (opts & (C0CE_INSERT_ENABLE_LSR|C0CE_INSERT_ENABLE_LSR_BI))
-      lenOutBufIoctl += sizeof(UCHAR)*2 + sizeof(UCHAR);
+  if (opts & (C0CE_INSERT_ENABLE_LSR|C0CE_INSERT_ENABLE_LSR_BI))
+    lenOutBufIoctl += sizeof(UCHAR)*2 + sizeof(UCHAR);
 
-    if (opts & C0CE_INSERT_ENABLE_MST)
-      lenOutBufIoctl += sizeof(UCHAR)*2 + sizeof(UCHAR);
+  if (opts & C0CE_INSERT_ENABLE_MST)
+    lenOutBufIoctl += sizeof(UCHAR)*2 + sizeof(UCHAR);
 
-    if (opts & C0CE_INSERT_ENABLE_RBR)
-      lenOutBufIoctl += sizeof(UCHAR)*2 + sizeof(ULONG);
+  if (opts & C0CE_INSERT_ENABLE_RBR)
+    lenOutBufIoctl += sizeof(UCHAR)*2 + sizeof(ULONG);
 
-    if (opts & C0CE_INSERT_ENABLE_RLC)
-      lenOutBufIoctl += sizeof(UCHAR)*2 + sizeof(UCHAR)*3;
+  if (opts & C0CE_INSERT_ENABLE_RLC)
+    lenOutBufIoctl += sizeof(UCHAR)*2 + sizeof(UCHAR)*3;
 
-    if (lenOutBufIoctl) {
-      *ppBuf = pBufAlloc(lenOutBufIoctl);
+  if (lenOutBufIoctl) {
+    *ppBuf = pBufAlloc(lenOutBufIoctl);
 
-      if (!*ppBuf)
-        lenOutBufIoctl = 0;
-    }
+    if (!*ppBuf)
+      lenOutBufIoctl = 0;
   }
 
   if (!DeviceIoControl(handle,
@@ -377,6 +381,28 @@ DWORD SetEscMode(HANDLE handle, DWORD escOptions, BYTE **ppBuf, DWORD *pDone)
 
     *pDone = 0;
     return escOptions | ESC_OPTS_V2O_ESCCHAR(-1);
+  }
+
+  if (lenOutBufIoctl && (opts & C0CE_INSERT_IOCTL_GET) == 0) {
+    BYTE *pBuf = *ppBuf;
+
+    if (opts & (C0CE_INSERT_ENABLE_LSR|C0CE_INSERT_ENABLE_LSR_BI)) {
+      *pBuf++ = escapeChar;
+      *pBuf++ = SERIAL_LSRMST_LSR_NODATA;
+      *pBuf++ = (LINE_STATUS_THRE | LINE_STATUS_TEMT);
+    }
+
+    if (opts & C0CE_INSERT_ENABLE_MST) {
+      DWORD stat;
+
+      if (::GetCommModemStatus(handle, &stat)) {
+        *pBuf++ = escapeChar;
+        *pBuf++ = SERIAL_LSRMST_MST;
+        *pBuf++ = (BYTE)stat;
+      }
+    }
+
+    *pDone = (DWORD)(pBuf - *ppBuf);
   }
 
   if (opts & C0CE_INSERT_ENABLE_MST)
