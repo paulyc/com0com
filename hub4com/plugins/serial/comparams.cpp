@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/04/07 12:28:03  vfrolov
+ * Replaced --rt-events option by SET_RT_EVENTS message
+ *
  * Revision 1.1  2008/03/26 08:44:13  vfrolov
  * Redesigned for using plugins
  *
@@ -35,12 +38,10 @@
  * Revision 1.1  2007/01/23 09:13:10  vfrolov
  * Initial revision
  *
- *
  */
 
 #include "precomp.h"
 #include "comparams.h"
-#include "../../utils.h"
 
 ///////////////////////////////////////////////////////////////
 static struct {

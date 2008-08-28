@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/08/20 14:30:19  vfrolov
+ * Redesigned serial port options
+ *
  * Revision 1.6  2008/08/15 12:44:59  vfrolov
  * Added fake read filter method to ports
  *
@@ -43,8 +46,17 @@
 #include "comparams.h"
 #include "comport.h"
 #include "import.h"
-#include "../../utils.h"
 
+///////////////////////////////////////////////////////////////
+static const char *GetParam(const char *pArg, const char *pPattern)
+{
+  size_t lenPattern = strlen(pPattern);
+
+  if (_strnicmp(pArg, pPattern, lenPattern) != 0)
+    return NULL;
+
+  return pArg + lenPattern;
+}
 ///////////////////////////////////////////////////////////////
 static PLUGIN_TYPE CALLBACK GetPluginType()
 {
