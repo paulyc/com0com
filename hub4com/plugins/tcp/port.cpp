@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/08/15 12:44:59  vfrolov
+ * Added fake read filter method to ports
+ *
  * Revision 1.3  2008/04/14 07:32:04  vfrolov
  * Renamed option --use-port-module to --use-driver
  *
@@ -34,8 +37,17 @@
 #include "comparams.h"
 #include "comport.h"
 #include "import.h"
-#include "../../utils.h"
 
+///////////////////////////////////////////////////////////////
+static const char *GetParam(const char *pArg, const char *pPattern)
+{
+  size_t lenPattern = strlen(pPattern);
+
+  if (_strnicmp(pArg, pPattern, lenPattern) != 0)
+    return NULL;
+
+  return pArg + lenPattern;
+}
 ///////////////////////////////////////////////////////////////
 static PLUGIN_TYPE CALLBACK GetPluginType()
 {
