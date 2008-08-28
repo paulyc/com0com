@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.9  2008/08/22 16:57:12  vfrolov
+ * Added
+ *   HUB_MSG_TYPE_GET_ESC_OPTS
+ *   HUB_MSG_TYPE_FAIL_ESC_OPTS
+ *   HUB_MSG_TYPE_BREAK_STATUS
+ *
  * Revision 1.8  2008/08/22 12:45:34  vfrolov
  * Added masking to HUB_MSG_TYPE_MODEM_STATUS and HUB_MSG_TYPE_LINE_STATUS
  *
@@ -364,15 +370,6 @@ BOOL ComPort::FakeReadFilter(HUB_MSG *pInMsg)
   return pInMsg != NULL;
 }
 
-static FIELD2NAME codeNameTableSetPinState[] = {
-  TOFIELD2NAME2(PIN_STATE_, RTS),
-  TOFIELD2NAME2(PIN_STATE_, DTR),
-  TOFIELD2NAME2(PIN_STATE_, OUT1),
-  TOFIELD2NAME2(PIN_STATE_, OUT2),
-  TOFIELD2NAME2(PIN_STATE_, BREAK),
-  {0, 0, NULL}
-};
-
 BOOL ComPort::Write(HUB_MSG *pMsg)
 {
   _ASSERTE(pMsg != NULL);
@@ -443,15 +440,7 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
     if (handle == INVALID_HANDLE_VALUE)
       return FALSE;
 
-    WORD mask = MASK2VAL(pMsg->u.val);
-
-    cout << name << " SET_PIN_STATE 0x" << hex << pMsg->u.val << dec << " SET["
-         << FieldToName(codeNameTableSetPinState, pMsg->u.val & mask)
-         << "] CLR["
-         << FieldToName(codeNameTableSetPinState, ~pMsg->u.val & mask)
-         << "]" << endl;
-
-    mask &= maskOutPins;
+    WORD mask = MASK2VAL(pMsg->u.val) & maskOutPins;
 
     if (mask & PIN_STATE_RTS) {
       if (!CommFunction(handle, (pMsg->u.val & PIN_STATE_RTS) ? SETRTS : CLRRTS))
