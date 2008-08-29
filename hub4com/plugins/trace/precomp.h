@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/08/29 13:13:04  vfrolov
+ * Initial revision
+ *
  */
 
 #ifndef _PRECOMP_H_
@@ -31,6 +34,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <set>
 
 using namespace std;
 

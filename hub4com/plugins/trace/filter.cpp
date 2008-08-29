@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/08/29 13:13:04  vfrolov
+ * Initial revision
+ *
  */
 
 #include "precomp.h"
@@ -34,6 +37,8 @@
 static ROUTINE_PORT_NAME_A *pPortName = NULL;
 static ROUTINE_FILTER_NAME_A *pFilterName = NULL;
 ///////////////////////////////////////////////////////////////
+static void PrintTime(ostream &tout);
+///////////////////////////////////////////////////////////////
 const char *GetParam(const char *pArg, const char *pPattern)
 {
   size_t lenPattern = strlen(pPattern);
@@ -46,14 +51,20 @@ const char *GetParam(const char *pArg, const char *pPattern)
 ///////////////////////////////////////////////////////////////
 class TraceConfig {
   public:
-    TraceConfig() : pTraceStream(&cout) {}
+    TraceConfig() : pTraceStream(NULL) {}
 
     void SetTracePath(const char *pPath);
     ostream *GetTraceStream();
+    void PrintToAllTraceStreams(const char *pStr);
+    stringstream buf;
 
   private:
     string path;
     ostream *pTraceStream;
+
+    typedef set<ostream*> Streams;
+
+    Streams traceStreams;
 };
 
 void TraceConfig::SetTracePath(const char *pPath) {
@@ -65,19 +76,33 @@ ostream *TraceConfig::GetTraceStream() {
   if (pTraceStream)
     return pTraceStream;
 
-  ofstream *pStream = new ofstream(path.c_str());
+  if (path.empty()) {
+    pTraceStream = &cout;
+  } else {
+    ofstream *pStream = new ofstream(path.c_str());
 
-  if (!pStream) {
-    cerr << "No enough memory." << endl;
-    exit(2);
+    if (!pStream) {
+      cerr << "No enough memory." << endl;
+      exit(2);
+    }
+
+    if (!pStream->is_open()) {
+      cerr << "Can't open " << path.c_str() << endl;
+      exit(2);
+    }
+
+    pTraceStream = pStream;
   }
 
-  if (!pStream->is_open()) {
-    cerr << "Can't open " << path.c_str() << endl;
-    exit(2);
-  }
+  traceStreams.insert(pTraceStream);
 
-  return pTraceStream = pStream;
+  return pTraceStream;
+}
+
+void TraceConfig::PrintToAllTraceStreams(const char *pStr)
+{
+  for (Streams::const_iterator iS = traceStreams.begin() ; iS != traceStreams.end() ; iS++)
+    (**iS) << pStr;
 }
 ///////////////////////////////////////////////////////////////
 class Valid {
@@ -165,6 +190,13 @@ static HCONFIG CALLBACK ConfigStart()
     exit(2);
   }
 
+  PrintTime(pConfig->buf);
+  pConfig->buf << "Command Line:" << endl
+               << "  {" << GetCommandLine() << "}" << endl;
+
+  PrintTime(pConfig->buf);
+  pConfig->buf << "Config: {";
+
   return (HCONFIG)pConfig;
 }
 ///////////////////////////////////////////////////////////////
@@ -173,6 +205,8 @@ static BOOL CALLBACK Config(
     const char *pArg)
 {
   _ASSERTE(hConfig != NULL);
+
+  ((TraceConfig *)hConfig)->buf << endl << "  {" << pArg << "}";
 
   const char *pParam;
 
@@ -189,6 +223,9 @@ static void CALLBACK ConfigStop(
     HCONFIG hConfig)
 {
   _ASSERTE(hConfig != NULL);
+
+  ((TraceConfig *)hConfig)->buf << endl << "}" << endl;
+  ((TraceConfig *)hConfig)->PrintToAllTraceStreams(((TraceConfig *)hConfig)->buf.str().c_str());
 
   delete (TraceConfig *)hConfig;
 }
