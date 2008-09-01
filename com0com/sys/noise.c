@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/06/26 13:37:10  vfrolov
+ * Implemented noise emulation
+ *
  */
 
 #include "precomp.h"
@@ -47,8 +50,13 @@ VOID FrameError(PC0C_IO_PORT pReadIoPort, PUCHAR pLsr)
 /********************************************************************/
 VOID BreakError(PC0C_IO_PORT pReadIoPort, PUCHAR pLsr)
 {
-  *pLsr |= 0x10;  /* break interrupt indicator */
-  pReadIoPort->errors |= SERIAL_ERROR_BREAK;
+  *pLsr |= 0x18;  /* break interrupt indicator & framing error */
+  pReadIoPort->errors |= (SERIAL_ERROR_BREAK | SERIAL_ERROR_FRAMING);
+
+  if (pReadIoPort->lineControl.Parity == ODD_PARITY || pReadIoPort->lineControl.Parity == MARK_PARITY) {
+    *pLsr |= 0x04;  /* parity error */
+    pReadIoPort->errors |= SERIAL_ERROR_PARITY;
+  }
 }
 /********************************************************************/
 UCHAR GarbageChar(PC0C_IO_PORT pWriteIoPort, PC0C_IO_PORT pReadIoPort, PUCHAR pLsr)
