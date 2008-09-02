@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2008/09/01 16:54:28  vfrolov
+ * Replaced SERIAL_LSRMST_LSR_NODATA by SERIAL_LSRMST_LSR_DATA for BREAK
+ *
  * Revision 1.12  2008/07/11 10:30:39  vfrolov
  * Added missing data available bit to LSR
  *
@@ -206,6 +209,7 @@ VOID CopyCharsWithEscape(
         if (pIoPortRemote->sendBreak) {
           pIoPortRemote->sendBreak = FALSE;
           BreakError(pIoPort, &lsr);
+          pFlowFilter->events |= SERIAL_EV_BREAK;
         } else {
           if (pIoPortRemote->brokeCharsProbability > 0)
             BrokeChar(pIoPortRemote, pIoPort, &curChar, &lsr);
