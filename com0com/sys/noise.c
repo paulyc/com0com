@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/09/01 16:45:12  vfrolov
+ * Fixed bits in BreakError()
+ *
  * Revision 1.1  2008/06/26 13:37:10  vfrolov
  * Implemented noise emulation
  *
@@ -51,12 +54,10 @@ VOID FrameError(PC0C_IO_PORT pReadIoPort, PUCHAR pLsr)
 VOID BreakError(PC0C_IO_PORT pReadIoPort, PUCHAR pLsr)
 {
   *pLsr |= 0x18;  /* break interrupt indicator & framing error */
-  pReadIoPort->errors |= (SERIAL_ERROR_BREAK | SERIAL_ERROR_FRAMING);
+  pReadIoPort->errors |= SERIAL_ERROR_BREAK;
 
-  if (pReadIoPort->lineControl.Parity == ODD_PARITY || pReadIoPort->lineControl.Parity == MARK_PARITY) {
+  if (pReadIoPort->lineControl.Parity == ODD_PARITY || pReadIoPort->lineControl.Parity == MARK_PARITY)
     *pLsr |= 0x04;  /* parity error */
-    pReadIoPort->errors |= SERIAL_ERROR_PARITY;
-  }
 }
 /********************************************************************/
 UCHAR GarbageChar(PC0C_IO_PORT pWriteIoPort, PC0C_IO_PORT pReadIoPort, PUCHAR pLsr)
