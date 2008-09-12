@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2008/09/02 07:36:22  vfrolov
+ * Added missing SERIAL_EV_BREAK
+ *
  * Revision 1.13  2008/09/01 16:54:28  vfrolov
  * Replaced SERIAL_LSRMST_LSR_NODATA by SERIAL_LSRMST_LSR_DATA for BREAK
  *
@@ -231,7 +234,8 @@ VOID CopyCharsWithEscape(
         pFlowFilter->events |= SERIAL_EV_ERR;
 
         if (pIoPort->escapeChar &&
-            (pIoPort->insertMask & (C0CE_INSERT_ENABLE_LSR|C0CE_INSERT_ENABLE_LSR_BI)))
+            ((pIoPort->insertMask & C0CE_INSERT_ENABLE_LSR) != 0 ||
+             (isBreak && (pIoPort->insertMask & C0CE_INSERT_ENABLE_LSR_BI) != 0)))
         {
           UCHAR buf[4];
           SIZE_T length = sizeof(buf);
@@ -246,8 +250,12 @@ VOID CopyCharsWithEscape(
               lsr |= 0x40;  /* transmit holding register empty and line is idle */
           }
 
-          if (pIoPortRemote->writeHolding & SERIAL_TX_WAITING_ON_BREAK && !pIoPortRemote->sendBreak)
+          if ((pIoPort->insertMask & C0CE_INSERT_ENABLE_LSR_BI) != 0 &&
+              (pIoPortRemote->writeHolding & SERIAL_TX_WAITING_ON_BREAK) != 0 &&
+              !pIoPortRemote->sendBreak)
+          {
             lsr |= 0x10;  /* break interrupt indicator */
+          }
 
           buf[0] = pIoPort->escapeChar;
           buf[1] = SERIAL_LSRMST_LSR_DATA;
