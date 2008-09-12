@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.23  2008/04/02 10:28:24  vfrolov
+ * Added reload command
+ *
  * Revision 1.22  2007/11/27 16:32:54  vfrolov
  * Added disable and enable options
  *
@@ -964,6 +967,8 @@ int Help(const char *pProgName)
                                       C0C_PREF_PORT_NAME_B "<n>\n"
     "  disable all                  - disable all ports in current hardware profile\n"
     "  enable all                   - enable all ports in current hardware profile\n"
+    );
+  ConsoleWrite(
     "  change <portid> <prms>       - set parameters <prms> for port with\n"
     "                                 identifier <portid>\n"
     "  list                         - for each port show its identifier and\n"
