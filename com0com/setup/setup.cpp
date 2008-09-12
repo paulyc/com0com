@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.24  2008/09/12 09:55:59  vfrolov
+ * Fixed help cutting
+ *
  * Revision 1.23  2008/04/02 10:28:24  vfrolov
  * Added reload command
  *
@@ -120,6 +123,7 @@
 
 ///////////////////////////////////////////////////////////////
 static BOOL detailPrms = FALSE;
+static BOOL silent = FALSE;
 ///////////////////////////////////////////////////////////////
 static BOOL IsValidPortNum(int num)
 {
@@ -778,7 +782,8 @@ int Uninstall(InfFile &infFile)
 
           if (QueryServiceStatus(hSrv, &srvStatus)) {
             if (srvStatus.dwCurrentState == SERVICE_STOPPED) {
-              if (ShowMsg(MB_YESNO,
+              if (silent ||
+                  ShowMsg(MB_YESNO,
                   "The deleting %s service will remove your manual settings.\n"
                   "Would you like to delete service?\n",
                   C0C_SERVICE) == IDYES)
@@ -953,6 +958,7 @@ int Help(const char *pProgName)
     "Options:\n"
     "  --output <file>              - file for output, default is console\n"
     "  --detail-prms                - show detailed parameters\n"
+    "  --silent                     - suppress dialogs if possible\n"
     );
   ConsoleWrite(
     "\n"
@@ -1049,6 +1055,12 @@ int Main(int argc, const char* argv[])
     else
     if (!strcmp(argv[1], "--detail-prms")) {
       detailPrms = TRUE;
+      argv++;
+      argc--;
+    }
+    else
+    if (!strcmp(argv[1], "--silent")) {
+      silent = TRUE;
       argv++;
       argc--;
     }
