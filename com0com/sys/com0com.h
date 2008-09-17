@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.45  2008/07/11 10:38:00  vfrolov
+ * Added nonstandard ability to enable LSR insertion on BREAK OFF
+ *
  * Revision 1.44  2008/06/26 13:37:10  vfrolov
  * Implemented noise emulation
  *
@@ -276,10 +279,12 @@ typedef struct _C0C_IO_PORT {
 
   KTIMER                  timerReadTotal;
   KDPC                    timerReadTotalDpc;
+  ULONG                   addRTTO;
 
   KTIMER                  timerReadInterval;
   KDPC                    timerReadIntervalDpc;
   LARGE_INTEGER           timeoutInterval;
+  ULONG                   addRITO;
 
   KTIMER                  timerWriteTotal;
   KDPC                    timerWriteTotalDpc;

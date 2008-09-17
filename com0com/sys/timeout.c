@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.10  2008/03/14 15:28:39  vfrolov
+ * Implemented ability to get paired port settings with
+ * extended IOCTL_SERIAL_LSRMST_INSERT
+ *
  * Revision 1.9  2007/06/04 15:24:33  vfrolov
  * Fixed open reject just after close in exclusiveMode
  *
@@ -46,7 +50,6 @@
  *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
- *
  *
  */
 
@@ -150,7 +153,7 @@ NTSTATUS SetReadTimeout(PC0C_IO_PORT pIoPort, PIRP pIrp)
       pState->flags |= C0C_IRP_FLAG_INTERVAL_TIMEOUT;
 
       pIoPort->timeoutInterval.QuadPart =
-          ((LONGLONG)timeouts.ReadIntervalTimeout) * -10000;
+          ((LONGLONG)timeouts.ReadIntervalTimeout + pIoPort->addRITO) * -10000;
 
       if (pIrp->IoStatus.Information)
         SetIntervalTimeout(pIoPort);
@@ -163,7 +166,8 @@ NTSTATUS SetReadTimeout(PC0C_IO_PORT pIoPort, PIRP pIrp)
 
     length = IoGetCurrentIrpStackLocation(pIrp)->Parameters.Read.Length;
 
-    total.QuadPart = ((LONGLONG)(UInt32x32To64(length, multiplier) + constant)) * -10000;
+    total.QuadPart = ((LONGLONG)(
+        UInt32x32To64(length, multiplier) + constant + pIoPort->addRTTO)) * -10000;
 
     KeSetTimer(
         &pIoPort->timerReadTotal,
