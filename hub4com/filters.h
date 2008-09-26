@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/08/20 08:32:35  vfrolov
+ * Implemented Filters::FilterName()
+ *
  * Revision 1.2  2008/04/16 14:13:59  vfrolov
  * Added ability to specify source posts for OUT method
  *
@@ -55,8 +58,9 @@ class Filters
     BOOL AddFilter(
         int iPort,
         const char *pName,
-        BOOL isInMethod,
-        const set<int> *pSrcPorts);
+        BOOL addInMethod,
+        BOOL addOutMethod,
+        const set<int> *pOutMethodSrcPorts);
     void Report() const;
     BOOL Init() const;
     const char *FilterName(HFILTER hFilter) const;
