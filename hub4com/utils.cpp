@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/08/28 15:53:13  vfrolov
+ * Added ability to load arguments from standard input and
+ * to select fragment for loading
+ *
  * Revision 1.3  2008/04/16 14:07:12  vfrolov
  * Extended STRQTOK_R()
  *
@@ -54,7 +58,7 @@ void Args::Add(const string &arg, const vector<string> &params)
     for (size_type i = 0 ; i < params.size() ; i++) {
       stringstream par;
 
-      par << (i + 1) << "%%";
+      par << i << "%%";
 
       if (argBuf.compare(off + 2, par.str().length(), par.str()) == 0) {
         argBuf.replace(off, par.str().length() + 2, params[i]);
@@ -102,6 +106,8 @@ void Args::Add(const string &arg, const vector<string> &params)
     pEnd = NULL;
   }
 
+  vector<string> paramsLoad;
+
   ifstream ifile;
   istream *pInStream;
 
@@ -113,12 +119,12 @@ void Args::Add(const string &arg, const vector<string> &params)
       exit(1);
     }
 
+    paramsLoad.push_back(pFile);
     pInStream = &ifile;
   } else {
+    paramsLoad.push_back("");
     pInStream = &cin;
   }
-
-  vector<string> paramsLoad;
 
   for (char *p = STRQTOK_R(NULL, ",", &pSave) ; p ; p = STRQTOK_R(NULL, ",", &pSave))
     paramsLoad.push_back(p);
