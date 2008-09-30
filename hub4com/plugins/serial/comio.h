@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/08/22 16:57:12  vfrolov
+ * Added
+ *   HUB_MSG_TYPE_GET_ESC_OPTS
+ *   HUB_MSG_TYPE_FAIL_ESC_OPTS
+ *   HUB_MSG_TYPE_BREAK_STATUS
+ *
  * Revision 1.5  2008/08/20 14:30:19  vfrolov
  * Redesigned serial port options
  *
@@ -56,21 +62,53 @@
 #ifndef _COMIO_H
 #define _COMIO_H
 
+#include "../plugins_api.h"
+
 ///////////////////////////////////////////////////////////////
 class ComPort;
 class ComParams;
 ///////////////////////////////////////////////////////////////
-extern HANDLE OpenComPort(const char *pPath, const ComParams &comParams);
-extern BOOL SetManualRtsControl(HANDLE handle);
-extern BOOL SetManualDtrControl(HANDLE handle);
-extern BOOL SetComEvents(HANDLE handle, DWORD *events);
-extern BOOL CommFunction(HANDLE handle, DWORD func);
-extern DWORD SetEscMode(HANDLE handle, DWORD escOptions, BYTE **ppBuf, DWORD *pDone);
+class ComIo
+{
+  public:
+    ComIo(ComPort &_port) : port(_port), handle(INVALID_HANDLE_VALUE) {}
+    ~ComIo() { Close(); }
+
+    BOOL Open(const char *pPath, const ComParams &comParams);
+    void Close();
+
+    BOOL SetManualRtsControl();
+    BOOL SetManualDtrControl();
+    BOOL SetManualOut1Control() { return hasExtendedModemControl; }
+    BOOL SetManualOut2Control() { return hasExtendedModemControl; }
+    BOOL SetComEvents(DWORD *pEvents);
+    void SetPinState(WORD value, WORD mask);
+    DWORD SetBaudRate(DWORD baudRate);
+    DWORD SetLineControl(DWORD lineControl);
+    DWORD SetEscMode(DWORD escOptions, BYTE **ppBuf, DWORD *pDone);
+    void PurgeWrite() { ::PurgeComm(handle, PURGE_TXABORT|PURGE_TXCLEAR); }
+
+    HANDLE Handle() const { return handle; }
+    DWORD GetBaudRate() const { return dcb.BaudRate; }
+    DWORD GetLineControl() const {
+      return (VAL2LC_BYTESIZE(dcb.ByteSize)
+             |VAL2LC_PARITY(dcb.Parity)
+             |VAL2LC_STOPBITS(dcb.StopBits));
+    }
+
+  public:
+    ComPort &port;
+
+  private:
+    HANDLE handle;
+    BOOL hasExtendedModemControl;
+    DCB dcb;
+};
 ///////////////////////////////////////////////////////////////
 class ReadOverlapped : private OVERLAPPED
 {
   public:
-    ReadOverlapped(ComPort &_port);
+    ReadOverlapped(ComIo &_comIo);
     ~ReadOverlapped();
     BOOL StartRead();
 
@@ -80,14 +118,14 @@ class ReadOverlapped : private OVERLAPPED
         DWORD done,
         LPOVERLAPPED pOverlapped);
 
-    ComPort &port;
+    ComIo &comIo;
     BYTE *pBuf;
 };
 ///////////////////////////////////////////////////////////////
 class WriteOverlapped : private OVERLAPPED
 {
   public:
-    WriteOverlapped(ComPort &_port, BYTE *_pBuf, DWORD _len);
+    WriteOverlapped(ComIo &_comIo, BYTE *_pBuf, DWORD _len);
     ~WriteOverlapped();
     BOOL StartWrite();
 
@@ -97,7 +135,7 @@ class WriteOverlapped : private OVERLAPPED
       DWORD done,
       LPOVERLAPPED pOverlapped);
 
-    ComPort &port;
+    ComIo &comIo;
     BYTE *pBuf;
     DWORD len;
 };
@@ -105,7 +143,7 @@ class WriteOverlapped : private OVERLAPPED
 class WaitCommEventOverlapped : private OVERLAPPED
 {
   public:
-    WaitCommEventOverlapped(ComPort &_port);
+    WaitCommEventOverlapped(ComIo &_comIo);
     ~WaitCommEventOverlapped();
     BOOL StartWaitCommEvent();
 
@@ -115,7 +153,7 @@ class WaitCommEventOverlapped : private OVERLAPPED
       BOOLEAN timerOrWaitFired);
     static VOID CALLBACK OnCommEvent(ULONG_PTR pOverlapped);
 
-    ComPort &port;
+    ComIo &comIo;
     HANDLE hWait;
     DWORD eMask;
 };
