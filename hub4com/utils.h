@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/08/28 15:53:13  vfrolov
+ * Added ability to load arguments from standard input and
+ * to select fragment for loading
+ *
  * Revision 1.3  2008/04/16 14:07:12  vfrolov
  * Extended STRQTOK_R()
  *
@@ -43,7 +47,7 @@ class Args : public vector<string>
     Args(int argc, const char *const argv[]);
 
   private:
-    void Add(const string &arg, const vector<string> &params);
+    void Add(const string &arg);
 
     int num_recursive;
 };
