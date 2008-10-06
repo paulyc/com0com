@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/08/26 14:07:01  vfrolov
+ * Execute OnEvent() in main thread context
+ *
  * Revision 1.1  2008/03/27 17:17:27  vfrolov
  * Initial revision
  *
@@ -268,11 +271,8 @@ static HANDLE hThread = INVALID_HANDLE_VALUE;
 #ifdef _DEBUG
 static DWORD idThread;
 #endif  /* _DEBUG */
-///////////////////////////////////////////////////////////////
-WaitEventOverlapped::WaitEventOverlapped(ComPort &_port, SOCKET hSockWait)
-  : port(_port),
-    hSock(hSockWait),
-    hWait(INVALID_HANDLE_VALUE)
+
+static BOOL SetThread()
 {
 #ifdef _DEBUG
   if (hThread == INVALID_HANDLE_VALUE) {
@@ -295,12 +295,22 @@ WaitEventOverlapped::WaitEventOverlapped(ComPort &_port, SOCKET hSockWait)
 
       TraceError(
           GetLastError(),
-          "WaitEventOverlapped::WaitEventOverlapped(): DuplicateHandle() %s",
-          port.Name().c_str());
+          "SetThread(): DuplicateHandle()");
 
-      return;
+      return FALSE;
     }
   }
+
+  return TRUE;
+}
+///////////////////////////////////////////////////////////////
+WaitEventOverlapped::WaitEventOverlapped(ComPort &_port, SOCKET hSockWait)
+  : port(_port),
+    hSock(hSockWait),
+    hWait(INVALID_HANDLE_VALUE)
+{
+  if (!SetThread())
+      return;
 
   hEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
 
@@ -422,32 +432,8 @@ ListenOverlapped::ListenOverlapped(Listener &_listener, SOCKET hSockWait)
     hSock(hSockWait),
     hWait(INVALID_HANDLE_VALUE)
 {
-#ifdef _DEBUG
-  if (hThread == INVALID_HANDLE_VALUE) {
-    idThread = ::GetCurrentThreadId();
-  } else {
-    _ASSERTE(idThread == ::GetCurrentThreadId());
-  }
-#endif  /* _DEBUG */
-
-  if (hThread == INVALID_HANDLE_VALUE) {
-    if (!::DuplicateHandle(::GetCurrentProcess(),
-                           ::GetCurrentThread(),
-                           ::GetCurrentProcess(),
-                           &hThread,
-                           0,
-                           FALSE,
-                           DUPLICATE_SAME_ACCESS))
-    {
-      hThread = INVALID_HANDLE_VALUE;
-
-      TraceError(
-          GetLastError(),
-          "ListenOverlapped::ListenOverlapped(): DuplicateHandle()");
-
+  if (!SetThread())
       return;
-    }
-  }
 
   hEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
 
