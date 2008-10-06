@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/27 17:17:56  vfrolov
+ * Initial revision
  *
  */
 
@@ -35,8 +37,17 @@ class ComParams
     void SetIF(const char *_pIF);
     const char *GetIF() const { return pIF; }
 
+    void SetReconnectTime(int _reconnectTime) { reconnectTime = _reconnectTime; }
+    int GetReconnectTime() const { return reconnectTime; }
+
+    enum {
+      rtDefault = -1,
+      rtDisable = -2,
+    };
+
   private:
     char *pIF;
+    int reconnectTime;
 };
 ///////////////////////////////////////////////////////////////
 

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/03/28 16:00:19  vfrolov
+ * Added connectionCounter
+ *
  * Revision 1.1  2008/03/27 17:18:27  vfrolov
  * Initial revision
  *
@@ -85,9 +88,10 @@ class ComPort
     const string &Name() const { return name; }
     void Name(const char *pName) { name = pName; }
     HANDLE Handle() const { return (HANDLE)hSock; }
+    BOOL CanConnect() const { return (permanent || connectionCounter > 0); }
+    void StartConnect();
 
   private:
-    void StartConnect();
     BOOL StartRead();
     BOOL StartWaitEvent(SOCKET hSockWait);
     void OnConnect();
@@ -102,6 +106,9 @@ class ComPort
     BOOL isConnected;
     int connectionCounter;
     BOOL permanent;
+
+    int reconnectTime;
+    HANDLE hReconnectTimer;
 
     string name;
     HMASTERPORT hMasterPort;

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/10/02 08:07:02  vfrolov
+ * Fixed sending not paired CONNECT(FALSE)
+ *
  * Revision 1.3  2008/09/30 06:44:50  vfrolov
  * Added warning about ignored output options
  *
@@ -101,6 +104,8 @@ ComPort::ComPort(
     hSock(INVALID_SOCKET),
     isConnected(FALSE),
     connectionCounter(0),
+    reconnectTime(-1),
+    hReconnectTimer(NULL),
     name("TCP"),
     hMasterPort(NULL),
     hHub(NULL),
@@ -130,6 +135,15 @@ ComPort::ComPort(
     isValid =
       SetAddr(snLocal, comParams.GetIF(), NULL) &&
       SetAddr(snRemote, addrName.c_str(), portName.c_str());
+
+    if (comParams.GetReconnectTime() == comParams.rtDefault) {
+      if (permanent)
+        reconnectTime = 0;
+    }
+    else
+    if (comParams.GetReconnectTime() != comParams.rtDisable) {
+      reconnectTime = comParams.GetReconnectTime();
+    }
   } else {
     isValid = SetAddr(snLocal, comParams.GetIF(), path.c_str());
 
@@ -172,7 +186,7 @@ BOOL ComPort::Start()
   if (pListener) {
     return pListener->Start();
   } else {
-    if (permanent)
+    if (CanConnect())
       StartConnect();
   }
 
@@ -205,7 +219,6 @@ BOOL ComPort::StartRead()
 
   return TRUE;
 }
-
 
 void ComPort::StartConnect()
 {
@@ -311,8 +324,12 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
 
       _ASSERTE(connectionCounter > 0);
 
-      if (!pListener)
+      if (!pListener) {
+        if (hReconnectTimer)
+          ::CancelWaitableTimer(hReconnectTimer);
+
         StartConnect();
+      }
     } else {
       _ASSERTE(connectionCounter > 0);
 
@@ -398,6 +415,15 @@ void ComPort::OnRead(ReadOverlapped *pOverlapped, BYTE *pBuf, DWORD done)
   }
 }
 
+static VOID CALLBACK TimerAPCProc(
+  LPVOID pArg,
+  DWORD /*dwTimerLowValue*/,
+  DWORD /*dwTimerHighValue*/)
+{
+  if (((ComPort *)pArg)->CanConnect())
+    ((ComPort *)pArg)->StartConnect();
+}
+
 BOOL ComPort::OnEvent(WaitEventOverlapped *pOverlapped, long e, int err)
 {
   //cout << "OnEvent " << name << " " << hex << e << dec << " " << err << endl;
@@ -417,11 +443,36 @@ BOOL ComPort::OnEvent(WaitEventOverlapped *pOverlapped, long e, int err)
         pOnRead(hHub, hMasterPort, &msg);
       }
 
-      if (pListener)
+      if (pListener) {
         Accept();
+      }
       else
-      if (permanent)
-        StartConnect();
+      if (CanConnect()) {
+        if (reconnectTime == 0) {
+          StartConnect();
+        }
+        else
+        if (reconnectTime > 0) {
+          if (!hReconnectTimer)
+            hReconnectTimer = ::CreateWaitableTimer(NULL, FALSE, NULL);
+
+          if (hReconnectTimer) {
+            LARGE_INTEGER firstReportTime;
+
+            firstReportTime.QuadPart = -10000LL * reconnectTime;
+
+            if (!::SetWaitableTimer(hReconnectTimer, &firstReportTime, 0, TimerAPCProc, this, FALSE)) {
+              DWORD err = GetLastError();
+
+              cerr << "WARNING: SetWaitableTimer() - error=" << err << endl;
+            }
+          } else {
+            DWORD err = GetLastError();
+
+            cerr << "WARNING: CreateWaitableTimer() - error=" << err << endl;
+          }
+        }
+      }
     }
 
     delete pOverlapped;
@@ -442,6 +493,8 @@ BOOL ComPort::OnEvent(WaitEventOverlapped *pOverlapped, long e, int err)
 
 void ComPort::OnConnect()
 {
+  _ASSERTE(isConnected == FALSE);
+
   isConnected = TRUE;
 
   if (countXoff <= 0)
