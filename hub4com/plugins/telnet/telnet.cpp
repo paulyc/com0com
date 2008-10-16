@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/10/09 11:02:58  vfrolov
+ * Redesigned class TelnetProtocol
+ *
  * Revision 1.1  2008/03/28 16:05:15  vfrolov
  * Initial revision
  *
@@ -140,7 +143,8 @@ HUB_MSG *TelnetProtocol::Encode(HUB_MSG *pMsg)
   const BYTE *pBuf = org.data();
 
   // discard original data from the stream
-  pMsg = pMsgReplaceBuf(pMsg, HUB_MSG_TYPE_LINE_DATA, NULL, 0);
+  if (!pMsgReplaceBuf(pMsg, HUB_MSG_TYPE_LINE_DATA, NULL, 0))
+    return NULL;
 
   for (; len ; len--) {
     BYTE ch = *pBuf++;
@@ -163,7 +167,8 @@ HUB_MSG *TelnetProtocol::Decode(HUB_MSG *pMsg)
   const BYTE *pBuf = org.data();
 
   // discard original data from the stream
-  pMsg = pMsgReplaceBuf(pMsg, HUB_MSG_TYPE_LINE_DATA, NULL, 0);
+  if (!pMsgReplaceBuf(pMsg, HUB_MSG_TYPE_LINE_DATA, NULL, 0))
+    return NULL;
 
   for (; len ; len--) {
     BYTE ch = *pBuf++;

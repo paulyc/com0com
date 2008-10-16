@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/10/16 06:34:27  vfrolov
+ * Fixed typo
+ *
  * Revision 1.1  2008/09/30 08:34:38  vfrolov
  * Initial revision
  *
@@ -240,13 +243,17 @@ static BOOL CALLBACK OutMethod(
     }
     case HUB_MSG_TYPE_SET_BR:
       // discard if controlled by this filter
-      if (((Filter *)hFilter)->soOutMask & SO_SET_BR)
-        pMsgReplaceNone(pOutMsg, HUB_MSG_TYPE_EMPTY);
+      if (((Filter *)hFilter)->soOutMask & SO_SET_BR) {
+        if (!pMsgReplaceNone(pOutMsg, HUB_MSG_TYPE_EMPTY))
+          return FALSE;
+      }
       break;
     case HUB_MSG_TYPE_SET_LC:
       // discard if controlled by this filter
-      if (((Filter *)hFilter)->soOutMask & SO_SET_LC)
-        pMsgReplaceNone(pOutMsg, HUB_MSG_TYPE_EMPTY);
+      if (((Filter *)hFilter)->soOutMask & SO_SET_LC) {
+        if (!pMsgReplaceNone(pOutMsg, HUB_MSG_TYPE_EMPTY))
+          return FALSE;
+      }
       break;
     case HUB_MSG_TYPE_RBR_STATUS: {
       if (((Filter *)hFilter)->soOutMask & SO_SET_BR) {
