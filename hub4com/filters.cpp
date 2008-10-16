@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/09/26 15:34:50  vfrolov
+ * Fixed adding order for filters with the same FID
+ *
  * Revision 1.3  2008/08/20 08:32:35  vfrolov
  * Implemented Filters::FilterName()
  *
@@ -42,17 +45,20 @@
 class Filter {
   public:
     Filter(
+        const char *pGroup,
         const char *pName,
         HFILTER _hFilter,
         FILTER_INIT *_pInit,
         FILTER_IN_METHOD *_pInMethod,
         FILTER_OUT_METHOD *_pOutMethod)
-      : name(pName),
+      : group(pGroup),
+        name(pName),
         hFilter(_hFilter),
         pInit(_pInit),
         pInMethod(_pInMethod),
         pOutMethod(_pOutMethod) {}
 
+    const string group;
     const string name;
     const HFILTER hFilter;
     FILTER_INIT *const pInit;
@@ -99,6 +105,7 @@ Filters::~Filters()
 ///////////////////////////////////////////////////////////////
 BOOL Filters::CreateFilter(
     const FILTER_ROUTINES_A *pFltRoutines,
+    const char *pFilterGroup,
     const char *pFilterName,
     HCONFIG hConfig,
     const char *pArgs)
@@ -124,6 +131,7 @@ BOOL Filters::CreateFilter(
   }
 
   Filter *pFilter = new Filter(
+      pFilterGroup,
       pFilterName,
       hFilter,
       ROUTINE_GET(pFltRoutines, pInit),
@@ -142,7 +150,7 @@ BOOL Filters::CreateFilter(
 ///////////////////////////////////////////////////////////////
 BOOL Filters::AddFilter(
     int iPort,
-    const char *pName,
+    const char *pGroup,
     BOOL addInMethod,
     BOOL addOutMethod,
     const set<int> *pOutMethodSrcPorts)
@@ -172,7 +180,7 @@ BOOL Filters::AddFilter(
   BOOL found = FALSE;
 
   for (FilterArray::const_iterator i = allFilters.begin() ; i != allFilters.end() ; i++) {
-    if (*i && (*i)->name == pName) {
+    if (*i && (*i)->group == pGroup) {
       if (addInMethod && (*i)->pInMethod) {
         FilterMethod *pFilterMethod = new FilterMethod(*(*i), TRUE, NULL);
 
@@ -213,7 +221,7 @@ BOOL Filters::AddFilter(
   }
 
   if (!found) {
-    cerr << "Can't find filter " << pName << endl;
+    cerr << "Can't find any filter for group " << pGroup << endl;
     return FALSE;
   }
 
