@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.12  2008/09/30 08:28:32  vfrolov
+ * Added ability to control OUT1 and OUT2 pins
+ * Added ability to get remote baud rate and line control settings
+ * Added ability to set baud rate and line control
+ * Added fallback to non escape mode
+ *
  * Revision 1.11  2008/08/29 13:02:37  vfrolov
  * Added ESC_OPTS_MAP_EO2GO() and ESC_OPTS_MAP_GO2EO()
  *
@@ -196,6 +202,8 @@ static FIELD2NAME codeNameTableLineStatus[] = {
 static FIELD2NAME codeNameTableGoOptions[] = {
   TOFIELD2NAME2(GO_, RBR_STATUS),
   TOFIELD2NAME2(GO_, RLC_STATUS),
+  TOFIELD2NAME2(GO_, LBR_STATUS),
+  TOFIELD2NAME2(GO_, LLC_STATUS),
   TOFIELD2NAME2(GO_, BREAK_STATUS),
   TOFIELD2NAME2(GO_, ESCAPE_MODE),
   {0, 0, NULL}
@@ -283,6 +291,8 @@ BOOL ComPort::Start()
   inOptions |= (intercepted_options & (
         GO_RBR_STATUS    |
         GO_RLC_STATUS    |
+        GO_LBR_STATUS    |
+        GO_LLC_STATUS    |
         MODEM_STATUS_CTS |
         MODEM_STATUS_DSR |
         MODEM_STATUS_DCD |
@@ -335,6 +345,18 @@ BOOL ComPort::Start()
   msg.type = HUB_MSG_TYPE_CONNECT;
   msg.u.val = TRUE;
   pOnRead(hHub, hMasterPort, &msg);
+
+  if (inOptions & GO_LBR_STATUS) {
+    msg.type = HUB_MSG_TYPE_LBR_STATUS;
+    msg.u.val = pComIo->GetBaudRate();
+    pOnRead(hHub, hMasterPort, &msg);
+  }
+
+  if (inOptions & GO_LLC_STATUS) {
+    msg.type = HUB_MSG_TYPE_LLC_STATUS;
+    msg.u.val = pComIo->GetLineControl();
+    pOnRead(hHub, hMasterPort, &msg);
+  }
 
   if (inOptions & GO_RBR_STATUS) {
     cerr << name << " WARNING: Suppose remote baud rate is equal local settings" << endl;
@@ -402,6 +424,8 @@ BOOL ComPort::FakeReadFilter(HUB_MSG *pInMsg)
         GO_ESCAPE_MODE |
         GO_RBR_STATUS |
         GO_RLC_STATUS |
+        GO_LBR_STATUS |
+        GO_LLC_STATUS |
         GO_BREAK_STATUS |
         GO_V2O_MODEM_STATUS(-1) |
         GO_V2O_LINE_STATUS(-1));
@@ -508,12 +532,22 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
            << endl;
     }
 
-    if ((inOptions & GO_RBR_STATUS) && oldVal != curVal) {
-      HUB_MSG msg;
+    if (oldVal != curVal) {
+      if (inOptions & GO_LBR_STATUS) {
+        HUB_MSG msg;
 
-      msg.type = HUB_MSG_TYPE_RBR_STATUS;
-      msg.u.val = curVal;                 // suppose remote equal local
-      pOnRead(hHub, hMasterPort, &msg);
+        msg.type = HUB_MSG_TYPE_LBR_STATUS;
+        msg.u.val = curVal;
+        pOnRead(hHub, hMasterPort, &msg);
+      }
+
+      if (inOptions & GO_RBR_STATUS) {
+        HUB_MSG msg;
+
+        msg.type = HUB_MSG_TYPE_RBR_STATUS;
+        msg.u.val = curVal;                 // suppose remote equal local
+        pOnRead(hHub, hMasterPort, &msg);
+      }
     }
   }
   else
@@ -534,12 +568,22 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
            << endl;
     }
 
-    if ((inOptions & GO_RLC_STATUS) && oldVal != curVal) {
-      HUB_MSG msg;
+    if (oldVal != curVal) {
+      if (inOptions & GO_LLC_STATUS) {
+        HUB_MSG msg;
 
-      msg.type = HUB_MSG_TYPE_RLC_STATUS;
-      msg.u.val = curVal;                 // suppose remote equal local
-      pOnRead(hHub, hMasterPort, &msg);
+        msg.type = HUB_MSG_TYPE_LLC_STATUS;
+        msg.u.val = curVal;
+        pOnRead(hHub, hMasterPort, &msg);
+      }
+
+      if (inOptions & GO_RLC_STATUS) {
+        HUB_MSG msg;
+
+        msg.type = HUB_MSG_TYPE_RLC_STATUS;
+        msg.u.val = curVal;                 // suppose remote equal local
+        pOnRead(hHub, hMasterPort, &msg);
+      }
     }
   }
   else
