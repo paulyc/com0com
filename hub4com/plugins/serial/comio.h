@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/09/30 08:28:32  vfrolov
+ * Added ability to control OUT1 and OUT2 pins
+ * Added ability to get remote baud rate and line control settings
+ * Added ability to set baud rate and line control
+ * Added fallback to non escape mode
+ *
  * Revision 1.6  2008/08/22 16:57:12  vfrolov
  * Added
  *   HUB_MSG_TYPE_GET_ESC_OPTS
@@ -92,8 +98,11 @@ class ComIo
     DWORD GetBaudRate() const { return dcb.BaudRate; }
     DWORD GetLineControl() const {
       return (VAL2LC_BYTESIZE(dcb.ByteSize)
+             |LC_MASK_BYTESIZE
              |VAL2LC_PARITY(dcb.Parity)
-             |VAL2LC_STOPBITS(dcb.StopBits));
+             |LC_MASK_PARITY
+             |VAL2LC_STOPBITS(dcb.StopBits)
+             |LC_MASK_STOPBITS);
     }
 
   public:
