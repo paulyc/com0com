@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/10/06 12:15:14  vfrolov
+ * Added --reconnect option
+ *
  * Revision 1.4  2008/10/02 08:07:02  vfrolov
  * Fixed sending not paired CONNECT(FALSE)
  *
@@ -64,7 +67,7 @@ BOOL Listener::Start()
     return FALSE;
 
   if (!pOverlapped->StartWaitEvent()) {
-    delete pOverlapped;
+    pOverlapped->Delete();
     return FALSE;
   }
 
@@ -375,7 +378,7 @@ BOOL ComPort::StartWaitEvent(SOCKET hSockWait)
     return FALSE;
 
   if (!pOverlapped->StartWaitEvent()) {
-    delete pOverlapped;
+    pOverlapped->Delete();
     return FALSE;
   }
 
@@ -475,7 +478,7 @@ BOOL ComPort::OnEvent(WaitEventOverlapped *pOverlapped, long e, int err)
       }
     }
 
-    delete pOverlapped;
+    pOverlapped->Delete();
     return FALSE;
   }
   else
@@ -483,7 +486,7 @@ BOOL ComPort::OnEvent(WaitEventOverlapped *pOverlapped, long e, int err)
     if (hSock == pOverlapped->Sock()) {
       OnConnect();
     } else {
-      delete pOverlapped;
+      pOverlapped->Delete();
       return FALSE;
     }
   }

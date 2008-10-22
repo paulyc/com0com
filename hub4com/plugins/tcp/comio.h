@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/08/26 14:07:01  vfrolov
+ * Execute OnEvent() in main thread context
+ *
  * Revision 1.1  2008/03/27 17:17:27  vfrolov
  * Initial revision
  *
@@ -73,11 +76,48 @@ class WriteOverlapped : private OVERLAPPED
     DWORD len;
 };
 ///////////////////////////////////////////////////////////////
-class WaitEventOverlapped
+class SafeDelete
+{
+  protected:
+    SafeDelete() : deleted(FALSE), locked(0) {}
+
+    virtual ~SafeDelete() {}
+
+    void Delete() {
+      _ASSERTE(locked >= 0);
+
+      if (locked <= 0)
+        delete this;
+      else
+        deleted = TRUE;
+    }
+
+    void LockDelete() { locked++; }
+    BOOL UnockDelete() {
+      locked--;
+
+      _ASSERTE(locked >= 0);
+
+      if (deleted) {
+        if (locked <= 0)
+          delete this;
+
+        return FALSE;
+      }
+
+      return TRUE;
+    }
+
+  private:
+    BOOL deleted;
+    int locked;
+};
+///////////////////////////////////////////////////////////////
+class WaitEventOverlapped : public SafeDelete
 {
   public:
     WaitEventOverlapped(ComPort &_port, SOCKET hSockWait);
-    ~WaitEventOverlapped();
+    void Delete();
     BOOL StartWaitEvent();
 
     SOCKET Sock() { return hSock; }
@@ -92,13 +132,18 @@ class WaitEventOverlapped
     SOCKET hSock;
     HANDLE hWait;
     HANDLE hEvent;
+
+#ifdef _DEBUG
+  private:
+    ~WaitEventOverlapped() {}
+#endif  /* _DEBUG */
 };
 ///////////////////////////////////////////////////////////////
-class ListenOverlapped
+class ListenOverlapped : public SafeDelete
 {
   public:
     ListenOverlapped(Listener &_listener, SOCKET hSockWait);
-    ~ListenOverlapped();
+    void Delete();
     BOOL StartWaitEvent();
 
     SOCKET Sock() { return hSock; }
@@ -113,6 +158,11 @@ class ListenOverlapped
     SOCKET hSock;
     HANDLE hWait;
     HANDLE hEvent;
+
+#ifdef _DEBUG
+  private:
+    ~ListenOverlapped() {}
+#endif  /* _DEBUG */
 };
 ///////////////////////////////////////////////////////////////
 
