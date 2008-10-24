@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/10/09 11:02:58  vfrolov
+ * Redesigned class TelnetProtocol
+ *
  */
 
 #ifndef _IMPORT_H
@@ -27,8 +30,10 @@
 #include "../plugins_api.h"
 
 ///////////////////////////////////////////////////////////////
+extern ROUTINE_MSG_INSERT_VAL *pMsgInsertVal;
 extern ROUTINE_MSG_REPLACE_BUF *pMsgReplaceBuf;
 extern ROUTINE_MSG_INSERT_BUF *pMsgInsertBuf;
+extern ROUTINE_MSG_REPLACE_NONE *pMsgReplaceNone;
 ///////////////////////////////////////////////////////////////
 
 #endif  // _IMPORT_H
