@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2008/09/12 10:07:50  vfrolov
+ * Fixed LSR insertion
+ *
  * Revision 1.14  2008/09/02 07:36:22  vfrolov
  * Added missing SERIAL_EV_BREAK
  *
@@ -463,7 +466,7 @@ SIZE_T WriteToBuffer(
               pBuf, pFlowFilter,
               NULL, 0,
               pWriteBuf, writeLength,
-              &writeDone, pOverrun);
+              pOverrun, &writeDone);
 
           writeDoneTotal += writeDone;
         }
