@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/09/02 07:37:34  vfrolov
+ * Fixed bits in BreakError()
+ *
  * Revision 1.2  2008/09/01 16:45:12  vfrolov
  * Fixed bits in BreakError()
  *
@@ -73,11 +76,6 @@ UCHAR GarbageChar(PC0C_IO_PORT pWriteIoPort, PC0C_IO_PORT pReadIoPort, PUCHAR pL
 /********************************************************************/
 VOID BrokeChar(PC0C_IO_PORT pWriteIoPort, PC0C_IO_PORT pReadIoPort, PUCHAR pChar, PUCHAR pLsr)
 {
-  if (pWriteIoPort->brokeChars) {
-    pWriteIoPort->brokeChars--;
-    *pChar = GarbageChar(pWriteIoPort, pReadIoPort, pLsr);
-  }
-  else
   if (pWriteIoPort->brokeCharsProbability > (RAND()%C0C_PROBABILITY_ONE)) {
     int r = (int)(RAND()%(
                       + 1  /* start bit */

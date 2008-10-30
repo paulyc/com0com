@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.40  2008/09/01 16:54:28  vfrolov
+ * Replaced SERIAL_LSRMST_LSR_NODATA by SERIAL_LSRMST_LSR_DATA for BREAK
+ *
  * Revision 1.39  2008/08/19 12:40:58  vfrolov
  * Replaces C0CE_INSERT_ENABLE_LSR_NBI (insertion on BREAK OFF)
  * by C0CE_INSERT_ENABLE_LSR_BI (insertion on BREAK change)
@@ -221,11 +224,11 @@ ULONG GetWriteLength(IN PIRP pIrp)
 
 VOID OnRxChars(
     PC0C_IO_PORT pReadIoPort,
-    SIZE_T size,
     PC0C_FLOW_FILTER pFlowFilter,
     PLIST_ENTRY pQueueToComplete)
 {
   PIRP pCurrent;
+  SIZE_T size = pFlowFilter->rxCount;
 
   SetXonXoffHolding(pReadIoPort, pFlowFilter->lastXonXoff);
 
@@ -311,10 +314,8 @@ NTSTATUS ReadFromBuffers(
                         &readDone,
                         &sendDone);
 
-    if (sendDone) {
+    if (sendDone)
       pReadIoPort->pIoPortRemote->brokeIdleChars -= sendDone;
-      OnRxChars(pReadIoPort, sendDone, &flowFilter, pQueueToComplete);
-    }
 
     if (readDone) {
       *pReadDone += readDone;
@@ -346,7 +347,6 @@ NTSTATUS ReadFromBuffers(
       pWriteDelay->idleCount = 0;
     }
 
-    OnRxChars(pReadIoPort, sendDone, &flowFilter, pQueueToComplete);
     *pSendDone += sendDone;
   }
 
@@ -357,6 +357,9 @@ NTSTATUS ReadFromBuffers(
   }
 
   pIrp->IoStatus.Information = information;
+
+  if (flowFilter.rxCount)
+    OnRxChars(pReadIoPort, &flowFilter, pQueueToComplete);
 
   if (destRestLength == 0)
     return STATUS_SUCCESS;
@@ -392,10 +395,11 @@ VOID ReadBrokenIdleChars(
                       &readDone,
                       &sendDone);
 
-  if (sendDone) {
+  if (sendDone)
     pReadIoPort->pIoPortRemote->brokeIdleChars -= sendDone;
-    OnRxChars(pReadIoPort, sendDone, &flowFilter, pQueueToComplete);
-  }
+
+  if (flowFilter.rxCount)
+    OnRxChars(pReadIoPort, &flowFilter, pQueueToComplete);
 
   if (readDone) {
     *pReadDone += readDone;
@@ -452,8 +456,8 @@ SIZE_T SendBrokenChars(
                              NULL);
   }
 
-  if (sendDone)
-    OnRxChars(pReadIoPort, sendDone, &flowFilter, pQueueToComplete);
+  if (flowFilter.rxCount)
+    OnRxChars(pReadIoPort, &flowFilter, pQueueToComplete);
 
   return sendDone;
 }
@@ -505,9 +509,11 @@ VOID SendTxBuffer(
       pWriteDelay->idleCount = 0;
     }
 
-    OnRxChars(pReadIoPort, sendDone, &flowFilter, pQueueToComplete);
     *pSendDone += sendDone;
   }
+
+  if (flowFilter.rxCount)
+    OnRxChars(pReadIoPort, &flowFilter, pQueueToComplete);
 }
 
 VOID WriteToBuffers(
@@ -571,7 +577,7 @@ VOID WriteToBuffers(
 
   writeDone = sendDone;
 
-  if (writeDone < length)
+  if (writeDone < length && !isBreak)
     writeDone += WriteToTxBuffer(&pReadIoPort->pIoPortRemote->txBuf, pWriteBuf + writeDone, length - writeDone);
 
   HALT_UNLESS3(writeDone <= length, pDataWrite->type, writeDone, length);
@@ -599,11 +605,12 @@ VOID WriteToBuffers(
       pWriteDelay->idleCount = 0;
     }
 
-    OnRxChars(pReadIoPort, sendDone, &flowFilter, pQueueToComplete);
-
     if (!isBreak)
       *pSendDone += sendDone;
   }
+
+  if (flowFilter.rxCount)
+    OnRxChars(pReadIoPort, &flowFilter, pQueueToComplete);
 
   if (information == writeLength) {
     if (pDataWrite->type == RW_DATA_TYPE_IRP) {
@@ -690,13 +697,14 @@ VOID ReadWriteDirect(
       pReadIoPort->pIoPortRemote->amountInWriteQueue -= (ULONG)writeDone;
     }
 
-    OnRxChars(pReadIoPort, writeDone, &flowFilter, pQueueToComplete);
-
     if (!isBreak) {
       pReadIoPort->pIoPortRemote->perfStats.TransmittedCount += (ULONG)writeDone;
       *pWriteDone += writeDone;
     }
   }
+
+  if (flowFilter.rxCount)
+    OnRxChars(pReadIoPort, &flowFilter, pQueueToComplete);
 
   *pReadDone += readDone;
 }
@@ -1142,18 +1150,9 @@ NTSTATUS TryReadWrite(
    * Prepare TX QUEUE                                                           *
    ******************************************************************************/
 
-  /* get special char to send */
+  /* get XON or XOFF char */
 
-  if (pIoPortWrite->sendBreak) {
-    /* get BREAK char */
-
-    dataChar.data.chr.type = RW_DATA_TYPE_CHR_BREAK;
-    dataChar.data.chr.chr = 0;
-    dataChar.data.chr.isChr = TRUE;
-  } else {
-    /* get XON or XOFF char */
-
-    switch (pIoPortWrite->sendXonXoff) {
+  switch (pIoPortWrite->sendXonXoff) {
     case C0C_XCHAR_ON:
       dataChar.data.chr.type = RW_DATA_TYPE_CHR_XCHR;
       dataChar.data.chr.chr = pIoPortWrite->specialChars.XonChar;
@@ -1167,7 +1166,6 @@ NTSTATUS TryReadWrite(
     default:
       dataChar.data.chr.type = RW_DATA_TYPE_CHR_NONE;
       dataChar.data.chr.isChr = FALSE;
-    }
   }
 
   /* get first pIrpWrite */
@@ -1191,6 +1189,25 @@ NTSTATUS TryReadWrite(
     if (dataChar.data.chr.isChr) {
       if (!pWriteLimit || *pWriteLimit) {
         if (CAN_WRITE_RW_DATA_CHR(pIoPortWrite, dataChar)) {
+          if (dataIrpRead.data.irp.status == STATUS_PENDING) {
+            ReadWriteDirect(dataIrpRead.data.irp.pIrp,
+                            &dataChar,
+                            &dataIrpRead.data.irp.status,
+                            pIoPortRead,
+                            pQueueToComplete,
+                            pWriteLimit,
+                            pWriteDelay,
+                            &doneRead, &doneSend);
+          }
+        }
+        else
+        if (dataChar.data.chr.type != RW_DATA_TYPE_CHR_BREAK && pIoPortWrite->sendBreak) {
+          /* send BREAK char */
+
+          dataChar.data.chr.type = RW_DATA_TYPE_CHR_BREAK;
+          dataChar.data.chr.chr = 0;
+          dataChar.data.chr.isChr = TRUE;
+
           if (dataIrpRead.data.irp.status == STATUS_PENDING) {
             ReadWriteDirect(dataIrpRead.data.irp.pIrp,
                             &dataChar,
@@ -1246,6 +1263,25 @@ NTSTATUS TryReadWrite(
                 doneWrite += done;
                 doneSend += done;
               }
+            }
+          }
+          else
+          if (dataChar.data.chr.type != RW_DATA_TYPE_CHR_BREAK && pIoPortWrite->sendBreak) {
+            /* send BREAK char */
+
+            dataChar.data.chr.type = RW_DATA_TYPE_CHR_BREAK;
+            dataChar.data.chr.chr = 0;
+            dataChar.data.chr.isChr = TRUE;
+
+            if (dataIrpRead.data.irp.status == STATUS_PENDING) {
+              ReadWriteDirect(dataIrpRead.data.irp.pIrp,
+                              &dataChar,
+                              &dataIrpRead.data.irp.status,
+                              pIoPortRead,
+                              pQueueToComplete,
+                              pWriteLimit,
+                              pWriteDelay,
+                              &doneRead, &doneSend);
             }
           }
           else
@@ -1350,6 +1386,19 @@ NTSTATUS TryReadWrite(
                      pQueueToComplete, pWriteLimit, pWriteDelay, &done, &doneSend);
     }
     else
+    if (dataChar.data.chr.type != RW_DATA_TYPE_CHR_BREAK && pIoPortWrite->sendBreak) {
+      /* send BREAK char */
+
+      SIZE_T done = 0;
+
+      dataChar.data.chr.type = RW_DATA_TYPE_CHR_BREAK;
+      dataChar.data.chr.chr = 0;
+      dataChar.data.chr.isChr = TRUE;
+
+      WriteToBuffers(&dataChar, pIoPortRead,
+                     pQueueToComplete, pWriteLimit, pWriteDelay, &done, &doneSend);
+    }
+    else
     if (pWriteDelay) {
       if (pIoPortWrite->brokeCharsProbability > 0) {
         pIoPortWrite->brokeIdleChars += GetBrokenChars(pIoPortWrite->brokeCharsProbability, *pWriteLimit);
@@ -1383,6 +1432,19 @@ NTSTATUS TryReadWrite(
       if (!pIoPortWrite->writeHolding) {
         WriteToBuffers(&dataIrpWrite, pIoPortRead,
                        pQueueToComplete, pWriteLimit, pWriteDelay, &doneWrite, &doneSend);
+      }
+      else
+      if (dataChar.data.chr.type != RW_DATA_TYPE_CHR_BREAK && pIoPortWrite->sendBreak) {
+        /* send BREAK char */
+
+        SIZE_T done = 0;
+
+        dataChar.data.chr.type = RW_DATA_TYPE_CHR_BREAK;
+        dataChar.data.chr.chr = 0;
+        dataChar.data.chr.isChr = TRUE;
+
+        WriteToBuffers(&dataChar, pIoPortRead,
+                       pQueueToComplete, pWriteLimit, pWriteDelay, &done, &doneSend);
       }
       else
       if (pWriteDelay) {
@@ -1442,6 +1504,19 @@ NTSTATUS TryReadWrite(
     } else {
       dataIrpWrite.data.irp.pIrp = NULL;
     }
+  }
+
+  if (dataChar.data.chr.type != RW_DATA_TYPE_CHR_BREAK && pIoPortWrite->sendBreak) {
+    /* send BREAK char */
+
+    SIZE_T done = 0;
+
+    dataChar.data.chr.type = RW_DATA_TYPE_CHR_BREAK;
+    dataChar.data.chr.chr = 0;
+    dataChar.data.chr.isChr = TRUE;
+
+    WriteToBuffers(&dataChar, pIoPortRead,
+                   pQueueToComplete, pWriteLimit, pWriteDelay, &done, &doneSend);
   }
 
   /******************************************************************************/

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/06/26 13:37:10  vfrolov
+ * Implemented noise emulation
+ *
  * Revision 1.6  2007/07/20 08:00:22  vfrolov
  * Implemented TX buffer
  *
@@ -52,6 +55,7 @@ typedef struct _C0C_FLOW_FILTER {
   UCHAR flags;
 
   UCHAR lastXonXoff;
+  SIZE_T rxCount;
 } C0C_FLOW_FILTER, *PC0C_FLOW_FILTER;
 
 

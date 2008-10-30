@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2008/08/25 14:18:58  vfrolov
+ * Fixed SERIAL_TRANSMIT_TOGGLE
+ *
  * Revision 1.10  2008/08/19 12:40:58  vfrolov
  * Replaces C0CE_INSERT_ENABLE_LSR_NBI (insertion on BREAK OFF)
  * by C0CE_INSERT_ENABLE_LSR_BI (insertion on BREAK change)
@@ -409,6 +412,8 @@ VOID SetBreakHolding(PC0C_IO_PORT pIoPort, BOOLEAN on, PLIST_ENTRY pQueueToCompl
       pIoPort->sendBreak = FALSE;
 
       pIoPortRead = pIoPort->pIoPortRemote;
+
+      pIoPortRead->rcvdBreak = FALSE;
 
       if (pIoPortRead->escapeChar && (pIoPortRead->insertMask & C0CE_INSERT_ENABLE_LSR_BI)) {
         UCHAR lsr = 0;
