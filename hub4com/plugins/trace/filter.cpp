@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/10/16 16:02:34  vfrolov
+ * Added LBR_STATUS and LLC_STATUS
+ *
  * Revision 1.5  2008/10/16 06:46:13  vfrolov
  * Added PIN_STATE_* for DCE
  * Added HUB_MSG_TYPE_SET_LSR
@@ -575,10 +578,24 @@ static void PrintVal(ostream &tout, DWORD msgType, DWORD val)
       tout << val;
       break;
     case HUB_MSG_VAL_TYPE_LC:
-      tout << (unsigned)LC2VAL_BYTESIZE(val) << '-';
-      PrintCode(tout, codeNameTableParity, LC2VAL_PARITY(val));
+      if (val & LC_MASK_BYTESIZE)
+        tout << (unsigned)LC2VAL_BYTESIZE(val);
+      else
+        tout << 'x';
+
       tout << '-';
-      PrintCode(tout, codeNameTableStopBits, LC2VAL_STOPBITS(val));
+
+      if (val & LC_MASK_PARITY)
+        PrintCode(tout, codeNameTableParity, LC2VAL_PARITY(val));
+      else
+        tout << 'x';
+
+      tout << '-';
+
+      if (val & LC_MASK_STOPBITS)
+        PrintCode(tout, codeNameTableStopBits, LC2VAL_STOPBITS(val));
+      else
+        tout << 'x';
       break;
     default:
       tout << "0x" << hex << val << dec;
@@ -616,6 +633,7 @@ static void PrintMsg(ostream &tout, HUB_MSG *pMsg)
       PrintMaskedFields(tout, fieldNameTableModemStatus, pMsg->u.val);
       break;
     case HUB_MSG_TYPE_LINE_STATUS:
+    case HUB_MSG_TYPE_SET_LSR:
       PrintMaskedFields(tout, fieldNameTableLineStatus, pMsg->u.val);
       break;
     case HUB_MSG_TYPE_SET_PIN_STATE:
