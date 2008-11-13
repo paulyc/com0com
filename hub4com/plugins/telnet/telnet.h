@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/10/24 08:29:01  vfrolov
+ * Implemented RFC 2217
+ *
  * Revision 1.2  2008/10/09 11:02:58  vfrolov
  * Redesigned class TelnetProtocol
  *
@@ -29,8 +32,6 @@
 
 #ifndef _TELNET_H
 #define _TELNET_H
-
-#include "../plugins_api.h"
 
 ///////////////////////////////////////////////////////////////
 typedef vector<BYTE> BYTE_vector;

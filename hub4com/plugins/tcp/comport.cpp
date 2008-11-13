@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/10/22 15:31:38  vfrolov
+ * Fixed race condition
+ *
  * Revision 1.5  2008/10/06 12:15:14  vfrolov
  * Added --reconnect option
  *
@@ -37,11 +40,14 @@
  */
 
 #include "precomp.h"
+#include "../plugins_api.h"
+///////////////////////////////////////////////////////////////
+namespace PortTcp {
+///////////////////////////////////////////////////////////////
 #include "comport.h"
 #include "comio.h"
 #include "comparams.h"
 #include "import.h"
-
 ///////////////////////////////////////////////////////////////
 Listener::Listener(const struct sockaddr_in &_snLocal)
   : snLocal(_snLocal),
@@ -96,7 +102,7 @@ BOOL Listener::OnEvent(ListenOverlapped * /*pOverlapped*/, long e, int /*err*/)
 
 SOCKET Listener::Accept()
 {
-  return ::Accept(hSockListen);
+  return PortTcp::Accept(hSockListen);
 }
 ///////////////////////////////////////////////////////////////
 ComPort::ComPort(
@@ -546,4 +552,6 @@ void ComPort::LostReport()
     writeLost = 0;
   }
 }
+///////////////////////////////////////////////////////////////
+} // end namespace
 ///////////////////////////////////////////////////////////////

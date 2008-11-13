@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/10/06 12:15:14  vfrolov
+ * Added --reconnect option
+ *
  * Revision 1.5  2008/08/28 10:31:25  vfrolov
  * Removed linking with ../../utils.h and ../../utils.cpp
  *
@@ -37,10 +40,13 @@
  */
 
 #include "precomp.h"
+#include "../plugins_api.h"
+///////////////////////////////////////////////////////////////
+namespace PortTcp {
+///////////////////////////////////////////////////////////////
 #include "comparams.h"
 #include "comport.h"
 #include "import.h"
-
 ///////////////////////////////////////////////////////////////
 static const char *GetParam(const char *pArg, const char *pPattern)
 {
@@ -332,4 +338,6 @@ const PLUGIN_ROUTINES_A *const * CALLBACK InitA(
 
   return plugins;
 }
+///////////////////////////////////////////////////////////////
+} // end namespace
 ///////////////////////////////////////////////////////////////

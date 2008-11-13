@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/10/06 12:15:14  vfrolov
+ * Added --reconnect option
+ *
  * Revision 1.2  2008/03/28 16:00:19  vfrolov
  * Added connectionCounter
  *
@@ -29,8 +32,6 @@
 
 #ifndef _COMPORT_H
 #define _COMPORT_H
-
-#include "../plugins_api.h"
 
 ///////////////////////////////////////////////////////////////
 class ComParams;

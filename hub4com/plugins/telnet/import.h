@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/10/24 08:29:01  vfrolov
+ * Implemented RFC 2217
+ *
  * Revision 1.1  2008/10/09 11:02:58  vfrolov
  * Redesigned class TelnetProtocol
  *
@@ -26,8 +29,6 @@
 
 #ifndef _IMPORT_H
 #define _IMPORT_H
-
-#include "../plugins_api.h"
 
 ///////////////////////////////////////////////////////////////
 extern ROUTINE_MSG_INSERT_VAL *pMsgInsertVal;

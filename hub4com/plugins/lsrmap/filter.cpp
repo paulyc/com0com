@@ -19,11 +19,15 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/10/16 07:05:53  vfrolov
+ * Initial revision
+ *
  */
 
 #include "precomp.h"
 #include "../plugins_api.h"
-
+///////////////////////////////////////////////////////////////
+namespace FilterLsrMap {
 ///////////////////////////////////////////////////////////////
 static ROUTINE_MSG_INSERT_VAL *pMsgInsertVal;
 static ROUTINE_PORT_NAME_A *pPortName;
@@ -226,4 +230,6 @@ const PLUGIN_ROUTINES_A *const * CALLBACK InitA(
 
   return plugins;
 }
+///////////////////////////////////////////////////////////////
+} // end namespace
 ///////////////////////////////////////////////////////////////

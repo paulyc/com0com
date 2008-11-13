@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/10/24 08:29:01  vfrolov
+ * Implemented RFC 2217
+ *
  * Revision 1.3  2008/10/16 09:24:23  vfrolov
  * Changed return type of ROUTINE_MSG_REPLACE_*() to BOOL
  *
@@ -31,9 +34,12 @@
  */
 
 #include "precomp.h"
+#include "../plugins_api.h"
+///////////////////////////////////////////////////////////////
+namespace FilterTelnet {
+///////////////////////////////////////////////////////////////
 #include "import.h"
 #include "telnet.h"
-
 ///////////////////////////////////////////////////////////////
 static const char *code2name(unsigned code)
 {
@@ -330,4 +336,6 @@ void TelnetOption::Start()
   if (stateRemote == osYes)
     SendOption(TelnetProtocol::cdDO);
 }
+///////////////////////////////////////////////////////////////
+} // end namespace
 ///////////////////////////////////////////////////////////////

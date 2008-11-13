@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/10/24 08:29:01  vfrolov
+ * Implemented RFC 2217
+ *
  * Revision 1.4  2008/10/09 11:02:58  vfrolov
  * Redesigned class TelnetProtocol
  *
@@ -34,10 +37,13 @@
  */
 
 #include "precomp.h"
+#include "../plugins_api.h"
+///////////////////////////////////////////////////////////////
+namespace FilterTelnet {
+///////////////////////////////////////////////////////////////
 #include "import.h"
 #include "opt_termtype.h"
 #include "opt_comport.h"
-
 ///////////////////////////////////////////////////////////////
 static ROUTINE_MSG_INSERT_NONE *pMsgInsertNone;
 static ROUTINE_PORT_NAME_A *pPortName;
@@ -782,4 +788,6 @@ const PLUGIN_ROUTINES_A *const * CALLBACK InitA(
 
   return plugins;
 }
+///////////////////////////////////////////////////////////////
+} // end namespace
 ///////////////////////////////////////////////////////////////

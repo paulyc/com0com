@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/11/12 08:46:39  vfrolov
+ * Fixed TYPE_LC and SET_LSR tracing
+ *
  * Revision 1.6  2008/10/16 16:02:34  vfrolov
  * Added LBR_STATUS and LLC_STATUS
  *
@@ -45,7 +48,8 @@
 
 #include "precomp.h"
 #include "../plugins_api.h"
-
+///////////////////////////////////////////////////////////////
+namespace FilterTrace {
 ///////////////////////////////////////////////////////////////
 #ifndef _DEBUG
   #define DEBUG_PARAM(par)
@@ -764,4 +768,6 @@ const PLUGIN_ROUTINES_A *const * CALLBACK InitA(
 
   return plugins;
 }
+///////////////////////////////////////////////////////////////
+} // end namespace
 ///////////////////////////////////////////////////////////////
