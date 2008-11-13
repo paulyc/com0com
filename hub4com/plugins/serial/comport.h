@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.9  2008/09/30 08:28:32  vfrolov
+ * Added ability to control OUT1 and OUT2 pins
+ * Added ability to get remote baud rate and line control settings
+ * Added ability to set baud rate and line control
+ * Added fallback to non escape mode
+ *
  * Revision 1.8  2008/08/22 16:57:12  vfrolov
  * Added
  *   HUB_MSG_TYPE_GET_ESC_OPTS
@@ -68,8 +74,6 @@
 
 #ifndef _COMPORT_H
 #define _COMPORT_H
-
-#include "../plugins_api.h"
 
 ///////////////////////////////////////////////////////////////
 class ComParams;

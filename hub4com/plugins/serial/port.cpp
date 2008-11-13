@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2008/08/28 10:24:35  vfrolov
+ * Removed linking with ....utils.h and ....utils.cpp
+ *
  * Revision 1.7  2008/08/20 14:30:19  vfrolov
  * Redesigned serial port options
  *
@@ -43,10 +46,13 @@
  */
 
 #include "precomp.h"
+#include "../plugins_api.h"
+///////////////////////////////////////////////////////////////
+namespace PortSerial {
+///////////////////////////////////////////////////////////////
 #include "comparams.h"
 #include "comport.h"
 #include "import.h"
-
 ///////////////////////////////////////////////////////////////
 static const char *GetParam(const char *pArg, const char *pPattern)
 {
@@ -393,4 +399,6 @@ const PLUGIN_ROUTINES_A *const * CALLBACK InitA(
 
   return plugins;
 }
+///////////////////////////////////////////////////////////////
+} // end namespace
 ///////////////////////////////////////////////////////////////

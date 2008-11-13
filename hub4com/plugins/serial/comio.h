@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2008/10/22 08:27:26  vfrolov
+ * Added ability to set bytesize, parity and stopbits separately
+ *
  * Revision 1.7  2008/09/30 08:28:32  vfrolov
  * Added ability to control OUT1 and OUT2 pins
  * Added ability to get remote baud rate and line control settings
@@ -67,8 +70,6 @@
 
 #ifndef _COMIO_H
 #define _COMIO_H
-
-#include "../plugins_api.h"
 
 ///////////////////////////////////////////////////////////////
 class ComPort;

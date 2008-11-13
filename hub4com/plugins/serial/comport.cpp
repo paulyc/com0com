@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2008/10/22 08:27:26  vfrolov
+ * Added ability to set bytesize, parity and stopbits separately
+ *
  * Revision 1.13  2008/10/16 16:04:39  vfrolov
  * Added LBR_STATUS and LLC_STATUS
  *
@@ -88,11 +91,14 @@
  */
 
 #include "precomp.h"
+#include "../plugins_api.h"
+///////////////////////////////////////////////////////////////
+namespace PortSerial {
+///////////////////////////////////////////////////////////////
 #include "comport.h"
 #include "comio.h"
 #include "comparams.h"
 #include "import.h"
-
 ///////////////////////////////////////////////////////////////
 ComPort::ComPort(
     const ComParams &comParams,
@@ -832,4 +838,6 @@ void ComPort::LostReport()
     cout << endl;
   }
 }
+///////////////////////////////////////////////////////////////
+} // end namespace
 ///////////////////////////////////////////////////////////////

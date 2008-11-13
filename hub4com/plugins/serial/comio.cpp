@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2008/10/22 08:27:26  vfrolov
+ * Added ability to set bytesize, parity and stopbits separately
+ *
  * Revision 1.10  2008/10/07 09:26:00  vfrolov
  * Fixed reseting MCR by setting BR or LC
  *
@@ -81,12 +84,15 @@
  */
 
 #include "precomp.h"
+#include "../plugins_api.h"
+#include "../cncext.h"
+///////////////////////////////////////////////////////////////
+namespace PortSerial {
+///////////////////////////////////////////////////////////////
 #include "comio.h"
 #include "comport.h"
 #include "comparams.h"
 #include "import.h"
-#include "..\cncext.h"
-
 ///////////////////////////////////////////////////////////////
 static void TraceError(DWORD err, const char *pFmt, ...)
 {
@@ -367,17 +373,17 @@ void ComIo::SetPinState(WORD value, WORD mask)
 {
   if (mask & SPS_V2P_MCR(-1)) {
     if (hasExtendedModemControl) {
-      if (!::SetModemControl(handle, SPS_P2V_MCR(value), SPS_P2V_MCR(mask)))
+      if (!SetModemControl(handle, SPS_P2V_MCR(value), SPS_P2V_MCR(mask)))
         cerr << port.Name() << " WARNING: can't change MCR state" << endl;
     } else {
       _ASSERTE((mask & SPS_V2P_MCR(-1) & ~(PIN_STATE_RTS|PIN_STATE_DTR)) == 0);
 
       if (mask & PIN_STATE_RTS) {
-        if (!::CommFunction(handle, (value & PIN_STATE_RTS) ? SETRTS : CLRRTS))
+        if (!CommFunction(handle, (value & PIN_STATE_RTS) ? SETRTS : CLRRTS))
           cerr << port.Name() << " WARNING: can't change RTS state" << endl;
       }
       if (mask & PIN_STATE_DTR) {
-        if (!::CommFunction(handle, (value & PIN_STATE_DTR) ? SETDTR : CLRDTR))
+        if (!CommFunction(handle, (value & PIN_STATE_DTR) ? SETDTR : CLRDTR))
           cerr << port.Name() << " WARNING: can't change DTR state" << endl;
       }
     }
@@ -386,7 +392,7 @@ void ComIo::SetPinState(WORD value, WORD mask)
   _ASSERTE((mask & ~SPS_V2P_MCR(-1) & ~(PIN_STATE_BREAK)) == 0);
 
   if (mask & PIN_STATE_BREAK) {
-    if (!::CommFunction(handle, (value & PIN_STATE_BREAK) ? SETBREAK : CLRBREAK))
+    if (!CommFunction(handle, (value & PIN_STATE_BREAK) ? SETBREAK : CLRBREAK))
       cerr << port.Name() << " WARNING: can't change BREAK state" << endl;
   }
 }
@@ -848,4 +854,6 @@ BOOL WaitCommEventOverlapped::StartWaitCommEvent()
 
   return TRUE;
 }
+///////////////////////////////////////////////////////////////
+} // end namespace
 ///////////////////////////////////////////////////////////////
