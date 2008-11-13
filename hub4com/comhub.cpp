@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2008/08/20 14:30:18  vfrolov
+ * Redesigned serial port options
+ *
  * Revision 1.8  2008/08/20 08:46:06  vfrolov
  * Implemented ComHub::FilterName()
  *
@@ -53,6 +56,8 @@
  */
 
 #include "precomp.h"
+#include "plugins/plugins_api.h"
+
 #include "comhub.h"
 #include "port.h"
 #include "filters.h"

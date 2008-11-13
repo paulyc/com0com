@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/10/16 09:24:23  vfrolov
+ * Changed return type of ROUTINE_MSG_REPLACE_*() to BOOL
+ *
  * Revision 1.3  2008/08/20 09:06:48  vfrolov
  * Added HUB_ROUTINES_A::pFilterName
  *
@@ -31,6 +34,8 @@
  */
 
 #include "precomp.h"
+#include "plugins/plugins_api.h"
+
 #include "export.h"
 #include "port.h"
 #include "comhub.h"

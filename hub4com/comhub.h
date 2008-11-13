@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/08/20 08:46:06  vfrolov
+ * Implemented ComHub::FilterName()
+ *
  * Revision 1.6  2008/08/15 12:44:59  vfrolov
  * Added fake read filter method to ports
  *
@@ -41,8 +44,6 @@
 
 #ifndef _COMHUB_H
 #define _COMHUB_H
-
-#include "plugins/plugins_api.h"
 
 ///////////////////////////////////////////////////////////////
 class Port;

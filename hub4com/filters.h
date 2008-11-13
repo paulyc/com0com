@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/10/16 06:19:12  vfrolov
+ * Divided filter ID to filter group ID and filter name
+ *
  * Revision 1.4  2008/09/26 15:34:50  vfrolov
  * Fixed adding order for filters with the same FID
  *
@@ -35,8 +38,6 @@
 
 #ifndef _FILTERS_H
 #define _FILTERS_H
-
-#include "plugins/plugins_api.h"
 
 ///////////////////////////////////////////////////////////////
 class ComHub;

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/08/15 12:44:59  vfrolov
+ * Added fake read filter method to ports
+ *
  * Revision 1.1  2008/03/26 08:36:47  vfrolov
  * Initial revision
  *
@@ -26,8 +29,6 @@
 
 #ifndef _PORT_H
 #define _PORT_H
-
-#include "plugins/plugins_api.h"
 
 ///////////////////////////////////////////////////////////////
 class ComHub;

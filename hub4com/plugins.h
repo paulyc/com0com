@@ -19,13 +19,13 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/26 08:36:25  vfrolov
+ * Initial revision
  *
  */
 
 #ifndef _PLUGINS_H
 #define _PLUGINS_H
-
-#include "plugins/plugins_api.h"
 
 ///////////////////////////////////////////////////////////////
 class PluginEnt;
@@ -54,7 +54,7 @@ class Plugins
   private:
     void LoadPlugin(const string &pathPlugin);
     void InitPlugin(
-        const string &moduleName,
+        HMODULE hDll,
         PLUGIN_INIT_A *pInitProc,
         PluginArray &pluginArray);
 

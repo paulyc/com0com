@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/08/20 09:38:52  vfrolov
+ * Fixed unknown types printing
+ *
  * Revision 1.2  2008/04/14 07:32:03  vfrolov
  * Renamed option --use-port-module to --use-driver
  *
@@ -28,17 +31,20 @@
  */
 
 #include "precomp.h"
+#include "plugins/plugins_api.h"
+
 #include "port.h"
 #include "comhub.h"
 #include "plugins.h"
 #include "bufutils.h"
 #include "hubmsg.h"
 #include "export.h"
+#include "static.h"
 
 ///////////////////////////////////////////////////////////////
 class PluginEnt {
   public:
-    PluginEnt(const PLUGIN_ROUTINES_A *_pRoutines);
+    PluginEnt(const PLUGIN_ROUTINES_A *_pRoutines, HMODULE _hDll);
     ~PluginEnt();
 
     void Help(const char *pProgPath) const;
@@ -68,15 +74,18 @@ class PluginEnt {
     }
 
     BOOL InUse() const { return inUse; }
+    HMODULE Dll() const { return hDll; }
 
   private:
     const PLUGIN_ROUTINES_A *pRoutines;
+    HMODULE hDll;
     BOOL inUse;
     HCONFIG hConfig;
 };
 
-PluginEnt::PluginEnt(const PLUGIN_ROUTINES_A *_pRoutines)
+PluginEnt::PluginEnt(const PLUGIN_ROUTINES_A *_pRoutines, HMODULE _hDll)
   : pRoutines(_pRoutines),
+    hDll(_hDll),
     inUse(FALSE),
     hConfig(NULL)
 {
@@ -119,27 +128,28 @@ static string type2str(PLUGIN_TYPE type)
   return str.str();
 }
 ///////////////////////////////////////////////////////////////
-static BOOL GetPluginsDir(string &pluginsDir)
+static string GetModulePath(HMODULE hDll, BOOL withName)
 {
+  string path;
   DWORD res;
   char *pPath1 = new char[MAX_PATH];
 
   if (!pPath1) {
-    return FALSE;
+    return path;
   }
 
-  res = GetModuleFileName(NULL, pPath1, MAX_PATH);
+  res = GetModuleFileName(hDll, pPath1, MAX_PATH);
 
   if (!res || res >= MAX_PATH) {
     delete [] pPath1;
-    return FALSE;
+    return path;
   }
 
   char *pPath2 = new char[MAX_PATH];
 
   if (!pPath2) {
     delete [] pPath1;
-    return FALSE;
+    return path;
   }
 
   char *pName;
@@ -150,27 +160,34 @@ static BOOL GetPluginsDir(string &pluginsDir)
 
   if (!res || res >= MAX_PATH || !pName) {
     delete [] pPath2;
-    return FALSE;
+    return path;
   }
 
-  *pName = 0;
+  if (!withName)
+    *pName = 0;
 
-  pluginsDir = pPath2;
+  path = pPath2;
 
   delete [] pPath2;
 
-  pluginsDir += "plugins\\";
-
-  return TRUE;
+  return path;
 }
 ///////////////////////////////////////////////////////////////
 Plugins::Plugins()
 {
-  string pluginsDir;
+  DllPlugins *pDllPlugins = new DllPlugins(NULL, new PluginArray);
 
-  if (!GetPluginsDir(pluginsDir))
-    return;
+  for (PLUGIN_INIT_A *const *pList = GetStaticInitList() ; *pList ; pList++)
+    InitPlugin(NULL, *pList, *pDllPlugins->second);
 
+  if (pDllPlugins->second->size()) {
+    dllPluginsArray.push_back(pDllPlugins);
+  } else {
+    delete pDllPlugins->second;
+    delete pDllPlugins;
+  }
+
+  string pluginsDir = GetModulePath(NULL, FALSE) + "plugins\\";
   string pathWildcard(pluginsDir);
 
   pathWildcard += "*.dll";
@@ -272,7 +289,7 @@ void Plugins::LoadPlugin(const string &pathPlugin)
     return;
   }
 
-  InitPlugin(pathPlugin, pInitProc, *pDllPlugins->second);
+  InitPlugin(hDll, pInitProc, *pDllPlugins->second);
 
   if (pDllPlugins->second->size()) {
     dllPluginsArray.push_back(pDllPlugins);
@@ -284,7 +301,7 @@ void Plugins::LoadPlugin(const string &pathPlugin)
 }
 ///////////////////////////////////////////////////////////////
 void Plugins::InitPlugin(
-    const string &moduleName,
+    HMODULE hDll,
     PLUGIN_INIT_A *pInitProc,
     PluginArray &pluginArray)
 {
@@ -297,11 +314,11 @@ void Plugins::InitPlugin(
                        PLUGIN_TYPE_INVALID;
 
     if (type == PLUGIN_TYPE_INVALID) {
-      cerr << "Found plugin with invalid type in " << moduleName << endl;
+      cerr << "Found module with invalid type in " << GetModulePath(hDll, TRUE) << endl;
       continue;
     }
 
-    PluginEnt *pPlugin = new PluginEnt(*ppPlgRoutines);
+    PluginEnt *pPlugin = new PluginEnt(*ppPlgRoutines, hDll);
 
     if (!pPlugin) {
       cerr << "No enough memory." << endl;
@@ -316,7 +333,7 @@ void Plugins::InitPlugin(
       iPair = plugins.find(type);
 
       if (iPair == plugins.end()) {
-        cerr << "Can't add plugin type " << type << endl;
+        cerr << "Can't add module type " << type2str(type) << endl;
         delete pPlugin;
         continue;
       }
@@ -332,20 +349,19 @@ void Plugins::InitPlugin(
       }
     }
 
-    for (PluginArray::const_iterator i = iPair->second->begin() ; i != iPair->second->end() ; i++) {
+    for (PluginArray::iterator i = iPair->second->begin() ; i != iPair->second->end() ; i++) {
       if (*i && (*i)->Name() == pPlugin->Name()) {
         cerr
-          << "Plugin " << pPlugin->Name() << " with type " << type
-          << " already exists. Ignored plugin in " << moduleName << endl;
-        delete pPlugin;
-        pPlugin = NULL;
+          << "Module " << pPlugin->Name() << " with type " << type2str(type) << " in" << endl
+          << "  " << GetModulePath((*i)->Dll(), TRUE) << endl
+          << "replaced by module in" << endl
+          << "  " << GetModulePath(hDll, TRUE) << endl;
+        *i = NULL;
       }
     }
 
-    if (pPlugin) {
-      iPair->second->push_back(pPlugin);
-      pluginArray.push_back(pPlugin);
-    }
+    iPair->second->push_back(pPlugin);
+    pluginArray.push_back(pPlugin);
   }
 }
 ///////////////////////////////////////////////////////////////
@@ -356,8 +372,10 @@ void Plugins::List(ostream &o) const
       o << endl;
       o << "List of " << type2str(iPair->first) << " modules:" << endl;
 
-      for (PluginArray::const_iterator i = iPair->second->begin() ; i != iPair->second->end() ; i++)
-        o << "  " << (*i)->Name() << " - " << (*i)->Description() << endl;
+      for (PluginArray::const_iterator i = iPair->second->begin() ; i != iPair->second->end() ; i++) {
+        if (*i)
+          o << "  " << (*i)->Name() << " - " << (*i)->Description() << endl;
+      }
     }
   }
 }
@@ -380,6 +398,7 @@ void Plugins::Help(
           cerr << "Copyright:   " << (*i)->Copyright() << endl;
           cerr << "License:     " << (*i)->License() << endl;
           cerr << "Description: " << (*i)->Description() << endl;
+          cerr << "File:        " << GetModulePath((*i)->Dll(), TRUE) << endl;
           cerr << endl;
           (*i)->Help(pProgPath);
 
@@ -390,7 +409,7 @@ void Plugins::Help(
   }
 
   if (!found)
-    cerr << "The plugin " << pPluginName << " not found." << endl;
+    cerr << "The module " << pPluginName << " not found." << endl;
 }
 ///////////////////////////////////////////////////////////////
 BOOL Plugins::Config(const char *pArg) const
