@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/10/22 15:31:38  vfrolov
+ * Fixed race condition
+ *
  * Revision 1.2  2008/08/26 14:07:01  vfrolov
  * Execute OnEvent() in main thread context
  *
@@ -40,6 +43,7 @@ extern BOOL Connect(SOCKET hSock, const struct sockaddr_in &snRemote);
 extern BOOL Listen(SOCKET hSock);
 extern SOCKET Accept(SOCKET hSockListen);
 extern void Disconnect(SOCKET hSock);
+extern void Close(SOCKET hSock);
 ///////////////////////////////////////////////////////////////
 class ReadOverlapped : private OVERLAPPED
 {

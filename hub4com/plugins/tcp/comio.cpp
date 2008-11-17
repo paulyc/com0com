@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/11/13 07:41:09  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.4  2008/10/22 15:31:38  vfrolov
  * Fixed race condition
  *
@@ -117,7 +120,6 @@ BOOL Connect(SOCKET hSock, const struct sockaddr_in &snRemote)
 
     if (err != WSAEWOULDBLOCK) {
       TraceError(err, "Connect(%x): connect()", hSock);
-      closesocket(hSock);
       return FALSE;
     }
   }
@@ -186,6 +188,17 @@ void Disconnect(SOCKET hSock)
     TraceError(GetLastError(), "Disconnect(%x): shutdown()", hSock);
   else
     cout << "Disconnect(" << hex << hSock << dec << ") - OK" << endl;
+}
+///////////////////////////////////////////////////////////////
+void Close(SOCKET hSock)
+{
+  if (hSock == INVALID_SOCKET)
+    return;
+
+  if (closesocket(hSock) != 0)
+    TraceError(GetLastError(), "Close(): closesocket(%x)", hSock);
+  else
+    cout << "Close(" << hex << hSock << dec << ") - OK" << endl;
 }
 ///////////////////////////////////////////////////////////////
 WriteOverlapped::WriteOverlapped(ComPort &_port, BYTE *_pBuf, DWORD _len)
@@ -346,18 +359,6 @@ WaitEventOverlapped::WaitEventOverlapped(ComPort &_port, SOCKET hSockWait)
 
 void WaitEventOverlapped::Delete()
 {
-  if (hSock != INVALID_SOCKET) {
-    if (closesocket(hSock) != 0) {
-      TraceError(
-          GetLastError(),
-          "WaitEventOverlapped::~WaitEventOverlapped(): closesocket(%x) %s",
-          hSock,
-          port.Name().c_str());
-    }
-    else
-      cout << "Close(" << hex << hSock << dec << ") - OK" << endl;
-  }
-
   if (hWait != INVALID_HANDLE_VALUE) {
     if (!::UnregisterWait(hWait)) {
       DWORD err = GetLastError();
@@ -408,20 +409,23 @@ VOID CALLBACK WaitEventOverlapped::OnEvent(ULONG_PTR pOverlapped)
   }
 
   if ((events.lNetworkEvents & FD_CONNECT) != 0) {
+    if (!pOver->port.OnEvent(pOver, FD_CONNECT))
+      return;
+
     if (events.iErrorCode[FD_CONNECT_BIT] != ERROR_SUCCESS) {
       TraceError(
           events.iErrorCode[FD_CONNECT_BIT],
           "Connect(%lx) %s",
           (long)pOver->hSock,
           pOver->port.Name().c_str());
-    }
 
-    if (!pOver->port.OnEvent(pOver, FD_CONNECT, events.iErrorCode[FD_CONNECT_BIT]))
-      return;
+      if (!pOver->port.OnEvent(pOver, FD_CLOSE))
+        return;
+    }
   }
 
   if ((events.lNetworkEvents & FD_CLOSE) != 0) {
-    if (!pOver->port.OnEvent(pOver, FD_CLOSE, events.iErrorCode[FD_CLOSE_BIT]))
+    if (!pOver->port.OnEvent(pOver, FD_CLOSE))
       return;
   }
 }
