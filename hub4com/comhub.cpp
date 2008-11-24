@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2008/11/24 12:36:59  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.11  2008/11/21 08:16:56  vfrolov
  * Added HUB_MSG_TYPE_LOOP_TEST
  *
@@ -173,21 +176,6 @@ BOOL ComHub::OnFakeRead(Port *pFromPort, HubMsg *pMsg) const
 
 void ComHub::OnRead(Port *pFromPort, HubMsg *pMsg) const
 {
-  OnRead(routeDataMap, pFromPort, pMsg);
-}
-
-void ComHub::AddXoffXon(Port *pFromPort, BOOL xoff) const
-{
-  HubMsg msg;
-
-  msg.type = HUB_MSG_TYPE_ADD_XOFF_XON;
-  msg.u.val = xoff;
-
-  OnRead(routeFlowControlMap, pFromPort, &msg);
-}
-
-void ComHub::OnRead(const PortMap &routeMap, Port *pFromPort, HubMsg *pMsg) const
-{
   _ASSERTE(pFromPort != NULL);
   _ASSERTE(pMsg != NULL);
 
@@ -207,6 +195,8 @@ void ComHub::OnRead(const PortMap &routeMap, Port *pFromPort, HubMsg *pMsg) cons
     if (pEchoMsg)
       delete pEchoMsg;
   }
+
+  const PortMap &routeMap = (pMsg->type & HUB_MSG_ROUTE_FLOW_CONTROL) ? routeFlowControlMap : routeDataMap;
 
   for (PortMap::const_iterator i = routeMap.find(pFromPort) ; i != routeMap.end() ; i++) {
     if (i->first != pFromPort)

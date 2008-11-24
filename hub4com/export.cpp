@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/11/24 12:46:16  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.5  2008/11/13 08:07:40  vfrolov
  * Changed for staticaly linking
  *
@@ -199,14 +202,6 @@ static const char * CALLBACK filter_name(HMASTERFILTER hMasterFilter)
   return ((Filter *)hMasterFilter)->name.c_str();
 }
 ///////////////////////////////////////////////////////////////
-static void CALLBACK on_xoff_xon(HMASTERPORT hMasterPort, BOOL xoff)
-{
-  _ASSERTE(hMasterPort != NULL);
-  _ASSERTE(((Port *)hMasterPort)->IsValid());
-
-  ((Port *)hMasterPort)->hub.AddXoffXon((Port *)hMasterPort, xoff);
-}
-///////////////////////////////////////////////////////////////
 static void CALLBACK on_read(HMASTERPORT hMasterPort, HUB_MSG *pMsg)
 {
   _ASSERTE(hMasterPort != NULL);
@@ -232,7 +227,6 @@ HUB_ROUTINES_A hubRoutines = {
   msg_insert_none,
   port_name,
   filter_name,
-  on_xoff_xon,
   on_read,
 };
 ///////////////////////////////////////////////////////////////

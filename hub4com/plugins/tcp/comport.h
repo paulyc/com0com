@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/11/24 12:37:00  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.5  2008/11/17 16:44:57  vfrolov
  * Fixed race conditions
  *
@@ -125,7 +128,10 @@ class ComPort
     int countXoff;
 
     DWORD writeQueueLimit;
+    DWORD writeQueueLimitSendXoff;
+    DWORD writeQueueLimitSendXon;
     DWORD writeQueued;
+    BOOL writeSuspended;
     DWORD writeLost;
     DWORD writeLostTotal;
 

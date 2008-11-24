@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2008/11/24 12:37:00  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.10  2008/11/13 07:35:10  vfrolov
  * Changed for staticaly linking
  *
@@ -122,7 +125,10 @@ class ComPort
     DWORD outOptions;
 
     DWORD writeQueueLimit;
+    DWORD writeQueueLimitSendXoff;
+    DWORD writeQueueLimitSendXon;
     DWORD writeQueued;
+    BOOL writeSuspended;
     DWORD writeLost;
     DWORD writeLostTotal;
     DWORD errors;

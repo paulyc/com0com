@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2008/11/24 12:36:59  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.8  2008/11/13 08:07:40  vfrolov
  * Changed for staticaly linking
  *
@@ -83,7 +86,6 @@ class ComHub
     BOOL StartAll() const;
     BOOL OnFakeRead(Port *pFromPort, HubMsg *pMsg) const;
     void OnRead(Port *pFromPort, HubMsg *pMsg) const;
-    void AddXoffXon(Port *pFromPort, BOOL xoff) const;
     void LostReport() const;
     void SetDataRoute(const PortMap &map) { routeDataMap = map; }
     void SetFlowControlRoute(const PortMap &map) { routeFlowControlMap = map; }
@@ -104,8 +106,6 @@ class ComHub
     const char *FilterName(HFILTER hFilter) const;
 
   private:
-    void OnRead(const PortMap &routeMap, Port *pFromPort, HubMsg *pMsg) const;
-
     Ports ports;
     PortMap routeDataMap;
     PortMap routeFlowControlMap;
