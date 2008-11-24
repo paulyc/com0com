@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/11/13 07:44:12  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.1  2008/10/24 06:51:23  vfrolov
  * Initial revision
  *
@@ -120,15 +123,51 @@ inline BYTE v2p_stopSize(BYTE val)
   return 1;
 }
 ///////////////////////////////////////////////////////////////
-TelnetOptionComPort::TelnetOptionComPort(TelnetProtocol &_telnet, DWORD &_goMask, DWORD &_soMask)
+TelnetOptionComPort::TelnetOptionComPort(TelnetProtocol &_telnet, BOOL _isClient, DWORD &_goMask, DWORD &_soMask)
   : TelnetOption(_telnet, 44 /*COM-PORT-OPTION*/),
+    isClient(_isClient),
     goMask(_goMask),
-    soMask(_soMask)
+    soMask(_soMask),
+    countXoff(0),
+    suspended(FALSE)
 {
+}
+
+void TelnetOptionComPort::AddXoffXon(BOOL xoff)
+{
+  if (xoff) {
+    if (countXoff++ == 0) {
+      BYTE_vector params;
+
+      params.push_back((BYTE)(cpcFlowControlSuspend + (isClient ? 0 : cpcServerBase)));
+      SendSubNegotiation(params);
+    }
+  } else {
+    if (--countXoff == 0) {
+      BYTE_vector params;
+
+      params.push_back((BYTE)(cpcFlowControlResume + (isClient ? 0 : cpcServerBase)));
+      SendSubNegotiation(params);
+    }
+  }
+}
+
+void TelnetOptionComPort::OnSuspendResume(BOOL suspend, HUB_MSG **ppMsg)
+{
+  if (suspended != suspend) {
+    suspended = suspend;
+
+    *ppMsg = FlushDecodedStream(*ppMsg);
+
+    if (!*ppMsg)
+      return;
+
+    *ppMsg = pMsgInsertVal(*ppMsg, HUB_MSG_TYPE_ADD_XOFF_XON, suspended);
+  }
 }
 ///////////////////////////////////////////////////////////////
 TelnetOptionComPortClient::TelnetOptionComPortClient(TelnetProtocol &_telnet, DWORD &_goMask, DWORD &_soMask)
-  : TelnetOptionComPort(_telnet, _goMask, _soMask)
+  : TelnetOptionComPort(_telnet, TRUE, _goMask, _soMask)
 {
 }
 
@@ -358,6 +397,20 @@ BOOL TelnetOptionComPortClient::OnSubNegotiation(const BYTE_vector &params, HUB_
 
       break;
     }
+    case cpcFlowControlSuspend + cpcServerBase: {
+      if (params.size() != (1 + 0))
+        return FALSE;
+
+      OnSuspendResume(TRUE, ppMsg);
+      break;
+    }
+    case cpcFlowControlResume + cpcServerBase: {
+      if (params.size() != (1 + 0))
+        return FALSE;
+
+      OnSuspendResume(FALSE, ppMsg);
+      break;
+    }
     default:
       return FALSE;
   }
@@ -366,7 +419,7 @@ BOOL TelnetOptionComPortClient::OnSubNegotiation(const BYTE_vector &params, HUB_
 }
 ///////////////////////////////////////////////////////////////
 TelnetOptionComPortServer::TelnetOptionComPortServer(TelnetProtocol &_telnet, DWORD &_goMask, DWORD &_soMask)
-  : TelnetOptionComPort(_telnet, _goMask, _soMask),
+  : TelnetOptionComPort(_telnet, FALSE, _goMask, _soMask),
     br(0),
     brSend(FALSE),
     lc(0),
@@ -726,12 +779,20 @@ BOOL TelnetOptionComPortServer::OnSubNegotiation(const BYTE_vector &params, HUB_
       }
       break;
     }
-    case cpcFlowControlSuspend:
-      return FALSE;
+    case cpcFlowControlSuspend: {
+      if (params.size() != (1 + 0))
+        return FALSE;
+
+      OnSuspendResume(TRUE, ppMsg);
       break;
-    case cpcFlowControlResume:
-      return FALSE;
+    }
+    case cpcFlowControlResume: {
+      if (params.size() != (1 + 0))
+        return FALSE;
+
+      OnSuspendResume(FALSE, ppMsg);
       break;
+    }
     case cpcSetLineStateMask: {
       if (params.size() != (1 + 1))
         return FALSE;
