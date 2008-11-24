@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/03/26 08:37:06  vfrolov
+ * Initial revision
  *
  */
 
@@ -26,17 +28,19 @@
 #define _ROUTE_H
 
 ///////////////////////////////////////////////////////////////
-typedef multimap<int, int> PortNumMap;
+class Port;
+///////////////////////////////////////////////////////////////
+typedef multimap<Port *, Port *> PortMap;
 ///////////////////////////////////////////////////////////////
 void AddRoute(
-    PortNumMap &map,
-    int iFrom,
-    int iTo,
+    PortMap &map,
+    Port *pFrom,
+    Port *pTo,
     BOOL noRoute,
     BOOL noEcho);
 void SetFlowControlRoute(
-    PortNumMap &routeFlowControlMap,
-    PortNumMap &routeDataMap,
+    PortMap &routeFlowControlMap,
+    PortMap &routeDataMap,
     BOOL fromAnyDataReceiver);
 ///////////////////////////////////////////////////////////////
 

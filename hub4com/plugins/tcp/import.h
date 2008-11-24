@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/11/13 07:41:09  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.1  2008/03/27 17:19:18  vfrolov
  * Initial revision
  *
@@ -30,8 +33,7 @@
 ///////////////////////////////////////////////////////////////
 extern ROUTINE_BUF_ALLOC *pBufAlloc;
 extern ROUTINE_BUF_FREE *pBufFree;
-extern ROUTINE_ON_XOFF *pOnXoff;
-extern ROUTINE_ON_XON *pOnXon;
+extern ROUTINE_ON_XOFF_XON *pOnXoffXon;
 extern ROUTINE_ON_READ *pOnRead;
 ///////////////////////////////////////////////////////////////
 

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/11/13 07:46:58  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.4  2008/10/22 08:27:26  vfrolov
  * Added ability to set bytesize, parity and stopbits separately
  *
@@ -82,14 +85,14 @@ class State {
 class Filter : public Valid {
   public:
     Filter(int argc, const char *const argv[]);
-    State *GetState(int nPort);
+    State *GetState(HMASTERPORT hPort);
 
     DWORD soMask;
     BYTE escapeChar;
 
   private:
-    typedef map<int, State*> PortsMap;
-    typedef pair<int, State*> PortPair;
+    typedef map<HMASTERPORT, State*> PortsMap;
+    typedef pair<HMASTERPORT, State*> PortPair;
 
     PortsMap portsMap;
 };
@@ -116,14 +119,14 @@ Filter::Filter(int argc, const char *const argv[])
   }
 }
 
-State *Filter::GetState(int nPort)
+State *Filter::GetState(HMASTERPORT hPort)
 {
-  PortsMap::iterator iPair = portsMap.find(nPort);
+  PortsMap::iterator iPair = portsMap.find(hPort);
 
   if (iPair == portsMap.end()) {
-      portsMap.insert(PortPair(nPort, NULL));
+      portsMap.insert(PortPair(hPort, NULL));
 
-      iPair = portsMap.find(nPort);
+      iPair = portsMap.find(hPort);
 
       if (iPair == portsMap.end())
         return NULL;
@@ -253,7 +256,7 @@ static void InsertRLC(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK InMethod(
     HFILTER hFilter,
-    int nFromPort,
+    HMASTERPORT hFromPort,
     HUB_MSG *pInMsg,
     HUB_MSG **ppEchoMsg)
 {
@@ -264,7 +267,7 @@ static BOOL CALLBACK InMethod(
 
   switch (pInMsg->type) {
     case HUB_MSG_TYPE_CONNECT: {
-      State *pState = ((Filter *)hFilter)->GetState(nFromPort);
+      State *pState = ((Filter *)hFilter)->GetState(hFromPort);
 
       if (!pState)
         return FALSE;
@@ -307,8 +310,8 @@ static BOOL CALLBACK InMethod(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK OutMethod(
     HFILTER hFilter,
-    int /*nFromPort*/,
-    int nToPort,
+    HMASTERPORT /*nFromPort*/,
+    HMASTERPORT hToPort,
     HUB_MSG *pOutMsg)
 {
   _ASSERTE(hFilter != NULL);
@@ -321,7 +324,7 @@ static BOOL CALLBACK OutMethod(
       // discard supported options
       pOutMsg->u.val &= ~((Filter *)hFilter)->soMask;
 
-      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
         return FALSE;
@@ -331,7 +334,7 @@ static BOOL CALLBACK OutMethod(
       break;
     }
     case HUB_MSG_TYPE_SET_BR: {
-      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
         return FALSE;
@@ -360,7 +363,7 @@ static BOOL CALLBACK OutMethod(
                                   |VAL2LC_PARITY(-1)|LC_MASK_PARITY
                                   |VAL2LC_STOPBITS(-1)|LC_MASK_STOPBITS)) == 0);
 
-      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
         return FALSE;
@@ -400,7 +403,7 @@ static BOOL CALLBACK OutMethod(
       break;
     }
     case HUB_MSG_TYPE_SET_PIN_STATE: {
-      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
         return FALSE;
@@ -439,7 +442,7 @@ static BOOL CALLBACK OutMethod(
       break;
     }
     case HUB_MSG_TYPE_SET_LSR: {
-      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
         return FALSE;

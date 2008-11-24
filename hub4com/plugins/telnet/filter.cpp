@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/11/13 07:44:13  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.5  2008/10/24 08:29:01  vfrolov
  * Implemented RFC 2217
  *
@@ -103,15 +106,15 @@ class State {
 class Filter : public Valid {
   public:
     Filter(int argc, const char *const argv[]);
-    void SetHub(HHUB _hHub) { hHub = _hHub; }
-    State *GetState(int nPort);
+    State *GetState(HMASTERPORT hPort);
     TelnetProtocol *CreateProtocol(State *pState, const char *pName);
     void DelProtocol(State *pState);
-    const char *PortName(int nPort) const { return pPortName(hHub, nPort); }
-    const char *FilterName() const { return pFilterName(hHub, (HFILTER)this); }
 
-    TelnetProtocol *GetProtocol(int nPort) {
-      State *pState = GetState(nPort);
+    void SetFilterName(const char *_pName) { pName = _pName; }
+    const char *FilterName() const { return pName; }
+
+    TelnetProtocol *GetProtocol(HMASTERPORT hPort) {
+      State *pState = GetState(hPort);
 
       if (!pState)
         return NULL;
@@ -123,7 +126,7 @@ class Filter : public Valid {
     DWORD goMask;
 
   private:
-    HHUB hHub;
+    const char *pName;
     string terminalType;
     BOOL suppressEcho;
 
@@ -133,14 +136,14 @@ class Filter : public Valid {
       comport_server
     } comport;
 
-    typedef map<int, State*> PortsMap;
-    typedef pair<int, State*> PortPair;
+    typedef map<HMASTERPORT, State*> PortsMap;
+    typedef pair<HMASTERPORT, State*> PortPair;
 
     PortsMap portsMap;
 };
 
 Filter::Filter(int argc, const char *const argv[])
-  : hHub(NULL),
+  : pName(NULL),
     terminalType("UNKNOWN"),
     suppressEcho(FALSE),
     comport(comport_no)
@@ -219,14 +222,14 @@ Filter::Filter(int argc, const char *const argv[])
   }
 }
 
-State *Filter::GetState(int nPort)
+State *Filter::GetState(HMASTERPORT hPort)
 {
-  PortsMap::iterator iPair = portsMap.find(nPort);
+  PortsMap::iterator iPair = portsMap.find(hPort);
 
   if (iPair == portsMap.end()) {
-      portsMap.insert(PortPair(nPort, NULL));
+      portsMap.insert(PortPair(hPort, NULL));
 
-      iPair = portsMap.find(nPort);
+      iPair = portsMap.find(hPort);
 
       if (iPair == portsMap.end())
         return NULL;
@@ -419,19 +422,19 @@ static HFILTER CALLBACK Create(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK Init(
     HFILTER hFilter,
-    HHUB hHub)
+    HMASTERFILTER hMasterFilter)
 {
   _ASSERTE(hFilter != NULL);
-  _ASSERTE(hHub != NULL);
+  _ASSERTE(hMasterFilter != NULL);
 
-  ((Filter *)hFilter)->SetHub(hHub);
+  ((Filter *)hFilter)->SetFilterName(pFilterName(hMasterFilter));
 
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK InMethod(
     HFILTER hFilter,
-    int nFromPort,
+    HMASTERPORT hFromPort,
     HUB_MSG *pInMsg,
     HUB_MSG **ppEchoMsg)
 {
@@ -445,7 +448,7 @@ static BOOL CALLBACK InMethod(
       if (!((Filter *)hFilter)->goMask)
         break;
 
-      State *pState = ((Filter *)hFilter)->GetState(nFromPort);
+      State *pState = ((Filter *)hFilter)->GetState(hFromPort);
 
       if (!pState)
         return FALSE;
@@ -473,7 +476,7 @@ static BOOL CALLBACK InMethod(
       if (pInMsg->u.buf.size == 0)
         break;
 
-      TelnetProtocol *pTelnetProtocol = ((Filter *)hFilter)->GetProtocol(nFromPort);
+      TelnetProtocol *pTelnetProtocol = ((Filter *)hFilter)->GetProtocol(hFromPort);
 
       if (!pTelnetProtocol)
         break;
@@ -486,7 +489,7 @@ static BOOL CALLBACK InMethod(
       break;
     }
     case HUB_MSG_TYPE_CONNECT: {
-      State *pState = ((Filter *)hFilter)->GetState(nFromPort);
+      State *pState = ((Filter *)hFilter)->GetState(hFromPort);
 
       if (!pState)
         return FALSE;
@@ -513,7 +516,7 @@ static BOOL CALLBACK InMethod(
         break;
       }
 
-      TelnetProtocol *pTelnetProtocol = ((Filter *)hFilter)->CreateProtocol(pState, ((Filter *)hFilter)->PortName(nFromPort));
+      TelnetProtocol *pTelnetProtocol = ((Filter *)hFilter)->CreateProtocol(pState, pPortName(hFromPort));
 
       if (!pTelnetProtocol)
         return FALSE;
@@ -553,8 +556,8 @@ static BOOL CALLBACK InMethod(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK OutMethod(
     HFILTER hFilter,
-    int /*nFromPort*/,
-    int nToPort,
+    HMASTERPORT /*nFromPort*/,
+    HMASTERPORT hToPort,
     HUB_MSG *pOutMsg)
 {
   _ASSERTE(hFilter != NULL);
@@ -567,7 +570,7 @@ static BOOL CALLBACK OutMethod(
       // discard supported options
       pOutMsg->u.val &= ~((Filter *)hFilter)->soMask;
 
-      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
         return FALSE;
@@ -577,7 +580,7 @@ static BOOL CALLBACK OutMethod(
       break;
     }
     case HUB_MSG_TYPE_SET_BR: {
-      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
         return FALSE;
@@ -609,7 +612,7 @@ static BOOL CALLBACK OutMethod(
                                   |VAL2LC_PARITY(-1)|LC_MASK_PARITY
                                   |VAL2LC_STOPBITS(-1)|LC_MASK_STOPBITS)) == 0);
 
-      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
         return FALSE;
@@ -652,7 +655,7 @@ static BOOL CALLBACK OutMethod(
       break;
     }
     case HUB_MSG_TYPE_SET_PIN_STATE: {
-      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
         return FALSE;
@@ -693,7 +696,7 @@ static BOOL CALLBACK OutMethod(
       break;
     }
     case HUB_MSG_TYPE_SET_LSR: {
-      State *pState = ((Filter *)hFilter)->GetState(nToPort);
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
         return FALSE;
@@ -724,7 +727,7 @@ static BOOL CALLBACK OutMethod(
       if (pOutMsg->u.buf.size == 0)
         break;
 
-      TelnetProtocol *pTelnetProtocol = ((Filter *)hFilter)->GetProtocol(nToPort);
+      TelnetProtocol *pTelnetProtocol = ((Filter *)hFilter)->GetProtocol(hToPort);
 
       if (!pTelnetProtocol)
         break;

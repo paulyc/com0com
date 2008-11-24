@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/11/13 07:45:58  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.2  2008/10/02 07:59:37  vfrolov
  * Changed example
  *
@@ -96,7 +99,7 @@ static HFILTER CALLBACK Create(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK InMethod(
     HFILTER DEBUG_PARAM(hFilter),
-    int /*nFromPort*/,
+    HMASTERPORT /*nFromPort*/,
     HUB_MSG *pInMsg,
     HUB_MSG **ppEchoMsg)
 {

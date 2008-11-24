@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/11/13 08:07:40  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.1  2008/03/26 08:36:25  vfrolov
  * Initial revision
  *
@@ -44,7 +47,9 @@ class Plugins
     void List(ostream &o) const;
     void Help(const char *pProgPath, const char *pPluginName) const;
 
+    void ConfigStart() const;
     BOOL Config(const char *pArg) const;
+    void ConfigStop() const;
 
     const PLUGIN_ROUTINES_A *GetRoutines(
       PLUGIN_TYPE type,

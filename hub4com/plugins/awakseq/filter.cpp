@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2008/11/13 07:45:07  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.7  2008/10/16 09:24:23  vfrolov
  * Changed return type of ROUTINE_MSG_REPLACE_*() to BOOL
  *
@@ -86,14 +89,14 @@ class State {
 class Filter {
   public:
     Filter(int argc, const char *const argv[]);
-    State *GetState(int nPort);
+    State *GetState(HMASTERPORT hPort);
 
     const BYTE *pAwakSeq;
 
   private:
 
-    typedef map<int, State*> PortsMap;
-    typedef pair<int, State*> PortPair;
+    typedef map<HMASTERPORT, State*> PortsMap;
+    typedef pair<HMASTERPORT, State*> PortPair;
 
     PortsMap portsMap;
 };
@@ -119,14 +122,14 @@ Filter::Filter(int argc, const char *const argv[])
   }
 }
 
-State *Filter::GetState(int nPort)
+State *Filter::GetState(HMASTERPORT hPort)
 {
-  PortsMap::iterator iPair = portsMap.find(nPort);
+  PortsMap::iterator iPair = portsMap.find(hPort);
 
   if (iPair == portsMap.end()) {
-      portsMap.insert(PortPair(nPort, NULL));
+      portsMap.insert(PortPair(hPort, NULL));
 
-      iPair = portsMap.find(nPort);
+      iPair = portsMap.find(hPort);
 
       if (iPair == portsMap.end())
         return NULL;
@@ -202,7 +205,7 @@ static HFILTER CALLBACK Create(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK InMethod(
     HFILTER hFilter,
-    int nFromPort,
+    HMASTERPORT hFromPort,
     HUB_MSG *pInMsg,
     HUB_MSG **DEBUG_PARAM(ppEchoMsg))
 {
@@ -219,7 +222,7 @@ static BOOL CALLBACK InMethod(
     if (size == 0)
       return TRUE;
 
-    State *pState = ((Filter *)hFilter)->GetState(nFromPort);
+    State *pState = ((Filter *)hFilter)->GetState(hFromPort);
 
     if (!pState)
       return FALSE;
@@ -278,7 +281,7 @@ static BOOL CALLBACK InMethod(
       if (!pMsgReplaceNone(pInMsg, HUB_MSG_TYPE_EMPTY))
         return FALSE;
     } else {
-      State *pState = ((Filter *)hFilter)->GetState(nFromPort);
+      State *pState = ((Filter *)hFilter)->GetState(hFromPort);
 
       if (!pState)
         return FALSE;
@@ -302,8 +305,8 @@ static BOOL CALLBACK InMethod(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK OutMethod(
     HFILTER hFilter,
-    int /*nFromPort*/,
-    int nToPort,
+    HMASTERPORT /*nFromPort*/,
+    HMASTERPORT hToPort,
     HUB_MSG *pOutMsg)
 {
   _ASSERTE(hFilter != NULL);
@@ -311,7 +314,7 @@ static BOOL CALLBACK OutMethod(
 
 
   if (pOutMsg->type == HUB_MSG_TYPE_CONNECT) {
-    State *pState = ((Filter *)hFilter)->GetState(nToPort);
+    State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
     if (!pState)
       return FALSE;

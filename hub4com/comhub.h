@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2008/11/13 08:07:40  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.7  2008/08/20 08:46:06  vfrolov
  * Implemented ComHub::FilterName()
  *
@@ -52,7 +55,6 @@ class HubMsg;
 ///////////////////////////////////////////////////////////////
 typedef vector<Port*> Ports;
 typedef multimap<Port*, Port*> PortMap;
-typedef multimap<int, int> PortNumMap;
 ///////////////////////////////////////////////////////////////
 #define HUB_SIGNATURE 'h4cH'
 ///////////////////////////////////////////////////////////////
@@ -72,20 +74,19 @@ class ComHub
     }
 #endif
 
-    void Add() { ports.push_back(NULL); }
-    BOOL CreatePort(
-        const PORT_ROUTINES_A *pPortRoutines,
+    void Add();
+    BOOL InitPort(
         int n,
+        const PORT_ROUTINES_A *pPortRoutines,
         HCONFIG hConfig,
         const char *pPath);
     BOOL StartAll() const;
     BOOL OnFakeRead(Port *pFromPort, HubMsg *pMsg) const;
     void OnRead(Port *pFromPort, HubMsg *pMsg) const;
-    void AddXoff(Port *pFromPort) const;
-    void AddXon(Port *pFromPort) const;
+    void AddXoffXon(Port *pFromPort, BOOL xoff) const;
     void LostReport() const;
-    void SetDataRoute(const PortNumMap &map);
-    void SetFlowControlRoute(const PortNumMap &map);
+    void SetDataRoute(const PortMap &map) { routeDataMap = map; }
+    void SetFlowControlRoute(const PortMap &map) { routeFlowControlMap = map; }
     void RouteReport() const;
     int NumPorts() const { return (int)ports.size(); }
 
@@ -96,15 +97,15 @@ class ComHub
     }
 
     Port *ComHub::GetPort(int n) const {
-      if (n < 0 || n >= NumPorts())
-        return NULL;
-
+      _ASSERTE(n >= 0 && n < NumPorts());
       return ports.at(n);
     }
 
     const char *FilterName(HFILTER hFilter) const;
 
   private:
+    void OnRead(const PortMap &routeMap, Port *pFromPort, HubMsg *pMsg) const;
+
     Ports ports;
     PortMap routeDataMap;
     PortMap routeFlowControlMap;
@@ -112,6 +113,7 @@ class ComHub
     Filters *pFilters;
 
 #ifdef _DEBUG
+  private:
     DWORD signature;
 
   public:

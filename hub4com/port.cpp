@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/11/13 08:07:40  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.2  2008/08/15 12:44:59  vfrolov
  * Added fake read filter method to ports
  *
@@ -34,14 +37,43 @@
 #include "comhub.h"
 
 ///////////////////////////////////////////////////////////////
-Port::Port(ComHub &_hub, int _num, const PORT_ROUTINES_A *pPortRoutines, HPORT _hPort)
+Port::Port(ComHub &_hub, int _num)
   : hub(_hub),
     num(_num),
-    hPort(_hPort)
+    hPort(NULL)
 {
+  stringstream buf;
+
+  buf << "P(" << num << ")";
+
+  name = buf.str();
+
 #ifdef _DEBUG
   signature = PORT_SIGNATURE;
 #endif
+}
+
+BOOL Port::Init(
+    const PORT_ROUTINES_A *pPortRoutines,
+    HCONFIG hConfig,
+    const char *pPath)
+{
+  if (!ROUTINE_IS_VALID(pPortRoutines, pCreate)) {
+    cerr << "No create routine for port " << pPath << endl;
+    return FALSE;
+  }
+
+  hPort = pPortRoutines->pCreate(hConfig, pPath);
+
+  if (!hPort) {
+    cerr << "Can't create port " << pPath << endl;
+    return FALSE;
+  }
+
+  pStart = ROUTINE_GET(pPortRoutines, pStart);
+  pFakeReadFilter = ROUTINE_GET(pPortRoutines, pFakeReadFilter);
+  pWrite = ROUTINE_GET(pPortRoutines, pWrite);
+  pLostReport = ROUTINE_GET(pPortRoutines, pLostReport);
 
   const char *pName = ROUTINE_IS_VALID(pPortRoutines, pGetPortName)
                      ? pPortRoutines->pGetPortName(hPort)
@@ -62,21 +94,12 @@ Port::Port(ComHub &_hub, int _num, const PORT_ROUTINES_A *pPortRoutines, HPORT _
   if (ROUTINE_IS_VALID(pPortRoutines, pSetPortName))
     pPortRoutines->pSetPortName(hPort, name.c_str());
 
-  pInit = ROUTINE_GET(pPortRoutines, pInit);
-  pStart = ROUTINE_GET(pPortRoutines, pStart);
-  pFakeReadFilter = ROUTINE_GET(pPortRoutines, pFakeReadFilter);
-  pWrite = ROUTINE_GET(pPortRoutines, pWrite);
-  pAddXoff = ROUTINE_GET(pPortRoutines, pAddXoff);
-  pAddXon = ROUTINE_GET(pPortRoutines, pAddXon);
-  pLostReport = ROUTINE_GET(pPortRoutines, pLostReport);
-}
+  if (ROUTINE_IS_VALID(pPortRoutines, pInit)) {
+    if (!ROUTINE_GET(pPortRoutines, pInit)(hPort, HMASTERPORT(this)))
+      return FALSE;
+  }
 
-BOOL Port::Init()
-{
-  if (!pInit)
-    return TRUE;
-
-  return pInit(hPort, HMASTERPORT(this), HHUB(&hub));
+  return TRUE;
 }
 
 BOOL Port::Start()
@@ -112,18 +135,6 @@ BOOL Port::Write(HubMsg *pMsg)
     return TRUE;
 
   return pWrite(hPort, (HUB_MSG *)pMsg);
-}
-
-void Port::AddXoff()
-{
-  if (pAddXoff)
-    pAddXoff(hPort);
-}
-
-void Port::AddXon()
-{
-  if (pAddXon)
-    pAddXon(hPort);
 }
 
 void Port::LostReport()
