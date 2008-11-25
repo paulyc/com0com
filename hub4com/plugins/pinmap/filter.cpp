@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2008/11/24 12:37:00  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.11  2008/11/13 07:51:34  vfrolov
  * Changed for staticaly linking
  *
@@ -405,6 +408,8 @@ static BOOL CALLBACK OutMethod(
     HUB_MSG *pOutMsg)
 {
   _ASSERTE(hFilter != NULL);
+  _ASSERTE(hFromPort != NULL);
+  _ASSERTE(hToPort != NULL);
   _ASSERTE(pOutMsg != NULL);
 
   switch (pOutMsg->type) {

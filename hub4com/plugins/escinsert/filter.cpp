@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/11/24 12:37:00  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.5  2008/11/13 07:46:58  vfrolov
  * Changed for staticaly linking
  *
@@ -45,6 +48,12 @@ namespace FilterEscInsert {
 static ROUTINE_MSG_INSERT_BUF *pMsgInsertBuf;
 static ROUTINE_MSG_REPLACE_BUF *pMsgReplaceBuf;
 static ROUTINE_MSG_REPLACE_NONE *pMsgReplaceNone;
+///////////////////////////////////////////////////////////////
+#ifndef _DEBUG
+  #define DEBUG_PARAM(par)
+#else   /* _DEBUG */
+  #define DEBUG_PARAM(par) par
+#endif  /* _DEBUG */
 ///////////////////////////////////////////////////////////////
 const char *GetParam(const char *pArg, const char *pPattern)
 {
@@ -261,6 +270,7 @@ static BOOL CALLBACK InMethod(
     HUB_MSG **ppEchoMsg)
 {
   _ASSERTE(hFilter != NULL);
+  _ASSERTE(hFromPort != NULL);
   _ASSERTE(pInMsg != NULL);
   _ASSERTE(ppEchoMsg != NULL);
   _ASSERTE(*ppEchoMsg == NULL);
@@ -310,11 +320,12 @@ static BOOL CALLBACK InMethod(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK OutMethod(
     HFILTER hFilter,
-    HMASTERPORT /*nFromPort*/,
+    HMASTERPORT DEBUG_PARAM(hFromPort),
     HMASTERPORT hToPort,
     HUB_MSG *pOutMsg)
 {
   _ASSERTE(hFilter != NULL);
+  _ASSERTE(hFromPort != NULL);
   _ASSERTE(pOutMsg != NULL);
 
   switch (pOutMsg->type) {

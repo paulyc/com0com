@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/11/24 12:37:00  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.6  2008/11/13 07:47:48  vfrolov
  * Changed for staticaly linking
  *
@@ -471,6 +474,7 @@ static BOOL CALLBACK InMethod(
     HUB_MSG ** DEBUG_PARAM(ppEchoMsg))
 {
   _ASSERTE(hFilter != NULL);
+  _ASSERTE(hFromPort != NULL);
   _ASSERTE(pInMsg != NULL);
   _ASSERTE(ppEchoMsg != NULL);
   _ASSERTE(*ppEchoMsg == NULL);

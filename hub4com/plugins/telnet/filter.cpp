@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2008/11/24 16:39:58  vfrolov
+ * Implemented FLOWCONTROL-SUSPEND and FLOWCONTROL-RESUME commands (RFC 2217)
+ *
  * Revision 1.7  2008/11/24 12:37:00  vfrolov
  * Changed plugin API
  *
@@ -54,6 +57,12 @@ namespace FilterTelnet {
 static ROUTINE_MSG_INSERT_NONE *pMsgInsertNone;
 static ROUTINE_PORT_NAME_A *pPortName;
 static ROUTINE_FILTER_NAME_A *pFilterName;
+///////////////////////////////////////////////////////////////
+#ifndef _DEBUG
+  #define DEBUG_PARAM(par)
+#else   /* _DEBUG */
+  #define DEBUG_PARAM(par) par
+#endif  /* _DEBUG */
 ///////////////////////////////////////////////////////////////
 const char *GetParam(const char *pArg, const char *pPattern)
 {
@@ -355,6 +364,7 @@ static void CALLBACK Help(const char *pProgPath)
   << endl
   << "IN method output data stream description:" << endl
   << "  LINE_DATA - raw data." << endl
+  << "  ADD_XOFF_XON - flow control." << endl
   << "  " << endl
   << "  Notifications about events on the server side (RFC 2217 client mode):" << endl
   << "  " << endl
@@ -375,6 +385,7 @@ static void CALLBACK Help(const char *pProgPath)
   << endl
   << "OUT method input data stream description:" << endl
   << "  LINE_DATA - raw data." << endl
+  << "  ADD_XOFF_XON - flow control." << endl
   << "  " << endl
   << "  RFC 2217 client mode:" << endl
   << "  " << endl
@@ -442,6 +453,7 @@ static BOOL CALLBACK InMethod(
     HUB_MSG **ppEchoMsg)
 {
   _ASSERTE(hFilter != NULL);
+  _ASSERTE(hFromPort != NULL);
   _ASSERTE(pInMsg != NULL);
   _ASSERTE(ppEchoMsg != NULL);
   _ASSERTE(*ppEchoMsg == NULL);
@@ -559,11 +571,13 @@ static BOOL CALLBACK InMethod(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK OutMethod(
     HFILTER hFilter,
-    HMASTERPORT /*nFromPort*/,
+    HMASTERPORT DEBUG_PARAM(hFromPort),
     HMASTERPORT hToPort,
     HUB_MSG *pOutMsg)
 {
   _ASSERTE(hFilter != NULL);
+  _ASSERTE(hFromPort != NULL);
+  _ASSERTE(hToPort != NULL);
   _ASSERTE(pOutMsg != NULL);
 
   switch (pOutMsg->type) {

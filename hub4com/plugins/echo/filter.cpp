@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/11/24 12:36:59  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.3  2008/11/13 07:45:58  vfrolov
  * Changed for staticaly linking
  *
@@ -99,11 +102,12 @@ static HFILTER CALLBACK Create(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK InMethod(
     HFILTER DEBUG_PARAM(hFilter),
-    HMASTERPORT /*nFromPort*/,
+    HMASTERPORT DEBUG_PARAM(hFromPort),
     HUB_MSG *pInMsg,
     HUB_MSG **ppEchoMsg)
 {
   _ASSERTE(hFilter != NULL);
+  _ASSERTE(hFromPort != NULL);
   _ASSERTE(pInMsg != NULL);
   _ASSERTE(ppEchoMsg != NULL);
   _ASSERTE(*ppEchoMsg == NULL);

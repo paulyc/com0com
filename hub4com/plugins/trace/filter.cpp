@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2008/11/24 12:37:00  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.9  2008/11/21 08:16:56  vfrolov
  * Added HUB_MSG_TYPE_LOOP_TEST
  *
@@ -704,6 +707,7 @@ static BOOL CALLBACK InMethod(
     HUB_MSG **DEBUG_PARAM(ppEchoMsg))
 {
   _ASSERTE(hFilter != NULL);
+  _ASSERTE(hFromPort != NULL);
   _ASSERTE(pInMsg != NULL);
   _ASSERTE(ppEchoMsg != NULL);
   _ASSERTE(*ppEchoMsg == NULL);
@@ -728,6 +732,8 @@ static BOOL CALLBACK OutMethod(
     HUB_MSG *pOutMsg)
 {
   _ASSERTE(hFilter != NULL);
+  _ASSERTE(hFromPort != NULL);
+  _ASSERTE(hToPort != NULL);
   _ASSERTE(pOutMsg != NULL);
 
   _ASSERTE(((Filter *)hFilter)->pTraceStream != NULL);
