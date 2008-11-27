@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2008/11/24 16:30:56  vfrolov
+ * Removed pOnXoffXon
+ *
  * Revision 1.8  2008/11/24 12:37:00  vfrolov
  * Changed plugin API
  *
@@ -100,6 +103,9 @@ static void CALLBACK Help(const char *pProgPath)
   << "                             is a positive number of milliseconds or d[efault]" << endl
   << "                             or n[o]. If sign * is not used then d[efault]" << endl
   << "                             means n[o] else d[efault] means 0." << endl
+  << "  --write-limit=<s>        - set write queue limit to <s> (" << ComParams().WriteQueueLimitStr() << " by default)," << endl
+  << "                             where <s> is " << ComParams::WriteQueueLimitLst() << ". The queue will be" << endl
+  << "                             purged with data lost on overruning." << endl
   << endl
   << "Output data stream description:" << endl
   << "  LINE_DATA(<data>) - send <data> to remote host." << endl
@@ -175,11 +181,17 @@ static BOOL CALLBACK Config(
       reconnectTime = atoi(pParam);
     }
     else {
-      cerr << "Unknown reconnect value in " << pArg << endl;
+      cerr << "Invalid reconnect value in " << pArg << endl;
       exit(1);
     }
 
     comParams.SetReconnectTime(reconnectTime);
+  } else
+  if ((pParam = GetParam(pArg, "--write-limit=")) != NULL) {
+    if (!comParams.SetWriteQueueLimit(pParam)) {
+      cerr << "Invalid write limit value in " << pArg << endl;
+      exit(1);
+    }
   } else {
     return FALSE;
   }

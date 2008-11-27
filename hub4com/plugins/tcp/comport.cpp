@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2008/11/24 16:30:56  vfrolov
+ * Removed pOnXoffXon
+ *
  * Revision 1.9  2008/11/24 12:37:00  vfrolov
  * Changed plugin API
  *
@@ -129,7 +132,7 @@ ComPort::ComPort(
     hMasterPort(NULL),
     countReadOverlapped(0),
     countXoff(0),
-    writeQueueLimit(256),
+    writeQueueLimit(comParams.WriteQueueLimit()),
     writeQueued(0),
     writeSuspended(FALSE),
     writeLost(0),

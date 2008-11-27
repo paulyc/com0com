@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/11/13 07:41:09  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.2  2008/10/06 12:15:14  vfrolov
  * Added --reconnect option
  *
@@ -35,7 +38,8 @@ namespace PortTcp {
 ///////////////////////////////////////////////////////////////
 ComParams::ComParams()
   : pIF(NULL),
-    reconnectTime(rtDefault)
+    reconnectTime(rtDefault),
+    writeQueueLimit(256)
 {
 }
 ///////////////////////////////////////////////////////////////
@@ -53,6 +57,32 @@ void ComParams::SetIF(const char *_pIF)
     pIF = _strdup(_pIF);
   else
     pIF = NULL;
+}
+///////////////////////////////////////////////////////////////
+BOOL ComParams::SetWriteQueueLimit(const char *pWriteQueueLimit)
+{
+  if (isdigit(*pWriteQueueLimit)) {
+    writeQueueLimit = atol(pWriteQueueLimit);
+    return writeQueueLimit > 0;
+  }
+
+  return FALSE;
+}
+
+string ComParams::WriteQueueLimitStr(long writeQueueLimit)
+{
+  if (writeQueueLimit > 0) {
+    stringstream buf;
+    buf << writeQueueLimit;
+    return buf.str();
+  }
+
+  return "?";
+}
+
+const char *ComParams::WriteQueueLimitLst()
+{
+  return "a positive number";
 }
 ///////////////////////////////////////////////////////////////
 } // end namespace

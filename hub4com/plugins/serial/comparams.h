@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/04/07 12:28:03  vfrolov
+ * Replaced --rt-events option by SET_RT_EVENTS message
+ *
  * Revision 1.1  2008/03/26 08:44:13  vfrolov
  * Redesigned for using plugins
  *
@@ -56,6 +59,7 @@ class ComParams
     BOOL SetInX(const char *pInX) { return SetFlag(pInX, &inX); }
     BOOL SetInDsr(const char *pInDsr) { return SetFlag(pInDsr, &inDsr); }
     BOOL SetIntervalTimeout(const char *pIntervalTimeout);
+    BOOL SetWriteQueueLimit(const char *pWriteQueueLimit);
 
     static string BaudRateStr(long baudRate);
     static string ByteSizeStr(int byteSize);
@@ -67,6 +71,7 @@ class ComParams
     static string InXStr(int inX) { return FlagStr(inX); }
     static string InDsrStr(int inDsr) { return FlagStr(inDsr); }
     static string IntervalTimeoutStr(long intervalTimeout);
+    static string WriteQueueLimitStr(long writeQueueLimit);
 
     string BaudRateStr() const { return BaudRateStr(baudRate); }
     string ByteSizeStr() const { return ByteSizeStr(byteSize); }
@@ -78,6 +83,7 @@ class ComParams
     string InXStr() const { return InXStr(inX); }
     string InDsrStr() const { return InDsrStr(inDsr); }
     string IntervalTimeoutStr() const { return IntervalTimeoutStr(intervalTimeout); }
+    string WriteQueueLimitStr() const { return WriteQueueLimitStr(writeQueueLimit); }
 
     static const char *BaudRateLst();
     static const char *ByteSizeLst();
@@ -89,6 +95,7 @@ class ComParams
     static const char *InXLst() { return FlagLst(); }
     static const char *InDsrLst() { return FlagLst(); }
     static const char *IntervalTimeoutLst();
+    static const char *WriteQueueLimitLst();
 
     long BaudRate() const { return baudRate; }
     int ByteSize() const { return byteSize; }
@@ -100,6 +107,7 @@ class ComParams
     int InX() const { return inX; }
     int InDsr() const { return inDsr; }
     long IntervalTimeout() const { return intervalTimeout; }
+    long WriteQueueLimit() const { return writeQueueLimit; }
 
   private:
     BOOL SetFlag(const char *pFlagStr, int *pFlag);
@@ -116,6 +124,7 @@ class ComParams
     int inX;
     int inDsr;
     long intervalTimeout;
+    long writeQueueLimit;
 };
 ///////////////////////////////////////////////////////////////
 

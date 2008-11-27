@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.17  2008/11/24 16:30:56  vfrolov
+ * Removed pOnXoffXon
+ *
  * Revision 1.16  2008/11/24 12:37:00  vfrolov
  * Changed plugin API
  *
@@ -117,7 +120,7 @@ ComPort::ComPort(
     intercepted_options(0),
     inOptions(0),
     outOptions(0),
-    writeQueueLimit(256),
+    writeQueueLimit(comParams.WriteQueueLimit()),
     writeQueued(0),
     writeSuspended(FALSE),
     writeLost(0),
@@ -724,7 +727,7 @@ BOOL ComPort::StartWaitCommEvent()
 
 void ComPort::OnWrite(WriteOverlapped *pOverlapped, DWORD len, DWORD done)
 {
-  //cout << name << " OnWrite " << ::GetCurrentThreadId() << endl;
+  //cout << name << " OnWrite " << ::GetCurrentThreadId() << " len=" << len << " done=" << done << " queued=" << writeQueued << endl;
 
   delete pOverlapped;
 
