@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2008/11/24 16:30:56  vfrolov
+ * Removed pOnXoffXon
+ *
  * Revision 1.11  2008/11/24 12:37:00  vfrolov
  * Changed plugin API
  *
@@ -115,10 +118,14 @@ class ComPort
     ComIo *pComIo;
     string name;
     HMASTERPORT hMasterPort;
+    int countWriteOverlapped;
     int countReadOverlapped;
     int countWaitCommEventOverlapped;
     int countXoff;
     BOOL filterX;
+
+    BYTE *pWriteBuf;
+    DWORD lenWriteBuf;
 
     DWORD intercepted_options;
     DWORD inOptions;
