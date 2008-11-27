@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/11/24 16:30:56  vfrolov
+ * Removed pOnXoffXon
+ *
  * Revision 1.6  2008/11/24 12:46:16  vfrolov
  * Changed plugin API
  *
@@ -58,6 +61,11 @@ static BYTE * CALLBACK buf_alloc(DWORD size)
 static VOID CALLBACK buf_free(BYTE *pBuf)
 {
   BufFree(pBuf);
+}
+///////////////////////////////////////////////////////////////
+static VOID CALLBACK buf_append(BYTE **ppBuf, DWORD offset, const BYTE *pSrc, DWORD sizeSrc)
+{
+  BufAppend(ppBuf, offset, pSrc, sizeSrc);
 }
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK msg_replace_buf(HUB_MSG *pMsg, WORD type, const BYTE *pSrc, DWORD sizeSrc)
@@ -219,6 +227,7 @@ HUB_ROUTINES_A hubRoutines = {
   sizeof(HUB_ROUTINES_A),
   buf_alloc,
   buf_free,
+  buf_append,
   msg_replace_buf,
   msg_insert_buf,
   msg_replace_val,
