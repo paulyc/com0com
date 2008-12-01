@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/11/24 12:36:59  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.1  2008/03/26 08:37:06  vfrolov
  * Initial revision
  *
@@ -45,6 +48,29 @@ static PortMap::iterator FindPair(PortMap &map, const PortPair &pair)
   return i;
 }
 
+static void AddRoute(
+    PortMap &map,
+    const PortPair &pair,
+    BOOL noRoute)
+{
+  for (;;) {
+    PortMap::iterator i = FindPair(map, pair);
+
+    if (i == map.end()) {
+      if (!noRoute)
+        map.insert(pair);
+      break;
+    }
+    else
+    if (noRoute) {
+      map.erase(i);
+    }
+    else {
+      break;
+    }
+  }
+}
+
 void AddRoute(
     PortMap &map,
     Port *pFrom,
@@ -52,23 +78,17 @@ void AddRoute(
     BOOL noRoute,
     BOOL noEcho)
 {
-  if (pFrom != pTo || !noEcho || noRoute) {
-    PortPair pair(pFrom, pTo);
+  if (pFrom != pTo || !noEcho || noRoute)
+    AddRoute(map, PortPair(pFrom, pTo), noRoute);
+}
 
-    for (;;) {
-      PortMap::iterator i = FindPair(map, pair);
-
-      if (i == map.end()) {
-        if (!noRoute)
-          map.insert(pair);
-        break;
-      } else if (noRoute) {
-        map.erase(i);
-      } else {
-        break;
-      }
-    }
-  }
+void AddRoute(
+    PortMap &map,
+    PortMap &noMap,
+    BOOL noRoute)
+{
+  for (PortMap::const_iterator i = noMap.begin() ; i != noMap.end() ; i++)
+    AddRoute(map, *i, noRoute);
 }
 
 void SetFlowControlRoute(

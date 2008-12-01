@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/11/24 12:36:59  vfrolov
+ * Changed plugin API
+ *
  * Revision 1.1  2008/03/26 08:37:06  vfrolov
  * Initial revision
  *
@@ -38,6 +41,10 @@ void AddRoute(
     Port *pTo,
     BOOL noRoute,
     BOOL noEcho);
+void AddRoute(
+    PortMap &map,
+    PortMap &noMap,
+    BOOL noRoute);
 void SetFlowControlRoute(
     PortMap &routeFlowControlMap,
     PortMap &routeDataMap,
