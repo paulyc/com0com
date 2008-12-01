@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2008/11/27 13:46:29  vfrolov
+ * Added --write-limit option
+ *
  * Revision 1.10  2008/11/24 16:30:56  vfrolov
  * Removed pOnXoffXon
  *
@@ -136,7 +139,9 @@ ComPort::ComPort(
     writeQueued(0),
     writeSuspended(FALSE),
     writeLost(0),
-    writeLostTotal(0)
+    writeLostTotal(0),
+    pWriteBuf(NULL),
+    lenWriteBuf(0)
 {
   writeQueueLimitSendXoff = (writeQueueLimit*2)/3;
   writeQueueLimitSendXon = writeQueueLimit/3;
@@ -192,6 +197,15 @@ ComPort::ComPort(
       else
         isValid = FALSE;
     }
+  }
+
+  for (int i = 0 ; i < 3 ; i++) {
+    WriteOverlapped *pOverlapped = new WriteOverlapped(*this);
+
+    if (pOverlapped)
+      writeOverlappedBuf.push(pOverlapped);
+    else
+      isValid = FALSE;
   }
 }
 
@@ -282,6 +296,33 @@ void ComPort::Accept()
     pListener->push(this);
 }
 
+void ComPort::FlowControlUpdate()
+{
+  if (writeSuspended) {
+    if (writeQueued <= writeQueueLimitSendXon) {
+      writeSuspended = FALSE;
+
+      HUB_MSG msg;
+
+      msg.type = HUB_MSG_TYPE_ADD_XOFF_XON;
+      msg.u.val = FALSE;
+
+      pOnRead(hMasterPort, &msg);
+    }
+  } else {
+    if (writeQueued > writeQueueLimitSendXoff) {
+      writeSuspended = TRUE;
+
+      HUB_MSG msg;
+
+      msg.type = HUB_MSG_TYPE_ADD_XOFF_XON;
+      msg.u.val = TRUE;
+
+      pOnRead(hMasterPort, &msg);
+    }
+  }
+}
+
 BOOL ComPort::Write(HUB_MSG *pMsg)
 {
   _ASSERTE(pMsg != NULL);
@@ -303,51 +344,43 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
       return FALSE;
     }
 
-    if (isConnected) {
-      WriteOverlapped *pOverlapped;
+    if (writeQueued > writeQueueLimit) {
+      if (lenWriteBuf) {
+        _ASSERTE(pWriteBuf != NULL);
 
-      pOverlapped = new WriteOverlapped(*this, pBuf, len);
+        writeLost += lenWriteBuf;
+        writeQueued -= lenWriteBuf;
+        lenWriteBuf = 0;
+        pBufFree(pWriteBuf);
+        pWriteBuf = NULL;
+      }
+    }
 
-      if (!pOverlapped) {
+    if (isConnected && writeOverlappedBuf.size()) {
+      _ASSERTE(pWriteBuf == NULL);
+      _ASSERTE(lenWriteBuf == 0);
+
+      WriteOverlapped *pOverlapped = writeOverlappedBuf.front();
+
+      _ASSERTE(pOverlapped != NULL);
+
+      if (!pOverlapped->StartWrite(pBuf, len)) {
         writeLost += len;
+        FlowControlUpdate();
         return FALSE;
       }
 
-      pMsg->type = HUB_MSG_TYPE_EMPTY;
-
-      //if (writeQueued > writeQueueLimit) {
-      //}
-
-      if (!pOverlapped->StartWrite()) {
-        writeLost += len;
-        delete pOverlapped;
-        return FALSE;
-      }
+      writeOverlappedBuf.pop();
+      pMsg->type = HUB_MSG_TYPE_EMPTY;  // detach pBuf
     } else {
-      if (writeQueued > writeQueueLimit) {
-        for (Bufs::const_iterator i = bufs.begin() ; i != bufs.end() ; i++) {
-          pBufFree(i->pBuf);
-          writeLost += i->len;
-        }
-        bufs.clear();
-      }
+      _ASSERTE((pWriteBuf == NULL && lenWriteBuf == 0) || (pWriteBuf != NULL && lenWriteBuf != 0));
 
-      bufs.push_back(Buf(pBuf, len));
-      pMsg->type = HUB_MSG_TYPE_EMPTY;
+      pBufAppend(&pWriteBuf, lenWriteBuf, pBuf, len);
+      lenWriteBuf += len;
     }
 
     writeQueued += len;
-
-    if (writeQueued > writeQueueLimitSendXoff && !writeSuspended) {
-      writeSuspended = TRUE;
-
-      HUB_MSG msg;
-
-      msg.type = HUB_MSG_TYPE_ADD_XOFF_XON;
-      msg.u.val = TRUE;
-
-      pOnRead(hMasterPort, &msg);
-    }
+    FlowControlUpdate();
 
     //cout << "Started Write " << name << " " << len << " " << writeQueued << endl;
   }
@@ -418,23 +451,36 @@ BOOL ComPort::StartWaitEvent(SOCKET hSockWait)
 
 void ComPort::OnWrite(WriteOverlapped *pOverlapped, DWORD len, DWORD done)
 {
-  delete pOverlapped;
+  //cout << name << " OnWrite " << ::GetCurrentThreadId() << " len=" << len << " done=" << done << " queued=" << writeQueued << endl;
 
   if (len > done)
     writeLost += len - done;
 
   writeQueued -= len;
 
-  if (writeQueued <= writeQueueLimitSendXon && writeSuspended) {
-    writeSuspended = FALSE;
+  _ASSERTE(pWriteBuf != NULL || lenWriteBuf == 0);
+  _ASSERTE(pWriteBuf == NULL || lenWriteBuf != 0);
 
-    HUB_MSG msg;
+  if (lenWriteBuf &&
+      isConnected &&
+      !isDisconnected &&
+      hSock != INVALID_SOCKET)
+  {
+    if (!pOverlapped->StartWrite(pWriteBuf, lenWriteBuf)) {
+      writeOverlappedBuf.push(pOverlapped);
 
-    msg.type = HUB_MSG_TYPE_ADD_XOFF_XON;
-    msg.u.val = FALSE;
+      writeLost += lenWriteBuf;
+      writeQueued -= lenWriteBuf;
+      pBufFree(pWriteBuf);
+    }
 
-    pOnRead(hMasterPort, &msg);
+    lenWriteBuf = 0;
+    pWriteBuf = NULL;
+  } else {
+    writeOverlappedBuf.push(pOverlapped);
   }
+
+  FlowControlUpdate();
 }
 
 void ComPort::OnRead(ReadOverlapped *pOverlapped, BYTE *pBuf, DWORD done)
@@ -475,6 +521,18 @@ void ComPort::OnDisconnect()
   hSock = INVALID_SOCKET;
 
   if (isConnected) {
+    if (lenWriteBuf) {
+      _ASSERTE(pWriteBuf != NULL);
+
+      writeLost += lenWriteBuf;
+      writeQueued -= lenWriteBuf;
+      lenWriteBuf = 0;
+      pBufFree(pWriteBuf);
+      pWriteBuf = NULL;
+
+      FlowControlUpdate();
+    }
+
     isConnected = FALSE;
 
     HUB_MSG msg;
@@ -544,30 +602,31 @@ void ComPort::OnConnect()
 {
   _ASSERTE(isConnected == FALSE);
   _ASSERTE(isDisconnected == FALSE);
+  _ASSERTE(hSock != INVALID_SOCKET);
 
   isConnected = TRUE;
 
   if (countXoff <= 0)
     StartRead();
 
-  for (Bufs::const_iterator i = bufs.begin() ; i != bufs.end() ; i++) {
-    WriteOverlapped *pWriteOverlapped;
+  if (lenWriteBuf && writeOverlappedBuf.size()) {
+    WriteOverlapped *pOverlapped = writeOverlappedBuf.front();
 
-    pWriteOverlapped = new WriteOverlapped(*this, i->pBuf, i->len);
+    _ASSERTE(pOverlapped != NULL);
 
-    if (!pWriteOverlapped) {
-      pBufFree(i->pBuf);
-      writeLost += i->len;
-      continue;
+    if (pOverlapped->StartWrite(pWriteBuf, lenWriteBuf)) {
+      writeOverlappedBuf.pop();
+    } else {
+      writeLost += lenWriteBuf;
+      writeQueued -= lenWriteBuf;
+      pBufFree(pWriteBuf);
+
+      FlowControlUpdate();
     }
 
-    if (!pWriteOverlapped->StartWrite()) {
-      writeLost += i->len;
-      delete pWriteOverlapped;
-      continue;
-    }
+    lenWriteBuf = 0;
+    pWriteBuf = NULL;
   }
-  bufs.clear();
 
   HUB_MSG msg;
 

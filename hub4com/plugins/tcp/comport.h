@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/11/24 16:30:56  vfrolov
+ * Removed pOnXoffXon
+ *
  * Revision 1.6  2008/11/24 12:37:00  vfrolov
  * Changed plugin API
  *
@@ -68,15 +71,6 @@ class Listener : public queue<ComPort *>
     SOCKET hSockListen;
 };
 ///////////////////////////////////////////////////////////////
-struct Buf {
-  Buf(BYTE *_pBuf, DWORD _len) : pBuf(_pBuf), len(_len) {}
-
-  BYTE *pBuf;
-  DWORD len;
-};
-
-typedef vector<Buf> Bufs;
-///////////////////////////////////////////////////////////////
 class ComPort
 {
   public:
@@ -101,6 +95,7 @@ class ComPort
     void StartConnect();
 
   private:
+    void FlowControlUpdate();
     BOOL StartRead();
     BOOL StartWaitEvent(SOCKET hSockWait);
     void OnConnect();
@@ -135,7 +130,9 @@ class ComPort
     DWORD writeLost;
     DWORD writeLostTotal;
 
-    Bufs bufs;
+    queue<WriteOverlapped *> writeOverlappedBuf;
+    BYTE *pWriteBuf;
+    DWORD lenWriteBuf;
 };
 ///////////////////////////////////////////////////////////////
 
