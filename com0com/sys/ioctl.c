@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.40  2008/10/30 07:54:37  vfrolov
+ * Improved BREAK emulation
+ *
  * Revision 1.39  2008/09/12 10:07:50  vfrolov
  * Fixed LSR insertion
  *
@@ -1021,9 +1024,9 @@ NTSTATUS c0cIoControl(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
   NTSTATUS status;
   PC0C_COMMON_EXTENSION pDevExt = pDevObj->DeviceExtension;
 
-#if DBG
+#if ENABLE_TRACING
   ULONG code = IoGetCurrentIrpStackLocation(pIrp)->Parameters.DeviceIoControl.IoControlCode;
-#endif /* DBG */
+#endif /* ENABLE_TRACING */
 
   TraceIrp("c0cIoControl", pIrp, NULL, TRACE_FLAG_PARAMS);
 
@@ -1038,10 +1041,10 @@ NTSTATUS c0cIoControl(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
   }
 
-#if DBG
+#if ENABLE_TRACING
   if (status != STATUS_SUCCESS)
     TraceCode(pDevExt, "IOCTL_", codeNameTableIoctl, code, &status);
-#endif /* DBG */
+#endif /* ENABLE_TRACING */
 
   return status;
 }

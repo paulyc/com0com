@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.24  2008/07/11 10:38:00  vfrolov
+ * Added nonstandard ability to enable LSR insertion on BREAK OFF
+ *
  * Revision 1.23  2008/06/26 13:37:10  vfrolov
  * Implemented noise emulation
  *
@@ -150,7 +153,7 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   InitializeListHead(&queueToComplete);
 
-#if DBG
+#if ENABLE_TRACING
   if (pIoPort->amountInWriteQueue) {
     NTSTATUS status;
     UNICODE_STRING msg;
@@ -164,7 +167,7 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
     StrFree(&msg);
   }
-#endif /* DBG */
+#endif /* ENABLE_TRACING */
 
   KeAcquireSpinLock(pIoPort->pIoLock, &oldIrql);
 
@@ -275,10 +278,10 @@ NTSTATUS c0cOpen(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
 
   pIrp->IoStatus.Information = 0;
 
-#if DBG
+#if ENABLE_TRACING
   if (!NT_SUCCESS(status))
     TraceIrp("c0cOpen", pIrp, &status, TRACE_FLAG_RESULTS);
-#endif /* DBG */
+#endif /* ENABLE_TRACING */
 
   pIrp->IoStatus.Status = status;
   IoCompleteRequest(pIrp, IO_NO_INCREMENT);
@@ -291,9 +294,9 @@ NTSTATUS c0cClose(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
   NTSTATUS status;
   PC0C_COMMON_EXTENSION pDevExt = pDevObj->DeviceExtension;
 
-#if DBG
+#if ENABLE_TRACING
   ULONG code = IoGetCurrentIrpStackLocation(pIrp)->MajorFunction;
-#endif /* DBG */
+#endif /* ENABLE_TRACING */
 
   TraceIrp("--- Close ---", pIrp, NULL, TRACE_FLAG_PARAMS);
 
@@ -308,10 +311,10 @@ NTSTATUS c0cClose(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
   }
 
-#if DBG
+#if ENABLE_TRACING
   if (status != STATUS_SUCCESS)
     TraceCode(pDevExt, "IRP_MJ_", codeNameTableIrpMj, code, &status);
-#endif /* DBG */
+#endif /* ENABLE_TRACING */
 
   return status;
 }

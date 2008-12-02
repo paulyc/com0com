@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2005 Vyacheslav Frolov
+ * Copyright (c) 2004-2008 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,9 +19,11 @@
  *
  *
  * $Log$
+ * Revision 1.2  2005/07/01 11:05:41  vfrolov
+ * Removed unused headers
+ *
  * Revision 1.1  2005/01/26 12:18:54  vfrolov
  * Initial revision
- *
  *
  */
 
@@ -36,9 +38,12 @@
 
 #pragma warning(pop)
 
+#define ENABLE_TRACING 1
+
 #include "com0com.h"
 #include "trace.h"
 #include "syslog.h"
+#include "halt.h"
 
 #pragma warning(disable:4514) // unreferenced inline function has been removed
 

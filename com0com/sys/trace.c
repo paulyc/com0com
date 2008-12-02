@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.31  2008/06/10 11:24:20  vfrolov
+ * Disabled tracing if traceFileName is empty
+ *
  * Revision 1.30  2008/04/08 10:37:56  vfrolov
  * Implemented ability to set individual pins with extended
  * IOCTL_SERIAL_SET_MODEM_CONTROL and IOCTL_SERIAL_GET_MODEM_CONTROL
@@ -122,7 +125,7 @@
 
 #include "precomp.h"
 
-#if DBG
+#if ENABLE_TRACING
 
 #include "version.h"
 
@@ -1715,6 +1718,6 @@ VOID TraceIrp(
 }
 /********************************************************************/
 
-#else /* DBG */
+#else /* ENABLE_TRACING */
   #pragma warning(disable:4206) // nonstandard extension used : translation unit is empty
-#endif /* DBG */
+#endif /* ENABLE_TRACING */

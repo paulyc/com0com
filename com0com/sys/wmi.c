@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/03/14 15:28:39  vfrolov
+ * Implemented ability to get paired port settings with
+ * extended IOCTL_SERIAL_LSRMST_INSERT
+ *
  * Revision 1.4  2007/06/01 16:22:40  vfrolov
  * Implemented plug-in and exclusive modes
  *
@@ -382,9 +386,9 @@ NTSTATUS c0cSystemControlDispatch(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
   NTSTATUS status;
   PC0C_COMMON_EXTENSION pDevExt = pDevObj->DeviceExtension;
 
-#if DBG
+#if ENABLE_TRACING
   ULONG code = IoGetCurrentIrpStackLocation(pIrp)->MinorFunction;
-#endif /* DBG */
+#endif /* ENABLE_TRACING */
 
   HALT_UNLESS2(IoGetCurrentIrpStackLocation(pIrp)->MajorFunction == IRP_MJ_SYSTEM_CONTROL,
       IoGetCurrentIrpStackLocation(pIrp)->MajorFunction,
@@ -409,10 +413,10 @@ NTSTATUS c0cSystemControlDispatch(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
   }
 
-#if DBG
+#if ENABLE_TRACING
   if (status != STATUS_SUCCESS)
     TraceCode(pDevExt, "WMI_", codeNameTableWmi, code, &status);
-#endif /* DBG */
+#endif /* ENABLE_TRACING */
 
   return status;
 }
