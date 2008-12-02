@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2008/09/17 07:58:32  vfrolov
+ * Added AddRTTO and AddRITO parameters
+ *
  * Revision 1.12  2008/06/26 13:39:19  vfrolov
  * Implemented noise emulation
  *
@@ -855,7 +858,7 @@ const char *PortParameters::GetHelp()
     "                            (0 by default)\n"
     "  AddRTTO=<n>             - add <n> milliseconds to the total time-out period\n"
     "                            for read operations (0 by default)\n"
-    "  AddRITO=<n>             - add <n> milliseconds to the ìaximum time allowed to\n"
+    "  AddRITO=<n>             - add <n> milliseconds to the maximum time allowed to\n"
     "                            elapse between the arrival of two characters for\n"
     "                            read operations (0 by default)\n"
     "  PlugInMode={yes|no}     - enable/disable plug-in mode, the plug-in mode port\n"
