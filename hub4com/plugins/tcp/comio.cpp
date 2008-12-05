@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/12/01 17:09:34  vfrolov
+ * Improved write buffering
+ *
  * Revision 1.6  2008/11/17 16:44:57  vfrolov
  * Fixed race conditions
  *
@@ -397,8 +400,9 @@ VOID CALLBACK WaitEventOverlapped::OnEvent(
     PVOID pOverlapped,
     BOOLEAN /*timerOrWaitFired*/)
 {
-  if (::QueueUserAPC(OnEvent, hThread, (ULONG_PTR)pOverlapped))
-    ((WaitEventOverlapped *)pOverlapped)->LockDelete();
+  ((WaitEventOverlapped *)pOverlapped)->LockDelete();
+  if (!::QueueUserAPC(OnEvent, hThread, (ULONG_PTR)pOverlapped))
+    ((WaitEventOverlapped *)pOverlapped)->UnockDelete();
 }
 
 VOID CALLBACK WaitEventOverlapped::OnEvent(ULONG_PTR pOverlapped)
@@ -524,8 +528,9 @@ VOID CALLBACK ListenOverlapped::OnEvent(
     PVOID pOverlapped,
     BOOLEAN /*timerOrWaitFired*/)
 {
-  if (::QueueUserAPC(OnEvent, hThread, (ULONG_PTR)pOverlapped))
-    ((ListenOverlapped *)pOverlapped)->LockDelete();
+  ((ListenOverlapped *)pOverlapped)->LockDelete();
+  if (!::QueueUserAPC(OnEvent, hThread, (ULONG_PTR)pOverlapped))
+    ((ListenOverlapped *)pOverlapped)->UnockDelete();
 }
 
 VOID CALLBACK ListenOverlapped::OnEvent(ULONG_PTR pOverlapped)
