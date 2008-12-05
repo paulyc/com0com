@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/11/24 16:39:58  vfrolov
+ * Implemented FLOWCONTROL-SUSPEND and FLOWCONTROL-RESUME commands (RFC 2217)
+ *
  * Revision 1.2  2008/11/13 07:44:12  vfrolov
  * Changed for staticaly linking
  *
@@ -244,7 +247,7 @@ BOOL TelnetOptionComPortClient::OnSubNegotiation(const BYTE_vector &params, HUB_
     return FALSE;
 
   switch (params[0]) {
-    case cpcSignature:
+    case cpcSignature + cpcServerBase:
       return FALSE;
       break;
     case cpcSetBaudRate + cpcServerBase: {
@@ -260,7 +263,7 @@ BOOL TelnetOptionComPortClient::OnSubNegotiation(const BYTE_vector &params, HUB_
         return FALSE;
 
       if ((goMask & GO_LBR_STATUS) == 0)
-        return FALSE;
+        break;
 
       *ppMsg = FlushDecodedStream(*ppMsg);
 
@@ -281,7 +284,7 @@ BOOL TelnetOptionComPortClient::OnSubNegotiation(const BYTE_vector &params, HUB_
         return FALSE;
 
       if ((goMask & GO_LLC_STATUS) == 0)
-        return FALSE;
+        break;
 
       DWORD lcVal = (VAL2LC_BYTESIZE(p2v_dataSize(par))|LC_MASK_BYTESIZE);
 
@@ -304,7 +307,7 @@ BOOL TelnetOptionComPortClient::OnSubNegotiation(const BYTE_vector &params, HUB_
         return FALSE;
 
       if ((goMask & GO_LLC_STATUS) == 0)
-        return FALSE;
+        break;
 
       DWORD lcVal = (VAL2LC_PARITY(p2v_parity(par))|LC_MASK_PARITY);
 
@@ -327,7 +330,7 @@ BOOL TelnetOptionComPortClient::OnSubNegotiation(const BYTE_vector &params, HUB_
         return FALSE;
 
       if ((goMask & GO_LLC_STATUS) == 0)
-        return FALSE;
+        break;
 
       DWORD lcVal = (VAL2LC_STOPBITS(p2v_stopSize(par))|LC_MASK_STOPBITS);
 
@@ -411,6 +414,12 @@ BOOL TelnetOptionComPortClient::OnSubNegotiation(const BYTE_vector &params, HUB_
       OnSuspendResume(FALSE, ppMsg);
       break;
     }
+    case cpcSetLineStateMask + cpcServerBase:
+      break;
+    case cpcSetModemStateMask + cpcServerBase:
+      break;
+    case cpcPurgeData + cpcServerBase:
+      break;
     default:
       return FALSE;
   }
