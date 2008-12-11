@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2008/12/01 17:06:29  vfrolov
+ * Improved write buffering
+ *
  * Revision 1.13  2008/11/27 16:25:08  vfrolov
  * Improved write buffering
  *
@@ -115,6 +118,7 @@ class ComPort
 
   private:
     void FlowControlUpdate();
+    void PurgeWrite(BOOL withLost);
     BOOL StartRead();
     BOOL StartWaitCommEvent();
     void CheckComEvents(DWORD eMask);
