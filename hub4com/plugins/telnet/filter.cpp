@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2008/12/05 14:12:04  vfrolov
+ * Fixed return values
+ *
  * Revision 1.9  2008/11/25 16:40:40  vfrolov
  * Added assert for port handle
  *
@@ -57,7 +60,6 @@ namespace FilterTelnet {
 #include "opt_termtype.h"
 #include "opt_comport.h"
 ///////////////////////////////////////////////////////////////
-static ROUTINE_MSG_INSERT_NONE *pMsgInsertNone;
 static ROUTINE_PORT_NAME_A *pPortName;
 static ROUTINE_FILTER_NAME_A *pFilterName;
 ///////////////////////////////////////////////////////////////
@@ -217,7 +219,7 @@ Filter::Filter(int argc, const char *const argv[])
   switch (comport) {
     case comport_client:
       soMask = SO_V2O_PIN_STATE(PIN_STATE_DTR|PIN_STATE_RTS|PIN_STATE_BREAK) |
-               SO_SET_BR|SO_SET_LC;
+               SO_SET_BR|SO_SET_LC|SO_PURGE_TX;
 
       goMask = GO_V2O_LINE_STATUS(-1) |
                GO_V2O_MODEM_STATUS(-1) |
@@ -229,7 +231,7 @@ Filter::Filter(int argc, const char *const argv[])
                SO_SET_BR|SO_SET_LC;
 
       goMask = GO_V2O_MODEM_STATUS(MODEM_STATUS_CTS|MODEM_STATUS_DSR) |
-               GO_RBR_STATUS|GO_RLC_STATUS|GO_BREAK_STATUS;
+               GO_RBR_STATUS|GO_RLC_STATUS|GO_BREAK_STATUS|GO_PURGE_TX_IN;
       break;
     default:
       soMask = 0;
@@ -748,6 +750,30 @@ static BOOL CALLBACK OutMethod(
 
       break;
     }
+    case HUB_MSG_TYPE_PURGE_TX: {
+      State *pState = ((Filter *)hFilter)->GetState(hToPort);
+
+      if (!pState)
+        return FALSE;
+
+      _ASSERTE(((pState->soMask | ~((Filter *)hFilter)->soMask) & SO_PURGE_TX) != 0);
+
+      if (pState->soMask & SO_PURGE_TX) {
+        _ASSERTE(pOutMsg->u.val == (BYTE)pOutMsg->u.val);
+
+        // discard messages for supported options
+        if (!pMsgReplaceNone(pOutMsg, HUB_MSG_TYPE_EMPTY))
+          return FALSE;
+
+        if (pState->pComPort) {
+          pState->pComPort->PurgeTx();
+          _ASSERTE(pState->pTelnetProtocol != NULL);
+          pState->pTelnetProtocol->FlushEncodedStream(&pOutMsg);
+        }
+      }
+
+      break;
+    }
     case HUB_MSG_TYPE_ADD_XOFF_XON: {
       State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
@@ -806,6 +832,7 @@ ROUTINE_MSG_INSERT_VAL *pMsgInsertVal;
 ROUTINE_MSG_REPLACE_BUF *pMsgReplaceBuf;
 ROUTINE_MSG_INSERT_BUF *pMsgInsertBuf;
 ROUTINE_MSG_REPLACE_NONE *pMsgReplaceNone;
+ROUTINE_MSG_INSERT_NONE *pMsgInsertNone;
 ///////////////////////////////////////////////////////////////
 PLUGIN_INIT_A InitA;
 const PLUGIN_ROUTINES_A *const * CALLBACK InitA(

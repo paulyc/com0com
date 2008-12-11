@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/11/13 07:44:12  vfrolov
+ * Changed for staticaly linking
+ *
  * Revision 1.2  2008/10/24 08:29:01  vfrolov
  * Implemented RFC 2217
  *
@@ -35,6 +38,7 @@ extern ROUTINE_MSG_INSERT_VAL *pMsgInsertVal;
 extern ROUTINE_MSG_REPLACE_BUF *pMsgReplaceBuf;
 extern ROUTINE_MSG_INSERT_BUF *pMsgInsertBuf;
 extern ROUTINE_MSG_REPLACE_NONE *pMsgReplaceNone;
+extern ROUTINE_MSG_INSERT_NONE *pMsgInsertNone;
 ///////////////////////////////////////////////////////////////
 
 #endif  // _IMPORT_H

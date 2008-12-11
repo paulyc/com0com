@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/12/05 14:10:33  vfrolov
+ * Fixed return values of TelnetOptionComPortClient::OnSubNegotiation()
+ *
  * Revision 1.3  2008/11/24 16:39:58  vfrolov
  * Implemented FLOWCONTROL-SUSPEND and FLOWCONTROL-RESUME commands (RFC 2217)
  *
@@ -66,6 +69,12 @@ enum {
   scReqRtsState         = 10,
   scSetRtsOn            = 11,
   scSetRtsOff           = 12,
+};
+///////////////////////////////////////////////////////////////
+enum {
+  pdRxBuf               = 1,
+  pdTxBuf               = 2,
+  pdRxTxBuf             = 3,
 };
 ///////////////////////////////////////////////////////////////
 inline BYTE p2v_dataSize(BYTE par)
@@ -238,6 +247,15 @@ void TelnetOptionComPortClient::SetBreak(BOOL on)
 
   params.push_back((BYTE)(cpcSetControl));
   params.push_back((BYTE)(on ? scSetBreakOn : scSetBreakOff));
+  SendSubNegotiation(params);
+}
+
+void TelnetOptionComPortClient::PurgeTx()
+{
+  BYTE_vector params;
+
+  params.push_back((BYTE)(cpcPurgeData));
+  params.push_back(pdTxBuf);
   SendSubNegotiation(params);
 }
 
@@ -829,11 +847,39 @@ BOOL TelnetOptionComPortServer::OnSubNegotiation(const BYTE_vector &params, HUB_
       break;
     }
     case cpcPurgeData: {
-      BYTE_vector answer = params;
+      if (params.size() != (1 + 1))
+        return FALSE;
 
-      answer[0] += cpcServerBase;
+      BYTE val = params[1];
+
+      switch (val) {
+        case pdRxBuf:
+        case pdTxBuf:
+        case pdRxTxBuf:
+          break;
+        default:
+          return FALSE;
+      }
+
+      BYTE_vector answer;
+
+      answer.push_back((BYTE)(cpcPurgeData + cpcServerBase));
+      answer.push_back(val);
       SendSubNegotiation(answer);
-      return FALSE;
+
+      if ((goMask & GO_PURGE_TX_IN) == 0)
+        return FALSE;
+
+      if (val == pdRxBuf)
+        return FALSE;
+
+      *ppMsg = FlushDecodedStream(*ppMsg);
+
+      if (!*ppMsg)
+        return FALSE;
+
+      *ppMsg = pMsgInsertNone(*ppMsg, HUB_MSG_TYPE_PURGE_TX_IN);
+
       break;
     }
     default:
