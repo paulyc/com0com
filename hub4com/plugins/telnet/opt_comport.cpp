@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/12/11 13:13:40  vfrolov
+ * Implemented PURGE-DATA (RFC 2217)
+ *
  * Revision 1.4  2008/12/05 14:10:33  vfrolov
  * Fixed return values of TelnetOptionComPortClient::OnSubNegotiation()
  *
@@ -60,15 +63,31 @@ enum {
 };
 ///////////////////////////////////////////////////////////////
 enum {
+  scReqFCO              = 0,
+  scUseNoFCO            = 1,
+  scUseXonXoffFCO       = 2,
+  scUseHardwareFCO      = 3,
+
   scReqBreakState       = 4,
   scSetBreakOn          = 5,
   scSetBreakOff         = 6,
+
   scReqDtrState         = 7,
   scSetDtrOn            = 8,
   scSetDtrOff           = 9,
+
   scReqRtsState         = 10,
   scSetRtsOn            = 11,
   scSetRtsOff           = 12,
+
+  scReqFCI              = 13,
+  scUseNoFCI            = 14,
+  scUseXonXoffFCI       = 15,
+  scUseHardwareFCI      = 16,
+
+  scUseDcdFCO           = 17,
+  scUseDtrFCI           = 18,
+  scUseDsrFCO           = 19,
 };
 ///////////////////////////////////////////////////////////////
 enum {
@@ -366,12 +385,21 @@ BOOL TelnetOptionComPortClient::OnSubNegotiation(const BYTE_vector &params, HUB_
         return FALSE;
 
       switch (params[1]) {
+        //case scUseNoFCO:
+        //case scUseXonXoffFCO:
+        //case scUseHardwareFCO:
         case scSetBreakOn:
         case scSetBreakOff:
         case scSetDtrOn:
         case scSetDtrOff:
         case scSetRtsOn:
         case scSetRtsOff:
+        //case scUseNoFCI:
+        //case scUseXonXoffFCI:
+        //case scUseHardwareFCI:
+        //case scUseDcdFCO:
+        //case scUseDtrFCI:
+        //case scUseDsrFCO:
           break;
         default:
           return FALSE;
@@ -738,7 +766,42 @@ BOOL TelnetOptionComPortServer::OnSubNegotiation(const BYTE_vector &params, HUB_
       if (params.size() != (1 + 1))
         return FALSE;
 
-      switch (params[1]) {
+      BYTE val = params[1];
+
+      switch (val) {
+        case scReqFCO:
+        case scUseNoFCO:
+        case scUseXonXoffFCO:
+        case scUseHardwareFCO:
+        case scUseDcdFCO:
+        case scUseDsrFCO: {
+          BYTE_vector answer;
+
+          answer.push_back((BYTE)(cpcSetControl + cpcServerBase));
+          answer.push_back(scUseNoFCO);
+          SendSubNegotiation(answer);
+
+          if (val != scReqFCO)
+            return FALSE;
+
+          break;
+        }
+        case scReqFCI:
+        case scUseNoFCI:
+        case scUseXonXoffFCI:
+        case scUseHardwareFCI:
+        case scUseDtrFCI: {
+          BYTE_vector answer;
+
+          answer.push_back((BYTE)(cpcSetControl + cpcServerBase));
+          answer.push_back(scUseNoFCI);
+          SendSubNegotiation(answer);
+
+          if (val != scReqFCI)
+            return FALSE;
+
+          break;
+        }
         case scReqBreakState:
           brkSend = TRUE;
           SetBreak(brk);
@@ -746,7 +809,7 @@ BOOL TelnetOptionComPortServer::OnSubNegotiation(const BYTE_vector &params, HUB_
         case scSetBreakOn:
         case scSetBreakOff:
           brkSend = TRUE;
-          SetBreak(params[1] == scSetBreakOn);
+          SetBreak(val == scSetBreakOn);
 
           if ((goMask & GO_BREAK_STATUS) == 0)
             return FALSE;
@@ -756,7 +819,7 @@ BOOL TelnetOptionComPortServer::OnSubNegotiation(const BYTE_vector &params, HUB_
           if (!*ppMsg)
             return FALSE;
 
-          *ppMsg = pMsgInsertVal(*ppMsg, HUB_MSG_TYPE_BREAK_STATUS, params[1] == scSetBreakOn);
+          *ppMsg = pMsgInsertVal(*ppMsg, HUB_MSG_TYPE_BREAK_STATUS, val == scSetBreakOn);
 
           break;
         case scReqDtrState:
@@ -766,7 +829,7 @@ BOOL TelnetOptionComPortServer::OnSubNegotiation(const BYTE_vector &params, HUB_
         case scSetDtrOn:
         case scSetDtrOff:
           mcrSend |= SPS_P2V_MCR(PIN_STATE_DTR);
-          SetMCR(params[1] == scSetDtrOn ? SPS_P2V_MCR(PIN_STATE_DTR) : 0, SPS_P2V_MCR(PIN_STATE_DTR));
+          SetMCR(val == scSetDtrOn ? SPS_P2V_MCR(PIN_STATE_DTR) : 0, SPS_P2V_MCR(PIN_STATE_DTR));
 
           if ((goMask & GO_V2O_MODEM_STATUS(MODEM_STATUS_DSR)) == 0)
             return FALSE;
@@ -777,7 +840,7 @@ BOOL TelnetOptionComPortServer::OnSubNegotiation(const BYTE_vector &params, HUB_
             return FALSE;
 
           *ppMsg = pMsgInsertVal(*ppMsg, HUB_MSG_TYPE_MODEM_STATUS,
-               (params[1] == scSetDtrOn ? MODEM_STATUS_DSR : 0) | VAL2MASK(MODEM_STATUS_DSR));
+               (val == scSetDtrOn ? MODEM_STATUS_DSR : 0) | VAL2MASK(MODEM_STATUS_DSR));
 
           break;
         case scReqRtsState:
@@ -787,7 +850,7 @@ BOOL TelnetOptionComPortServer::OnSubNegotiation(const BYTE_vector &params, HUB_
         case scSetRtsOn:
         case scSetRtsOff:
           mcrSend |= SPS_P2V_MCR(PIN_STATE_RTS);
-          SetMCR(params[1] == scSetRtsOn ? SPS_P2V_MCR(PIN_STATE_RTS) : 0, SPS_P2V_MCR(PIN_STATE_RTS));
+          SetMCR(val == scSetRtsOn ? SPS_P2V_MCR(PIN_STATE_RTS) : 0, SPS_P2V_MCR(PIN_STATE_RTS));
 
           if ((goMask & GO_V2O_MODEM_STATUS(MODEM_STATUS_CTS)) == 0)
             return FALSE;
@@ -798,7 +861,7 @@ BOOL TelnetOptionComPortServer::OnSubNegotiation(const BYTE_vector &params, HUB_
             return FALSE;
 
           *ppMsg = pMsgInsertVal(*ppMsg, HUB_MSG_TYPE_MODEM_STATUS,
-               (params[1] == scSetRtsOn ? MODEM_STATUS_CTS : 0) | VAL2MASK(MODEM_STATUS_CTS));
+               (val == scSetRtsOn ? MODEM_STATUS_CTS : 0) | VAL2MASK(MODEM_STATUS_CTS));
 
           break;
         default:
