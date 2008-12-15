@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.41  2008/10/30 07:54:37  vfrolov
+ * Improved BREAK emulation
+ *
  * Revision 1.40  2008/09/01 16:54:28  vfrolov
  * Replaced SERIAL_LSRMST_LSR_NODATA by SERIAL_LSRMST_LSR_DATA for BREAK
  *
@@ -619,6 +622,9 @@ VOID WriteToBuffers(
       HALT_UNLESS1(pDataWrite->type == RW_DATA_TYPE_CHR, pDataWrite->type);
 
       pDataWrite->data.chr.isChr = FALSE;
+
+      if (pDataWrite->data.chr.type == RW_DATA_TYPE_CHR_XCHR)
+        pReadIoPort->pIoPortRemote->sendXonXoff = 0;
     }
   }
 }
@@ -680,6 +686,9 @@ VOID ReadWriteDirect(
       HALT_UNLESS1(pDataWrite->type == RW_DATA_TYPE_CHR, pDataWrite->type);
 
       pDataWrite->data.chr.isChr = FALSE;
+
+      if (pDataWrite->data.chr.type == RW_DATA_TYPE_CHR_XCHR)
+        pReadIoPort->pIoPortRemote->sendXonXoff = 0;
     }
   }
 
@@ -889,6 +898,11 @@ NTSTATUS FdoPortIo(
       statusCurrent = STATUS_SUCCESS;
       break;
     case C0C_IO_TYPE_INSERT:
+#if ENABLE_TRACING
+      if (C0C_BUFFER_BUSY(&pIoPort->readBuf))
+        Trace0((PC0C_COMMON_EXTENSION)pIoPort->pDevExt, L"ERROR: direct INSERT with no empty buf");
+#endif /* ENABLE_TRACING */
+
       HALT_UNLESS(pParam);
       InsertDirect((PC0C_RAW_DATA)pParam, pIrpCurrent, &status, &statusCurrent, &doneCurrent);
       break;
@@ -1164,6 +1178,15 @@ NTSTATUS TryReadWrite(
       dataChar.data.chr.isChr = TRUE;
       break;
     default:
+      if (pIoPortWrite->sendBreak) {
+        /* get BREAK char */
+
+        dataChar.data.chr.type = RW_DATA_TYPE_CHR_BREAK;
+        dataChar.data.chr.chr = 0;
+        dataChar.data.chr.isChr = TRUE;
+        break;
+      }
+
       dataChar.data.chr.type = RW_DATA_TYPE_CHR_NONE;
       dataChar.data.chr.isChr = FALSE;
   }
@@ -1186,6 +1209,11 @@ NTSTATUS TryReadWrite(
    ******************************************************************************/
 
   while (dataIrpRead.data.irp.pIrp) {
+#if ENABLE_TRACING
+            if (C0C_BUFFER_BUSY(&pIoPortRead->readBuf))
+              Trace0((PC0C_COMMON_EXTENSION)pIoPortRead->pDevExt, L"ERROR: direct R/W with no empty buf");
+#endif /* ENABLE_TRACING */
+
     if (dataChar.data.chr.isChr) {
       if (!pWriteLimit || *pWriteLimit) {
         if (CAN_WRITE_RW_DATA_CHR(pIoPortWrite, dataChar)) {
@@ -1408,16 +1436,6 @@ NTSTATUS TryReadWrite(
 
       pWriteDelay->sentFrames += *pWriteLimit;
       *pWriteLimit = 0;
-    }
-  }
-
-  if (!dataChar.data.chr.isChr) {
-    /* complete special char sending */
-
-    switch (dataChar.data.chr.type) {
-    case RW_DATA_TYPE_CHR_XCHR:
-      pIoPortWrite->sendXonXoff = 0;
-      break;
     }
   }
 
