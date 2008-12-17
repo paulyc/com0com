@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2008/12/11 13:07:54  vfrolov
+ * Added PURGE_TX
+ *
  * Revision 1.14  2008/12/01 17:06:29  vfrolov
  * Improved write buffering
  *
@@ -129,7 +132,6 @@ class ComPort
     int countReadOverlapped;
     int countWaitCommEventOverlapped;
     int countXoff;
-    BOOL filterX;
 
     DWORD intercepted_options;
     DWORD inOptions;
