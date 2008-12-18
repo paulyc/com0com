@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/12/11 13:13:40  vfrolov
+ * Implemented PURGE-DATA (RFC 2217)
+ *
  * Revision 1.2  2008/11/24 16:39:58  vfrolov
  * Implemented FLOWCONTROL-SUSPEND and FLOWCONTROL-RESUME commands (RFC 2217)
  *
@@ -36,7 +39,7 @@
 class TelnetOptionComPort : public TelnetOption
 {
   public:
-    TelnetOptionComPort(TelnetProtocol &_telnet, BOOL _isClient, DWORD &_goMask, DWORD &_soMask);
+    TelnetOptionComPort(TelnetProtocol &_telnet, BOOL _isClient, DWORD (&_goMask)[2], DWORD &_soMask);
 
     void AddXoffXon(BOOL xoff);
 
@@ -56,7 +59,7 @@ class TelnetOptionComPort : public TelnetOption
 
     BOOL isClient;
 
-    DWORD &goMask;
+    DWORD (&goMask)[2];
     DWORD &soMask;
 
     int countXoff;
@@ -66,7 +69,7 @@ class TelnetOptionComPort : public TelnetOption
 class TelnetOptionComPortClient : public TelnetOptionComPort
 {
   public:
-    TelnetOptionComPortClient(TelnetProtocol &_telnet, DWORD &_goMask, DWORD &_soMask);
+    TelnetOptionComPortClient(TelnetProtocol &_telnet, DWORD (&_goMask)[2], DWORD &_soMask);
 
     virtual void SetBR(DWORD br);
     virtual void SetLC(DWORD lc);
@@ -86,7 +89,7 @@ class TelnetOptionComPortClient : public TelnetOptionComPort
 class TelnetOptionComPortServer : public TelnetOptionComPort
 {
   public:
-    TelnetOptionComPortServer(TelnetProtocol &_telnet, DWORD &_goMask, DWORD &_soMask);
+    TelnetOptionComPortServer(TelnetProtocol &_telnet, DWORD (&_goMask)[2], DWORD &_soMask);
 
     virtual void SetBR(DWORD _br);
     virtual void SetLC(DWORD _lc);

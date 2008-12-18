@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.16  2008/12/17 11:52:35  vfrolov
+ * Replaced ComIo::dcb by serialBaudRate, serialLineControl,
+ * serialHandFlow and serialChars
+ * Replaced ComPort::filterX by ComIo::FilterX()
+ * Replaced SetManual*() by PinStateControlMask()
+ *
  * Revision 1.15  2008/12/11 13:07:54  vfrolov
  * Added PURGE_TX
  *
@@ -133,8 +139,8 @@ class ComPort
     int countWaitCommEventOverlapped;
     int countXoff;
 
-    DWORD intercepted_options;
-    DWORD inOptions;
+    DWORD intercepted_options[2];
+    DWORD inOptions[2];
     DWORD outOptions;
 
     DWORD writeQueueLimit;
