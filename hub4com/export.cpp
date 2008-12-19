@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2008/11/27 16:19:16  vfrolov
+ * Added pBufAppend()
+ *
  * Revision 1.7  2008/11/24 16:30:56  vfrolov
  * Removed pOnXoffXon
  *
@@ -68,7 +71,7 @@ static VOID CALLBACK buf_append(BYTE **ppBuf, DWORD offset, const BYTE *pSrc, DW
   BufAppend(ppBuf, offset, pSrc, sizeSrc);
 }
 ///////////////////////////////////////////////////////////////
-static BOOL CALLBACK msg_replace_buf(HUB_MSG *pMsg, WORD type, const BYTE *pSrc, DWORD sizeSrc)
+static BOOL CALLBACK msg_replace_buf(HUB_MSG *pMsg, DWORD type, const BYTE *pSrc, DWORD sizeSrc)
 {
   _ASSERTE((type & HUB_MSG_UNION_TYPES_MASK) == HUB_MSG_UNION_TYPE_BUF);
 
@@ -91,7 +94,7 @@ static BOOL CALLBACK msg_replace_buf(HUB_MSG *pMsg, WORD type, const BYTE *pSrc,
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-static HUB_MSG *CALLBACK msg_insert_buf(HUB_MSG *pPrevMsg, WORD type, const BYTE *pSrc, DWORD sizeSrc)
+static HUB_MSG *CALLBACK msg_insert_buf(HUB_MSG *pPrevMsg, DWORD type, const BYTE *pSrc, DWORD sizeSrc)
 {
   _ASSERTE((type & HUB_MSG_UNION_TYPES_MASK) == HUB_MSG_UNION_TYPE_BUF);
 
@@ -126,7 +129,7 @@ static HUB_MSG *CALLBACK msg_insert_buf(HUB_MSG *pPrevMsg, WORD type, const BYTE
   return pMsg;
 }
 ///////////////////////////////////////////////////////////////
-static BOOL CALLBACK msg_replace_val(HUB_MSG *pMsg, WORD type, DWORD val)
+static BOOL CALLBACK msg_replace_val(HUB_MSG *pMsg, DWORD type, DWORD val)
 {
   _ASSERTE((type & HUB_MSG_UNION_TYPES_MASK) == HUB_MSG_UNION_TYPE_VAL);
 
@@ -141,7 +144,7 @@ static BOOL CALLBACK msg_replace_val(HUB_MSG *pMsg, WORD type, DWORD val)
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-static HUB_MSG *CALLBACK msg_insert_val(HUB_MSG *pPrevMsg, WORD type, DWORD val)
+static HUB_MSG *CALLBACK msg_insert_val(HUB_MSG *pPrevMsg, DWORD type, DWORD val)
 {
   _ASSERTE((type & HUB_MSG_UNION_TYPES_MASK) == HUB_MSG_UNION_TYPE_VAL);
 
@@ -161,7 +164,7 @@ static HUB_MSG *CALLBACK msg_insert_val(HUB_MSG *pPrevMsg, WORD type, DWORD val)
   return pMsg;
 }
 ///////////////////////////////////////////////////////////////
-static BOOL CALLBACK msg_replace_none(HUB_MSG *pMsg, WORD type)
+static BOOL CALLBACK msg_replace_none(HUB_MSG *pMsg, DWORD type)
 {
   _ASSERTE((type & HUB_MSG_UNION_TYPES_MASK) == HUB_MSG_UNION_TYPE_NONE);
 
@@ -175,7 +178,7 @@ static BOOL CALLBACK msg_replace_none(HUB_MSG *pMsg, WORD type)
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-static HUB_MSG *CALLBACK msg_insert_none(HUB_MSG *pPrevMsg, WORD type)
+static HUB_MSG *CALLBACK msg_insert_none(HUB_MSG *pPrevMsg, DWORD type)
 {
   _ASSERTE((type & HUB_MSG_UNION_TYPES_MASK) == HUB_MSG_UNION_TYPE_NONE);
 
