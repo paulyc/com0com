@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/11/27 16:38:05  vfrolov
+ * Initial revision
+ *
  */
 
 #include "precomp.h"
@@ -212,7 +215,7 @@ static HFILTER CALLBACK Create(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK InMethod(
     HFILTER hFilter,
-    HMASTERPORT hFromPort,
+    HMASTERPORT DEBUG_PARAM(hFromPort),
     HUB_MSG *pInMsg,
     HUB_MSG **DEBUG_PARAM(ppEchoMsg))
 {
@@ -252,7 +255,7 @@ static BOOL CALLBACK InMethod(
 static BOOL CALLBACK OutMethod(
     HFILTER hFilter,
     HMASTERPORT DEBUG_PARAM(hFromPort),
-    HMASTERPORT hToPort,
+    HMASTERPORT DEBUG_PARAM(hToPort),
     HUB_MSG *pOutMsg)
 {
   _ASSERTE(hFilter != NULL);
