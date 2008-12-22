@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2008/11/25 16:40:40  vfrolov
+ * Added assert for port handle
+ *
  * Revision 1.9  2008/11/24 12:36:59  vfrolov
  * Changed plugin API
  *
@@ -218,7 +221,8 @@ static BOOL CALLBACK InMethod(
   _ASSERTE(ppEchoMsg != NULL);
   _ASSERTE(*ppEchoMsg == NULL);
 
-  if (pInMsg->type == HUB_MSG_TYPE_LINE_DATA) {
+  switch (HUB_MSG_T2N(pInMsg->type)) {
+  case HUB_MSG_T2N(HUB_MSG_TYPE_LINE_DATA): {
     _ASSERTE(pInMsg->u.buf.pBuf != NULL || pInMsg->u.buf.size == 0);
 
     DWORD size = pInMsg->u.buf.size;
@@ -277,9 +281,9 @@ static BOOL CALLBACK InMethod(
       pInMsg->u.buf.size = 0;
       pState->pAwakSeqNext = pAwakSeqNext;
     }
+    break;
   }
-  else
-  if (pInMsg->type == HUB_MSG_TYPE_CONNECT) {
+  case HUB_MSG_T2N(HUB_MSG_TYPE_CONNECT):
     if (pInMsg->u.val) {
       // discard CONNECT(TRUE) from the input stream
       if (!pMsgReplaceNone(pInMsg, HUB_MSG_TYPE_EMPTY))
@@ -302,6 +306,7 @@ static BOOL CALLBACK InMethod(
       // start awakening sequence waiting
       pState->StartAwakSeq(((Filter *)hFilter)->pAwakSeq);
     }
+    break;
   }
 
   return pInMsg != NULL;
@@ -318,8 +323,8 @@ static BOOL CALLBACK OutMethod(
   _ASSERTE(hToPort != NULL);
   _ASSERTE(pOutMsg != NULL);
 
-
-  if (pOutMsg->type == HUB_MSG_TYPE_CONNECT) {
+  switch (HUB_MSG_T2N(pOutMsg->type)) {
+  case HUB_MSG_T2N(HUB_MSG_TYPE_CONNECT): {
     State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
     if (!pState)
@@ -335,6 +340,8 @@ static BOOL CALLBACK OutMethod(
       if (--pState->connectionCounter <= 0)
         pState->StartAwakSeq(((Filter *)hFilter)->pAwakSeq);
     }
+    break;
+  }
   }
 
   return TRUE;

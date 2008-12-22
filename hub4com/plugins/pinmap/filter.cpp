@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2008/12/18 16:50:52  vfrolov
+ * Extended the number of possible IN options
+ *
  * Revision 1.13  2008/11/25 16:40:40  vfrolov
  * Added assert for port handle
  *
@@ -415,8 +418,8 @@ static BOOL CALLBACK OutMethod(
   _ASSERTE(hToPort != NULL);
   _ASSERTE(pOutMsg != NULL);
 
-  switch (pOutMsg->type) {
-    case HUB_MSG_TYPE_SET_OUT_OPTS: {
+  switch (HUB_MSG_T2N(pOutMsg->type)) {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_OUT_OPTS): {
       // or'e with the required mask to set pin state
       pOutMsg->u.val |= SO_V2O_PIN_STATE(((Filter *)hFilter)->outMask);
 
@@ -430,7 +433,7 @@ static BOOL CALLBACK OutMethod(
 
       break;
     }
-    case HUB_MSG_TYPE_GET_IN_OPTS: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_GET_IN_OPTS): {
       _ASSERTE(pOutMsg->u.pv.pVal != NULL);
 
       if (GO_O2I(pOutMsg->u.pv.val) != 1)
@@ -440,7 +443,7 @@ static BOOL CALLBACK OutMethod(
       *pOutMsg->u.pv.pVal |= (LM_2_GO1(((Filter *)hFilter)->lmInMask) & pOutMsg->u.pv.val);
       break;
     }
-    case HUB_MSG_TYPE_FAIL_IN_OPTS: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_FAIL_IN_OPTS): {
       if (GO_O2I(pOutMsg->u.pv.val) != 1)
         break;
 
@@ -455,11 +458,11 @@ static BOOL CALLBACK OutMethod(
       }
       break;
     }
-    case HUB_MSG_TYPE_SET_PIN_STATE:
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_PIN_STATE):
       // discard any pin settings controlled by this filter
       pOutMsg->u.val &= ~(VAL2MASK(((Filter *)hFilter)->outMask));
       break;
-    case HUB_MSG_TYPE_MODEM_STATUS: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_MODEM_STATUS): {
       State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
@@ -473,7 +476,7 @@ static BOOL CALLBACK OutMethod(
       pState->lmInVal = lmInVal;
       break;
     }
-    case HUB_MSG_TYPE_BREAK_STATUS: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_BREAK_STATUS): {
       if (((Filter *)hFilter)->lmInMask & LM_BREAK) {
         State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
@@ -488,7 +491,7 @@ static BOOL CALLBACK OutMethod(
       }
       break;
     }
-    case HUB_MSG_TYPE_CONNECT: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_CONNECT): {
       if (((Filter *)hFilter)->lmInMask & LM_CONNECT) {
         State *pState = ((Filter *)hFilter)->GetState(hToPort);
 

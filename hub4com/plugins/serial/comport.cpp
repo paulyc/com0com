@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.23  2008/12/18 16:50:52  vfrolov
+ * Extended the number of possible IN options
+ *
  * Revision 1.22  2008/12/17 11:52:35  vfrolov
  * Replaced ComIo::dcb by serialBaudRate, serialLineControl,
  * serialHandFlow and serialChars
@@ -514,8 +517,8 @@ BOOL ComPort::FakeReadFilter(HUB_MSG *pInMsg)
 {
   _ASSERTE(pInMsg != NULL);
 
-  switch (pInMsg->type) {
-    case HUB_MSG_TYPE_GET_IN_OPTS: {
+  switch (HUB_MSG_T2N(pInMsg->type)) {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_GET_IN_OPTS): {
       int iGo = GO_O2I(pInMsg->u.pv.val);
 
       if (iGo != 0 && iGo != 1)
@@ -602,8 +605,8 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
 {
   _ASSERTE(pMsg != NULL);
 
-  switch (pMsg->type) {
-  case HUB_MSG_TYPE_LINE_DATA: {
+  switch (HUB_MSG_T2N(pMsg->type)) {
+  case HUB_MSG_T2N(HUB_MSG_TYPE_LINE_DATA): {
     BYTE *pBuf = pMsg->u.buf.pBuf;
     DWORD len = pMsg->u.buf.size;
 
@@ -674,7 +677,7 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
     //cout << name << " Started Write " << len << " " << writeQueued << endl;
     break;
   }
-  case HUB_MSG_TYPE_SET_PIN_STATE:
+  case HUB_MSG_T2N(HUB_MSG_TYPE_SET_PIN_STATE):
     _ASSERTE((~SO_O2V_PIN_STATE(outOptions) & MASK2VAL(pMsg->u.val)) == 0);
 
     if (!pComIo)
@@ -682,7 +685,7 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
 
     pComIo->SetPinState((WORD)pMsg->u.val, MASK2VAL(pMsg->u.val));
     break;
-  case HUB_MSG_TYPE_SET_BR: {
+  case HUB_MSG_T2N(HUB_MSG_TYPE_SET_BR): {
     _ASSERTE(outOptions & SO_SET_BR);
 
     if (!pComIo)
@@ -718,7 +721,7 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
     }
     break;
   }
-  case HUB_MSG_TYPE_SET_LC: {
+  case HUB_MSG_T2N(HUB_MSG_TYPE_SET_LC): {
     _ASSERTE(outOptions & SO_SET_LC);
 
     if (!pComIo)
@@ -778,7 +781,7 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
     }
     break;
   }
-  case HUB_MSG_TYPE_PURGE_TX:
+  case HUB_MSG_T2N(HUB_MSG_TYPE_PURGE_TX):
     _ASSERTE(outOptions & SO_PURGE_TX);
 
     if (!pComIo)
@@ -787,7 +790,7 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
     PurgeWrite(FALSE);
     FlowControlUpdate();
     break;
-  case HUB_MSG_TYPE_SET_OUT_OPTS: {
+  case HUB_MSG_T2N(HUB_MSG_TYPE_SET_OUT_OPTS): {
     if (!pComIo)
       return FALSE;
 
@@ -835,7 +838,7 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
     }
     break;
   }
-  case HUB_MSG_TYPE_ADD_XOFF_XON:
+  case HUB_MSG_T2N(HUB_MSG_TYPE_ADD_XOFF_XON):
     if (pMsg->u.val) {
       countXoff++;
     } else {

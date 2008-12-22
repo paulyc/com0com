@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2008/12/18 16:50:51  vfrolov
+ * Extended the number of possible IN options
+ *
  * Revision 1.8  2008/11/25 16:40:40  vfrolov
  * Added assert for port handle
  *
@@ -240,13 +243,13 @@ static BOOL CALLBACK OutMethod(
   _ASSERTE(hToPort != NULL);
   _ASSERTE(pOutMsg != NULL);
 
-  switch (pOutMsg->type) {
-    case HUB_MSG_TYPE_SET_OUT_OPTS: {
+  switch (HUB_MSG_T2N(pOutMsg->type)) {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_OUT_OPTS): {
       // or'e with the required mask to set
       pOutMsg->u.val |= ((Filter *)hFilter)->soOutMask;
       break;
     }
-    case HUB_MSG_TYPE_GET_IN_OPTS: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_GET_IN_OPTS): {
       _ASSERTE(pOutMsg->u.pv.pVal != NULL);
 
       int iGo = GO_O2I(pOutMsg->u.pv.val);
@@ -258,7 +261,7 @@ static BOOL CALLBACK OutMethod(
       *pOutMsg->u.pv.pVal |= (((Filter *)hFilter)->goInMask[iGo == 0 ? 0 : 1] & pOutMsg->u.pv.val);
       break;
     }
-    case HUB_MSG_TYPE_FAIL_IN_OPTS: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_FAIL_IN_OPTS): {
       int iGo = GO_O2I(pOutMsg->u.pv.val);
 
       if (iGo != 0 && iGo != 1)
@@ -275,21 +278,21 @@ static BOOL CALLBACK OutMethod(
       }
       break;
     }
-    case HUB_MSG_TYPE_SET_BR:
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_BR):
       // discard if controlled by this filter
       if (((Filter *)hFilter)->soOutMask & SO_SET_BR) {
         if (!pMsgReplaceNone(pOutMsg, HUB_MSG_TYPE_EMPTY))
           return FALSE;
       }
       break;
-    case HUB_MSG_TYPE_SET_LC:
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_LC):
       // discard if controlled by this filter
       if (((Filter *)hFilter)->soOutMask & SO_SET_LC) {
         if (!pMsgReplaceNone(pOutMsg, HUB_MSG_TYPE_EMPTY))
           return FALSE;
       }
       break;
-    case HUB_MSG_TYPE_LBR_STATUS:
+    case HUB_MSG_T2N(HUB_MSG_TYPE_LBR_STATUS):
       if ((((Filter *)hFilter)->goInMask[0] & GO0_LBR_STATUS) == 0)
         break;
 
@@ -298,7 +301,7 @@ static BOOL CALLBACK OutMethod(
 
       pOutMsg = pMsgInsertVal(pOutMsg, HUB_MSG_TYPE_SET_BR, pOutMsg->u.val);
       break;
-    case HUB_MSG_TYPE_RBR_STATUS:
+    case HUB_MSG_T2N(HUB_MSG_TYPE_RBR_STATUS):
       if ((((Filter *)hFilter)->goInMask[1] & GO1_RBR_STATUS) == 0)
         break;
 
@@ -307,7 +310,7 @@ static BOOL CALLBACK OutMethod(
 
       pOutMsg = pMsgInsertVal(pOutMsg, HUB_MSG_TYPE_SET_BR, pOutMsg->u.val);
       break;
-    case HUB_MSG_TYPE_LLC_STATUS:
+    case HUB_MSG_T2N(HUB_MSG_TYPE_LLC_STATUS):
       if ((((Filter *)hFilter)->goInMask[0] & GO0_LLC_STATUS) == 0)
         break;
 
@@ -316,7 +319,7 @@ static BOOL CALLBACK OutMethod(
 
       pOutMsg = pMsgInsertVal(pOutMsg, HUB_MSG_TYPE_SET_LC, pOutMsg->u.val);
       break;
-    case HUB_MSG_TYPE_RLC_STATUS:
+    case HUB_MSG_T2N(HUB_MSG_TYPE_RLC_STATUS):
       if ((((Filter *)hFilter)->goInMask[1] & GO1_RLC_STATUS) == 0)
         break;
 

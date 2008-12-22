@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2008/12/18 16:50:52  vfrolov
+ * Extended the number of possible IN options
+ *
  * Revision 1.13  2008/11/25 16:40:40  vfrolov
  * Added assert for port handle
  *
@@ -294,8 +297,8 @@ static BOOL CALLBACK InMethod(
   _ASSERTE(ppEchoMsg != NULL);
   _ASSERTE(*ppEchoMsg == NULL);
 
-  switch (pInMsg->type) {
-  case HUB_MSG_TYPE_GET_IN_OPTS:
+  switch (HUB_MSG_T2N(pInMsg->type)) {
+  case HUB_MSG_T2N(HUB_MSG_TYPE_GET_IN_OPTS):
     _ASSERTE(pInMsg->u.pv.pVal != NULL);
 
     if (GO_O2I(pInMsg->u.pv.val) != 1)
@@ -304,7 +307,7 @@ static BOOL CALLBACK InMethod(
     // or'e with the required mask to get line status and modem status
     *pInMsg->u.pv.pVal |= (((Filter *)hFilter)->pin & pInMsg->u.pv.val);
     break;
-  case HUB_MSG_TYPE_FAIL_IN_OPTS: {
+  case HUB_MSG_T2N(HUB_MSG_TYPE_FAIL_IN_OPTS): {
     if (GO_O2I(pInMsg->u.pv.val) != 1)
       break;
 
@@ -318,12 +321,12 @@ static BOOL CALLBACK InMethod(
     }
     break;
   }
-  case HUB_MSG_TYPE_CONNECT:
+  case HUB_MSG_T2N(HUB_MSG_TYPE_CONNECT):
     // discard any CONNECT messages from the input stream
     if (!pMsgReplaceNone(pInMsg, HUB_MSG_TYPE_EMPTY))
       return FALSE;
     break;
-  case HUB_MSG_TYPE_MODEM_STATUS: {
+  case HUB_MSG_T2N(HUB_MSG_TYPE_MODEM_STATUS): {
     WORD pin;
 
     pin = GO1_O2V_MODEM_STATUS(((Filter *)hFilter)->pin);
@@ -335,7 +338,7 @@ static BOOL CALLBACK InMethod(
 
     break;
   }
-  case HUB_MSG_TYPE_BREAK_STATUS:
+  case HUB_MSG_T2N(HUB_MSG_TYPE_BREAK_STATUS):
     if (((Filter *)hFilter)->pin & GO1_BREAK_STATUS)
       pInMsg = InsertConnectState(*((Filter *)hFilter), hFromPort, pInMsg, pInMsg->u.val != 0);
     break;

@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/11/25 16:40:40  vfrolov
+ * Added assert for port handle
+ *
  * Revision 1.6  2008/11/24 12:37:00  vfrolov
  * Changed plugin API
  *
@@ -275,8 +278,8 @@ static BOOL CALLBACK InMethod(
   _ASSERTE(ppEchoMsg != NULL);
   _ASSERTE(*ppEchoMsg == NULL);
 
-  switch (pInMsg->type) {
-    case HUB_MSG_TYPE_CONNECT: {
+  switch (HUB_MSG_T2N(pInMsg->type)) {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_CONNECT): {
       State *pState = ((Filter *)hFilter)->GetState(hFromPort);
 
       if (!pState)
@@ -328,8 +331,8 @@ static BOOL CALLBACK OutMethod(
   _ASSERTE(hFromPort != NULL);
   _ASSERTE(pOutMsg != NULL);
 
-  switch (pOutMsg->type) {
-    case HUB_MSG_TYPE_SET_OUT_OPTS: {
+  switch (HUB_MSG_T2N(pOutMsg->type)) {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_OUT_OPTS): {
       DWORD soMask = (pOutMsg->u.val & ((Filter *)hFilter)->soMask);
 
       // discard supported options
@@ -344,7 +347,7 @@ static BOOL CALLBACK OutMethod(
 
       break;
     }
-    case HUB_MSG_TYPE_SET_BR: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_BR): {
       State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
@@ -369,7 +372,7 @@ static BOOL CALLBACK OutMethod(
 
       break;
     }
-    case HUB_MSG_TYPE_SET_LC: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_LC): {
       _ASSERTE((pOutMsg->u.val & ~(VAL2LC_BYTESIZE(-1)|LC_MASK_BYTESIZE
                                   |VAL2LC_PARITY(-1)|LC_MASK_PARITY
                                   |VAL2LC_STOPBITS(-1)|LC_MASK_STOPBITS)) == 0);
@@ -413,7 +416,7 @@ static BOOL CALLBACK OutMethod(
 
       break;
     }
-    case HUB_MSG_TYPE_SET_PIN_STATE: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_PIN_STATE): {
       State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
@@ -452,7 +455,7 @@ static BOOL CALLBACK OutMethod(
 
       break;
     }
-    case HUB_MSG_TYPE_SET_LSR: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_LSR): {
       State *pState = ((Filter *)hFilter)->GetState(hToPort);
 
       if (!pState)
@@ -475,7 +478,7 @@ static BOOL CALLBACK OutMethod(
 
       break;
     }
-    case HUB_MSG_TYPE_LINE_DATA: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_LINE_DATA): {
       // escape escape characters
 
       _ASSERTE(pOutMsg->u.buf.pBuf != NULL || pOutMsg->u.buf.size == 0);

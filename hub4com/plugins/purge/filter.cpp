@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2008/12/18 16:50:52  vfrolov
+ * Extended the number of possible IN options
+ *
  * Revision 1.1  2008/12/11 13:16:59  vfrolov
  * Initial revision
  *
@@ -159,13 +162,13 @@ static BOOL CALLBACK OutMethod(
   _ASSERTE(hToPort != NULL);
   _ASSERTE(pOutMsg != NULL);
 
-  switch (pOutMsg->type) {
-    case HUB_MSG_TYPE_SET_OUT_OPTS: {
+  switch (HUB_MSG_T2N(pOutMsg->type)) {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_SET_OUT_OPTS): {
       // or'e with the required mask to purge
       pOutMsg->u.val |= ((Filter *)hFilter)->soOutMask;
       break;
     }
-    case HUB_MSG_TYPE_GET_IN_OPTS: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_GET_IN_OPTS): {
       _ASSERTE(pOutMsg->u.pv.pVal != NULL);
 
       if (GO_O2I(pOutMsg->u.pv.val) != 1)
@@ -175,7 +178,7 @@ static BOOL CALLBACK OutMethod(
       *pOutMsg->u.pv.pVal |= (((Filter *)hFilter)->goInMask & pOutMsg->u.pv.val);
       break;
     }
-    case HUB_MSG_TYPE_FAIL_IN_OPTS: {
+    case HUB_MSG_T2N(HUB_MSG_TYPE_FAIL_IN_OPTS): {
       if (GO_O2I(pOutMsg->u.pv.val) != 1)
         break;
 
@@ -190,14 +193,14 @@ static BOOL CALLBACK OutMethod(
       }
       break;
     }
-    case HUB_MSG_TYPE_PURGE_TX:
+    case HUB_MSG_T2N(HUB_MSG_TYPE_PURGE_TX):
       // discard if controlled by this filter
       if (((Filter *)hFilter)->soOutMask & SO_PURGE_TX) {
         if (!pMsgReplaceNone(pOutMsg, HUB_MSG_TYPE_EMPTY))
           return FALSE;
       }
       break;
-    case HUB_MSG_TYPE_PURGE_TX_IN:
+    case HUB_MSG_T2N(HUB_MSG_TYPE_PURGE_TX_IN):
       if ((((Filter *)hFilter)->goInMask & GO1_PURGE_TX_IN) == 0)
         break;
 
