@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/12/24 15:22:44  vfrolov
+ * Added BusyMask::Clear() and BusyMask::DelNum()
+ *
  * Revision 1.6  2007/09/20 12:37:06  vfrolov
  * Added SetLastError(ERROR_NOT_ENOUGH_MEMORY)
  *
@@ -148,6 +151,38 @@ BOOL StrToInt(const char *pStr, int *pNum)
     *pNum = num*sign;
 
   return res;
+}
+///////////////////////////////////////////////////////////////
+BOOL MatchPattern(const char *pPattern, const char *pStr)
+{
+  for (;;) {
+    switch (*pPattern) {
+      case '*':
+        pPattern++;
+        do {
+          if (MatchPattern(pPattern, pStr))
+            return TRUE;
+        } while (*pStr++);
+
+        return FALSE;
+      case '?':
+        if (!*pStr)
+          return FALSE;
+
+        pStr++;
+        pPattern++;
+        break;
+      default:
+        if (*pPattern != *pStr)
+          return FALSE;
+
+        if (!*pStr)
+          return TRUE;
+
+        pStr++;
+        pPattern++;
+    }
+  }
 }
 ///////////////////////////////////////////////////////////////
 void BusyMask::Clear()

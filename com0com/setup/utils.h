@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2008/12/24 15:22:44  vfrolov
+ * Added BusyMask::Clear() and BusyMask::DelNum()
+ *
  * Revision 1.5  2007/09/25 12:28:22  vfrolov
  * Implemented Stack class
  *
@@ -44,6 +47,7 @@ int VSNPRINTF(char *pBuf, int size, const char *pFmt, va_list va);
 int SNPRINTF(char *pBuf, int size, const char *pFmt, ...);
 char *STRTOK_R(char *pStr, const char *pDelims, char **ppSave);
 BOOL StrToInt(const char *pStr, int *pNum);
+BOOL MatchPattern(const char *pPattern, const char *pStr);
 
 class BusyMask {
 public:
