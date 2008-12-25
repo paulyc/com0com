@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/12/24 15:20:35  vfrolov
+ * Initial revision
+ *
  */
 
 #ifndef _C0C_COMDB_H_
@@ -29,6 +32,7 @@ class InfFile;
 ///////////////////////////////////////////////////////////////
 BOOL ComDbGetInUse(const char *pPortName, BOOL &inUse);
 void ComDbSync(InfFile &infFile);
+DWORD ComDbQueryNames(char *pBuf, DWORD maxChars);
 ///////////////////////////////////////////////////////////////
 
 #endif /* _C0C_COMDB_H_ */

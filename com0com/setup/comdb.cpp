@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2008/12/24 15:20:35  vfrolov
+ * Initial revision
+ *
  */
 
 #include "precomp.h"
@@ -43,6 +46,7 @@ static WORD name2num(const char *pPortName)
   if ((pPortName[0] != 'C' && pPortName[0] != 'c') ||
       (pPortName[1] != 'O' && pPortName[1] != 'o') ||
       (pPortName[2] != 'M' && pPortName[2] != 'm') ||
+      pPortName[3] == '0' ||
       !StrToInt(pPortName + 3, &num) ||
       num <= 0 ||
       num > COMDB_MAX_PORTS_ARBITRATED)
@@ -110,8 +114,10 @@ static BOOL LoadComDb(BusyMask &comDb)
 
   } while (res == IDTRYAGAIN);
 
-  if (res != IDCONTINUE)
+  if (res != IDCONTINUE) {
+    SetLastError(ERROR_CANCELLED);
     return FALSE;
+  }
 
   return TRUE;
 }
@@ -160,8 +166,10 @@ static BOOL ClaimReleasePort(DWORD num, BOOL claim)
     ComDBClose(hComDB);
   } while (res == IDRETRY);
 
-  if (res != IDCONTINUE)
+  if (res != IDCONTINUE) {
+    SetLastError(ERROR_CANCELLED);
     return FALSE;
+  }
 
   return TRUE;
 }
@@ -247,8 +255,10 @@ static BOOL LoadComDbLocal(BusyMask &comDb)
 
   } while (res == IDTRYAGAIN);
 
-  if (res != IDCONTINUE)
+  if (res != IDCONTINUE) {
+    SetLastError(ERROR_CANCELLED);
     return FALSE;
+  }
 
   return TRUE;
 }
@@ -378,8 +388,10 @@ static BOOL SaveComDbLocal(const BusyMask &comDb)
     }
   } while (res == IDTRYAGAIN);
 
-  if (res != IDCONTINUE)
+  if (res != IDCONTINUE) {
+    SetLastError(ERROR_CANCELLED);
     return FALSE;
+  }
 
   return TRUE;
 }
@@ -433,5 +445,44 @@ void ComDbSync(InfFile &infFile)
       }
     }
   }
+}
+///////////////////////////////////////////////////////////////
+DWORD ComDbQueryNames(char *pBuf, DWORD maxChars)
+{
+  BusyMask comDb;
+
+  if (!LoadComDb(comDb))
+    return 0;
+
+  char *pB = pBuf;
+
+  for (DWORD num = 0 ; num < COMDB_MAX_PORTS_ARBITRATED ; num++) {
+    if (comDb.IsFreeNum(num))
+      continue;
+
+    int len = SNPRINTF(pB, maxChars, "COM%u", (unsigned)(num + 1));
+
+    if (len < 0) {
+      SetLastError(ERROR_INSUFFICIENT_BUFFER);
+      return 0;
+    }
+
+    pB += len + 1;
+    maxChars -= len + 1;
+  }
+
+  if (pB == pBuf) {
+    SetLastError(ERROR_FILE_NOT_FOUND);
+    return 0;
+  }
+
+  if (maxChars == 0) {
+    SetLastError(ERROR_INSUFFICIENT_BUFFER);
+    return 0;
+  }
+
+  *pB++ = 0;
+
+  return (DWORD)(pB - pBuf);
 }
 ///////////////////////////////////////////////////////////////
