@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2008/12/02 11:54:28  vfrolov
+ * Fixed typo
+ *
  * Revision 1.13  2008/09/17 07:58:32  vfrolov
  * Added AddRTTO and AddRITO parameters
  *
@@ -146,6 +149,7 @@ BOOL PortParameters::SetPortName(const char *pNewPortName)
 {
   if (lstrcmpi(portName, pNewPortName)) {
     SNPRINTF(portName, sizeof(portName)/sizeof(portName[0]), "%s", pNewPortName);
+    CharUpper(portName);
     maskChanged |= m_portName;
   }
 
