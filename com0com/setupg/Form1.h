@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2007-2008 Vyacheslav Frolov
+ * Copyright (c) 2007-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/05/04 09:56:47  vfrolov
+ * Implemented HiddenMode option
+ *
  * Revision 1.3  2008/04/08 06:52:12  vfrolov
  * Added pin OUT2
  *
@@ -536,6 +539,15 @@ namespace SetupApp {
           control->Text = value;
         }
 
+        bool IsValidValue(String ^key, String ^value) {
+          if (key == "portname") {
+            if (!pairs->IsValidName(value))
+              return false;
+          }
+
+          return true;
+        }
+
         /////////////////////////////////////////////////////////////////////
         #define DeclareControlPair(controlClass, control) \
           array<controlClass ^> ^control##s; \
@@ -553,7 +565,7 @@ namespace SetupApp {
               String ^key = (gcnew String(#control))->ToLower(); \
               String ^value = GetControlValue(control##s[i])->ToUpper(); \
               if (pairs[pairList->SelectedNode->Name][i][key] != value) { \
-                control##s[i]->ForeColor = Color::Blue; \
+                control##s[i]->ForeColor = (IsValidValue(key, value) ? Color::Blue : Color::Red); \
                 return; \
               } \
             } \
@@ -620,7 +632,7 @@ namespace SetupApp {
 
             TreeNode ^pair;
             bool pairExpand;
-            
+
             if (pairList->Nodes->ContainsKey(kvpPair.Key)) {
               pair = pairList->Nodes[kvpPair.Key];
               pairExpand = pair->IsExpanded;
@@ -714,7 +726,7 @@ namespace SetupApp {
                 pairList->SelectedNode->Text);
 
             System::Windows::Forms::DialogResult res;
-            
+
             res = MessageBox::Show(this, msg, "Apply", MessageBoxButtons::YesNoCancel);
 
             if (res == System::Windows::Forms::DialogResult::Cancel) {
@@ -751,7 +763,7 @@ namespace SetupApp {
         Void picturePinMap_Paint(Object ^/*sender*/, PaintEventArgs ^e) {
             pinMap->Paint(e, picturePinMap);
         }
- 
+
         Void picturePinMap_MouseDown(Object ^/*sender*/, MouseEventArgs ^e) {
             pinMap->MouseDown(e);
             picturePinMap->Invalidate();
@@ -780,7 +792,7 @@ namespace SetupApp {
     private:
 
         Void pairsList_BeforeSelect(Object ^/*sender*/, TreeViewCancelEventArgs ^e) {
-          if (e->Node->Level != 0 || !SaveChanges())
+          if (!SaveChanges())
             e->Cancel = true;
         }
 
@@ -804,7 +816,7 @@ namespace SetupApp {
                 pairList->SelectedNode->Text);
 
             System::Windows::Forms::DialogResult res;
-            
+
             res = MessageBox::Show(this, msg, "", MessageBoxButtons::YesNo);
 
             if (res == System::Windows::Forms::DialogResult::Yes) {
