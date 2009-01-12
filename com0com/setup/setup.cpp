@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2008 Vyacheslav Frolov
+ * Copyright (c) 2006-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.27  2008/12/25 16:58:45  vfrolov
+ * Implemented busynames command
+ *
  * Revision 1.26  2008/12/24 15:32:22  vfrolov
  * Added logging COM port numbers in the COM port database
  *
@@ -1162,7 +1165,7 @@ int Help(const char *pProgName)
     "  %s%suninstall\n"
     , pProgName, (pProgName && *pProgName) ? " " : "");
   ConsoleWrite(
-    "  %s%busynames COM?*\n"
+    "  %s%sbusynames COM?*\n"
     , pProgName, (pProgName && *pProgName) ? " " : "");
   ConsoleWrite(
     "\n");
