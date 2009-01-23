@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008 Vyacheslav Frolov
+ * Copyright (c) 2008-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2008/12/22 09:40:46  vfrolov
+ * Optimized message switching
+ *
  * Revision 1.14  2008/12/18 16:50:52  vfrolov
  * Extended the number of possible IN options
  *
@@ -447,6 +450,7 @@ static const CODE2NAME codeNameTableHubMsg[] = {
   TOCODE2NAME(HUB_MSG_TYPE_, ADD_XOFF_XON),
   TOCODE2NAME(HUB_MSG_TYPE_, PURGE_TX_IN),
   TOCODE2NAME(HUB_MSG_TYPE_, PURGE_TX),
+  TOCODE2NAME(HUB_MSG_TYPE_, TICK),
   {0, NULL}
 };
 ///////////////////////////////////////////////////////////////

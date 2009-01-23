@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008 Vyacheslav Frolov
+ * Copyright (c) 2008-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2008/12/19 18:23:05  vfrolov
+ * Changed message type to 32 bit
+ *
  * Revision 1.8  2008/11/27 16:19:16  vfrolov
  * Added pBufAppend()
  *
@@ -54,6 +57,7 @@
 #include "bufutils.h"
 #include "hubmsg.h"
 #include "filter.h"
+#include "timer.h"
 
 ///////////////////////////////////////////////////////////////
 static BYTE * CALLBACK buf_alloc(DWORD size)
@@ -226,6 +230,42 @@ static void CALLBACK on_read(HMASTERPORT hMasterPort, HUB_MSG *pMsg)
   ((Port *)hMasterPort)->hub.OnRead((Port *)hMasterPort, &msg);
 }
 ///////////////////////////////////////////////////////////////
+static HMASTERTIMER CALLBACK timer_create()
+{
+  Timer *pTimer = new Timer();
+
+  if (!pTimer)
+    cerr << "No enough memory." << endl;
+
+  return (HMASTERTIMER)pTimer;
+}
+///////////////////////////////////////////////////////////////
+static BOOL CALLBACK timer_set(
+  HMASTERTIMER hMasterTimer,
+  HMASTERPORT hMasterPort,
+  const LARGE_INTEGER *pDueTime,
+  LONG period)
+{
+  _ASSERTE(hMasterTimer != NULL);
+  _ASSERTE(hMasterPort != NULL);
+
+  return ((Timer *)hMasterTimer)->Set((Port *)hMasterPort, pDueTime, period);
+}
+///////////////////////////////////////////////////////////////
+static void CALLBACK timer_cancel(HMASTERTIMER hMasterTimer)
+{
+  _ASSERTE(hMasterTimer != NULL);
+
+  ((Timer *)hMasterTimer)->Cancel();
+}
+///////////////////////////////////////////////////////////////
+static void CALLBACK timer_delete(HMASTERTIMER hMasterTimer)
+{
+  _ASSERTE(hMasterTimer != NULL);
+
+  delete ((Timer *)hMasterTimer);
+}
+///////////////////////////////////////////////////////////////
 HUB_ROUTINES_A hubRoutines = {
   sizeof(HUB_ROUTINES_A),
   buf_alloc,
@@ -240,5 +280,9 @@ HUB_ROUTINES_A hubRoutines = {
   port_name,
   filter_name,
   on_read,
+  timer_create,
+  timer_set,
+  timer_cancel,
+  timer_delete,
 };
 ///////////////////////////////////////////////////////////////
