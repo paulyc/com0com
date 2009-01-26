@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2009/01/23 16:48:49  vfrolov
+ * Exported timer routines
+ *
  * Revision 1.9  2008/12/19 18:23:05  vfrolov
  * Changed message type to 32 bit
  *
@@ -247,7 +250,9 @@ static BOOL CALLBACK timer_set(
   LONG period)
 {
   _ASSERTE(hMasterTimer != NULL);
+  _ASSERTE(((Timer *)hMasterTimer)->IsValid());
   _ASSERTE(hMasterPort != NULL);
+  _ASSERTE(((Port *)hMasterPort)->IsValid());
 
   return ((Timer *)hMasterTimer)->Set((Port *)hMasterPort, pDueTime, period);
 }
@@ -255,6 +260,7 @@ static BOOL CALLBACK timer_set(
 static void CALLBACK timer_cancel(HMASTERTIMER hMasterTimer)
 {
   _ASSERTE(hMasterTimer != NULL);
+  _ASSERTE(((Timer *)hMasterTimer)->IsValid());
 
   ((Timer *)hMasterTimer)->Cancel();
 }
@@ -262,6 +268,7 @@ static void CALLBACK timer_cancel(HMASTERTIMER hMasterTimer)
 static void CALLBACK timer_delete(HMASTERTIMER hMasterTimer)
 {
   _ASSERTE(hMasterTimer != NULL);
+  _ASSERTE(((Timer *)hMasterTimer)->IsValid());
 
   delete ((Timer *)hMasterTimer);
 }
