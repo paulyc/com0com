@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.16  2009/01/23 16:48:49  vfrolov
+ * Exported timer routines
+ *
  * Revision 1.15  2008/12/22 09:40:46  vfrolov
  * Optimized message switching
  *
@@ -83,6 +86,7 @@ namespace FilterTrace {
 ///////////////////////////////////////////////////////////////
 static ROUTINE_PORT_NAME_A *pPortName = NULL;
 static ROUTINE_FILTER_NAME_A *pFilterName = NULL;
+static ROUTINE_FILTERPORT *pFilterPort;
 ///////////////////////////////////////////////////////////////
 static void PrintTime(ostream &tout);
 ///////////////////////////////////////////////////////////////
@@ -163,9 +167,8 @@ class Valid {
 ///////////////////////////////////////////////////////////////
 class Filter : public Valid {
   public:
-    Filter(TraceConfig &config, int argc, const char *const argv[]);
+    Filter(const char *_pName, TraceConfig &config, int argc, const char *const argv[]);
 
-    void SetFilterName(const char *_pName) { pName = _pName; }
     const char *FilterName() const { return pName; }
 
     ostream *pTraceStream;
@@ -174,9 +177,9 @@ class Filter : public Valid {
     const char *pName;
 };
 
-Filter::Filter(TraceConfig &config, int argc, const char *const argv[])
-  : pTraceStream(NULL),
-    pName(NULL)
+Filter::Filter(const char *_pName, TraceConfig &config, int argc, const char *const argv[])
+  : pName(_pName),
+    pTraceStream(NULL)
 {
   for (const char *const *pArgs = &argv[1] ; argc > 1 ; pArgs++, argc--) {
     const char *pArg = GetParam(*pArgs, "--");
@@ -188,7 +191,7 @@ Filter::Filter(TraceConfig &config, int argc, const char *const argv[])
     }
 
     {
-      cerr << "Unknown option --" << pArg << endl;
+      cerr << "Unknown option " << *pArgs << endl;
       Invalidate();
     }
   }
@@ -310,16 +313,20 @@ static void CALLBACK ConfigStop(
 }
 ///////////////////////////////////////////////////////////////
 static HFILTER CALLBACK Create(
+    HMASTERFILTER hMasterFilter,
     HCONFIG hConfig,
     int argc,
     const char *const argv[])
 {
   _ASSERTE(hConfig != NULL);
+  _ASSERTE(hMasterFilter != NULL);
 
-  Filter *pFilter = new Filter(*(TraceConfig *)hConfig, argc, argv);
+  Filter *pFilter = new Filter(pFilterName(hMasterFilter), *(TraceConfig *)hConfig, argc, argv);
 
-  if (!pFilter)
-    return NULL;
+  if (!pFilter) {
+    cerr << "No enough memory." << endl;
+    exit(2);
+  }
 
   if (!pFilter->IsValid()) {
     delete pFilter;
@@ -329,16 +336,30 @@ static HFILTER CALLBACK Create(
   return (HFILTER)pFilter;
 }
 ///////////////////////////////////////////////////////////////
-static BOOL CALLBACK Init(
-    HFILTER hFilter,
-    HMASTERFILTER hMasterFilter)
+static void CALLBACK Delete(
+    HFILTER hFilter)
 {
   _ASSERTE(hFilter != NULL);
-  _ASSERTE(hMasterFilter != NULL);
 
-  ((Filter *)hFilter)->SetFilterName(pFilterName(hMasterFilter));
+  delete (Filter *)hFilter;
+}
+///////////////////////////////////////////////////////////////
+static HFILTERINSTANCE CALLBACK CreateInstance(
+    HMASTERFILTERINSTANCE hMasterFilterInstance)
+{
+  _ASSERTE(hMasterFilterInstance != NULL);
 
-  return TRUE;
+  HMASTERPORT hMasterPort = pFilterPort(hMasterFilterInstance);
+
+  _ASSERTE(hMasterPort != NULL);
+
+  return (HFILTERINSTANCE)pPortName(hMasterPort);
+}
+///////////////////////////////////////////////////////////////
+static void CALLBACK DeleteInstance(
+    HFILTERINSTANCE DEBUG_PARAM(hFilterInstance))
+{
+  _ASSERTE(hFilterInstance != NULL);
 }
 ///////////////////////////////////////////////////////////////
 static void PrintTime(ostream &tout)
@@ -746,12 +767,12 @@ static void PrintMsg(ostream &tout, HUB_MSG *pMsg)
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK InMethod(
     HFILTER hFilter,
-    HMASTERPORT hFromPort,
+    HFILTERINSTANCE hFilterInstance,
     HUB_MSG *pInMsg,
     HUB_MSG **DEBUG_PARAM(ppEchoMsg))
 {
   _ASSERTE(hFilter != NULL);
-  _ASSERTE(hFromPort != NULL);
+  _ASSERTE(hFilterInstance != NULL);
   _ASSERTE(pInMsg != NULL);
   _ASSERTE(ppEchoMsg != NULL);
   _ASSERTE(*ppEchoMsg == NULL);
@@ -761,7 +782,7 @@ static BOOL CALLBACK InMethod(
 
   PrintTime(tout);
 
-  tout << pPortName(hFromPort) << "-("
+  tout << (const char *)hFilterInstance << "-("
        << ((Filter *)hFilter)->FilterName() << ")->: ";
 
   PrintMsg(tout, pInMsg);
@@ -771,13 +792,13 @@ static BOOL CALLBACK InMethod(
 ///////////////////////////////////////////////////////////////
 static BOOL CALLBACK OutMethod(
     HFILTER hFilter,
+    HFILTERINSTANCE hFilterInstance,
     HMASTERPORT hFromPort,
-    HMASTERPORT hToPort,
     HUB_MSG *pOutMsg)
 {
   _ASSERTE(hFilter != NULL);
+  _ASSERTE(hFilterInstance != NULL);
   _ASSERTE(hFromPort != NULL);
-  _ASSERTE(hToPort != NULL);
   _ASSERTE(pOutMsg != NULL);
 
   _ASSERTE(((Filter *)hFilter)->pTraceStream != NULL);
@@ -785,7 +806,7 @@ static BOOL CALLBACK OutMethod(
 
   PrintTime(tout);
 
-  tout << pPortName(hToPort) << "<-("
+  tout << (const char *)hFilterInstance << "<-("
        << ((Filter *)hFilter)->FilterName() << ")-"
        << pPortName(hFromPort) << ": ";
 
@@ -803,7 +824,9 @@ static const FILTER_ROUTINES_A routines = {
   Config,
   ConfigStop,
   Create,
-  Init,
+  Delete,
+  CreateInstance,
+  DeleteInstance,
   InMethod,
   OutMethod,
 };
@@ -818,13 +841,15 @@ const PLUGIN_ROUTINES_A *const * CALLBACK InitA(
     const HUB_ROUTINES_A * pHubRoutines)
 {
   if (!ROUTINE_IS_VALID(pHubRoutines, pPortName) ||
-      !ROUTINE_IS_VALID(pHubRoutines, pFilterName))
+      !ROUTINE_IS_VALID(pHubRoutines, pFilterName) ||
+      !ROUTINE_IS_VALID(pHubRoutines, pFilterPort))
   {
     return NULL;
   }
 
   pPortName = pHubRoutines->pPortName;
   pFilterName = pHubRoutines->pFilterName;
+  pFilterPort = pHubRoutines->pFilterPort;
 
   return plugins;
 }

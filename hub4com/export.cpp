@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2009/01/26 14:55:29  vfrolov
+ * Added signature checking for Timer
+ *
  * Revision 1.10  2009/01/23 16:48:49  vfrolov
  * Exported timer routines
  *
@@ -217,7 +220,7 @@ static const char * CALLBACK filter_name(HMASTERFILTER hMasterFilter)
   _ASSERTE(hMasterFilter != NULL);
   _ASSERTE(((Filter *)hMasterFilter)->IsValid());
 
-  return ((Filter *)hMasterFilter)->name.c_str();
+  return ((Filter *)hMasterFilter)->Name().c_str();
 }
 ///////////////////////////////////////////////////////////////
 static void CALLBACK on_read(HMASTERPORT hMasterPort, HUB_MSG *pMsg)
@@ -273,6 +276,14 @@ static void CALLBACK timer_delete(HMASTERTIMER hMasterTimer)
   delete ((Timer *)hMasterTimer);
 }
 ///////////////////////////////////////////////////////////////
+static HMASTERPORT CALLBACK filter_port(HMASTERFILTERINSTANCE hMasterFilterInstance)
+{
+  _ASSERTE(hMasterFilterInstance != NULL);
+  _ASSERTE(((FilterInstance *)hMasterFilterInstance)->IsValid());
+
+  return (HMASTERPORT)&((FilterInstance *)hMasterFilterInstance)->port;
+}
+///////////////////////////////////////////////////////////////
 HUB_ROUTINES_A hubRoutines = {
   sizeof(HUB_ROUTINES_A),
   buf_alloc,
@@ -291,5 +302,6 @@ HUB_ROUTINES_A hubRoutines = {
   timer_set,
   timer_cancel,
   timer_delete,
+  filter_port,
 };
 ///////////////////////////////////////////////////////////////
