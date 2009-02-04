@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2009/02/02 15:21:42  vfrolov
+ * Optimized filter's API
+ *
  * Revision 1.1  2008/11/24 11:46:56  vfrolov
  * Initial revision
  *
@@ -51,12 +54,15 @@ class Filter
 #endif
     }
 
-#ifdef _DEBUG
     ~Filter() {
+      //if (hFilter && pDelete)
+      //  pDelete(hFilter);
+
+#ifdef _DEBUG
       _ASSERTE(signature == FILTER_SIGNATURE);
       signature = 0;
-    }
 #endif
+    }
 
     const string &Name() const { return name; }
 
@@ -107,14 +113,16 @@ class FilterInstance {
       if (pSrcPorts)
         delete pSrcPorts;
 
-      //if (hFilterInstance)
-      //  Delete(hFilterInstance);
+      //if (hFilterInstance && pDeleteInstance)
+      //  pDeleteInstance(hFilterInstance);
 
 #ifdef _DEBUG
       _ASSERTE(signature == FILTER_INSTANCE_SIGNATURE);
       signature = 0;
 #endif
     }
+
+    HFILTER HFilter() const { return filter.hFilter; }
 
     Filter &filter;
     Port &port;
