@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2008 Vyacheslav Frolov
+ * Copyright (c) 2006-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2008/10/02 07:52:38  vfrolov
+ * Added removing macroses for undefined parameters of --load option
+ *
  * Revision 1.4  2008/08/28 15:53:13  vfrolov
  * Added ability to load arguments from standard input and
  * to select fragment for loading
@@ -44,7 +47,13 @@
 class Args : public vector<string>
 {
   public:
+    Args() : num_recursive(0) {}
     Args(int argc, const char *const argv[]);
+
+    void Add(const vector<string> &args);
+
+    static const char *LoadPrefix() { return "--load="; }
+    static int RecursiveMax() { return 256; }
 
   private:
     void Add(const string &arg);
@@ -65,12 +74,11 @@ const char *GetParam(const char *pArg, const char *pPattern);
 void CreateArgsVector(
     const char *pName,
     const char *pArgs,
+    Args &args,
     int *pArgc,
-    const char ***pArgv,
-    void **ppTmp);
+    const char ***pArgv);
 void FreeArgsVector(
-    const char **argv,
-    void *pTmp);
+    const char **argv);
 ///////////////////////////////////////////////////////////////
 
 #endif /* _UTILS_H_ */

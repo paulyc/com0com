@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2009/02/02 15:21:42  vfrolov
+ * Optimized filter's API
+ *
  * Revision 1.7  2008/11/24 12:36:59  vfrolov
  * Changed plugin API
  *
@@ -96,13 +99,13 @@ BOOL Filters::CreateFilter(
   if (ROUTINE_IS_VALID(pFltRoutines, pCreate)) {
     int argc;
     const char **argv;
-    void *pTmpArgs;
+    Args args;
 
-    CreateArgsVector(pFilterName, pArgs, &argc, &argv, &pTmpArgs);
+    CreateArgsVector(pFilterName, pArgs, args, &argc, &argv);
 
     HFILTER hFilter = pFltRoutines->pCreate((HMASTERFILTER)pFilter, hConfig, argc, argv);
 
-    FreeArgsVector(argv, pTmpArgs);
+    FreeArgsVector(argv);
 
     if (!hFilter) {
       cerr << "Can't create filter " << pFilterName << endl;
