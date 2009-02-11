@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.28  2009/01/12 12:48:05  vfrolov
+ * Fixed typo
+ *
  * Revision 1.27  2008/12/25 16:58:45  vfrolov
  * Implemented busynames command
  *
@@ -133,6 +136,7 @@
 ///////////////////////////////////////////////////////////////
 static BOOL detailPrms = FALSE;
 static BOOL silent = FALSE;
+static BOOL no_update = FALSE;
 ///////////////////////////////////////////////////////////////
 static BOOL IsValidPortNum(int num)
 {
@@ -494,7 +498,7 @@ int Reload(InfFile &infFile, BOOL update)
 
   BOOL rr = FALSE;
 
-  if (update) {
+  if (update && !no_update) {
     if (!UpdateDriverForPlugAndPlayDevices(0, C0C_BUS_DEVICE_ID, infFile.Path(), INSTALLFLAG_FORCE, &rr)) {
       CleanDevPropertiesStack(infFile, stack, TRUE, &rebootRequired);
       return 1;
@@ -580,7 +584,7 @@ static BOOL InstallDeviceCallBack(
 
 static BOOL InstallBusDevice(InfFile &infFile, int num)
 {
-  return InstallDevice(infFile, C0C_BUS_DEVICE_ID, C0C_CLASS, InstallDeviceCallBack, &num);
+  return InstallDevice(infFile, C0C_BUS_DEVICE_ID, C0C_CLASS, InstallDeviceCallBack, &num, !no_update);
 }
 
 static BOOL AddDeviceToBusyMask(
@@ -1093,6 +1097,8 @@ int Help(const char *pProgName)
     "  --output <file>              - file for output, default is console\n"
     "  --detail-prms                - show detailed parameters\n"
     "  --silent                     - suppress dialogs if possible\n"
+    "  --no-update                  - do not update driver while install command\n"
+    "                                 execution (update command expected later)\n"
     );
   ConsoleWrite(
     "\n"
@@ -1179,6 +1185,8 @@ int Main(int argc, const char* argv[])
     return 1;
 
   detailPrms = FALSE;
+  silent = FALSE;
+  no_update = FALSE;
 
   while (argc > 1) {
     if (*argv[1] != '-')
@@ -1200,6 +1208,12 @@ int Main(int argc, const char* argv[])
     else
     if (!strcmp(argv[1], "--silent")) {
       silent = TRUE;
+      argv++;
+      argc--;
+    }
+    else
+    if (!strcmp(argv[1], "--no-update")) {
+      no_update = TRUE;
       argv++;
       argc--;
     }

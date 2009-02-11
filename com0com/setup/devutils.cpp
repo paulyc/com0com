@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2007 Vyacheslav Frolov
+ * Copyright (c) 2006-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2007/11/27 16:35:49  vfrolov
+ * Added state check before enabling
+ *
  * Revision 1.8  2007/10/01 15:01:35  vfrolov
  * Added pDevInstID parameter to InstallDevice()
  *
@@ -606,7 +609,8 @@ static int TryInstallDevice(
     const char *pDevId,
     const char *pDevInstID,
     PDEVCALLBACK pDevCallBack,
-    void *pCallBackParam)
+    void *pCallBackParam,
+    BOOL update)
 {
   GUID classGUID;
   char className[32];
@@ -715,9 +719,13 @@ static int TryInstallDevice(
   int i;
 
   for (i = 0 ; i < 10 ; i++) {
-    BOOL rebootRequired;
+    if (update) {
+      BOOL rebootRequired;
 
-    res = UpdateDriverForPlugAndPlayDevices(0, pDevId, infFile.Path(), 0, &rebootRequired);
+      res = UpdateDriverForPlugAndPlayDevices(0, pDevId, infFile.Path(), 0, &rebootRequired);
+    } else {
+      res = TRUE;
+    }
 
     if (res) {
       updateErr = ERROR_SUCCESS;
@@ -794,12 +802,13 @@ BOOL InstallDevice(
     const char *pDevId,
     const char *pDevInstID,
     PDEVCALLBACK pDevCallBack,
-    void *pCallBackParam)
+    void *pCallBackParam,
+    BOOL update)
 {
   int res;
 
   do {
-    res = TryInstallDevice(infFile, pDevId, pDevInstID, pDevCallBack, pCallBackParam);
+    res = TryInstallDevice(infFile, pDevId, pDevInstID, pDevCallBack, pCallBackParam, update);
   } while (res == IDTRYAGAIN);
 
   return res == IDCONTINUE;
