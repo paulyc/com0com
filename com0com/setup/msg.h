@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2007 Vyacheslav Frolov
+ * Copyright (c) 2006-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2007/09/20 12:29:03  vfrolov
+ * Added return value to SetOutputFile()
+ *
  * Revision 1.3  2006/11/21 11:34:55  vfrolov
  * Added
  *   ConsoleWrite()
@@ -47,5 +50,8 @@ BOOL IsConsoleOpen();
 void SetTitle(const char *pTitle);
 BOOL SetOutputFile(const char *pFile);
 const char *GetOutputFile();
+BOOL Silent();
+void Silent(BOOL val);
+void PromptReboot();
 
 #endif /* _C0C_MSG_H_ */

@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2007 Vyacheslav Frolov
+ * Copyright (c) 2006-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2007/10/19 16:11:56  vfrolov
+ * Added ability to redirect console output
+ *
  * Revision 1.5  2007/09/20 12:29:03  vfrolov
  * Added return value to SetOutputFile()
  *
@@ -44,8 +47,9 @@
 #include "msg.h"
 #include "utils.h"
 
-char *pOutputFile = NULL;
-char title[80] = "";
+static char *pOutputFile = NULL;
+static char title[80] = "";
+static BOOL silent = FALSE;
 
 ///////////////////////////////////////////////////////////////
 static int ShowMsgDefault(LPCSTR pText, UINT type)
@@ -280,5 +284,23 @@ BOOL SetOutputFile(const char *pFile)
 const char *GetOutputFile()
 {
   return pOutputFile;
+}
+///////////////////////////////////////////////////////////////
+BOOL Silent()
+{
+  return silent;
+}
+///////////////////////////////////////////////////////////////
+void Silent(BOOL val)
+{
+  silent = val;
+}
+///////////////////////////////////////////////////////////////
+void PromptReboot()
+{
+  Trace("\nReboot required.\n");
+
+  if (!silent)
+    SetupPromptReboot(NULL, NULL, FALSE);
 }
 ///////////////////////////////////////////////////////////////
