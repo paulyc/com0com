@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2009/01/26 14:55:29  vfrolov
+ * Added signature checking for Timer
+ *
  * Revision 1.1  2009/01/23 16:46:32  vfrolov
  * Initial revision
  *
@@ -35,10 +38,10 @@ class Port;
 class Timer
 {
   public:
-    Timer();
+    Timer(HTIMEROWNER _hTimerOwner);
     ~Timer();
 
-    BOOL Set(Port *_pPort, const LARGE_INTEGER *pDueTime, LONG period);
+    BOOL Set(Port *_pPort, const LARGE_INTEGER *pDueTime, LONG period, HTIMERPARAM _hTimerParam);
     void Cancel();
 
   private:
@@ -47,7 +50,10 @@ class Timer
       DWORD dwTimerLowValue,
       DWORD dwTimerHighValue);
 
+    HTIMEROWNER hTimerOwner;
     Port *pPort;
+    HTIMERPARAM hTimerParam;
+
     HANDLE hTimer;
 
 #ifdef _DEBUG

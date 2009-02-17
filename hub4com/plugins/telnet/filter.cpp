@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.16  2009/02/02 15:21:42  vfrolov
+ * Optimized filter's API
+ *
  * Revision 1.15  2009/01/26 15:07:52  vfrolov
  * Implemented --keep-active option
  *
@@ -614,14 +617,19 @@ static BOOL CALLBACK InMethod(
       if (((Filter *)hFilter)->keepActive) {
         _ASSERTE(((State *)hFilterInstance)->hKeepActiveTimer == NULL);
 
-        ((State *)hFilterInstance)->hKeepActiveTimer = pTimerCreate();
+        ((State *)hFilterInstance)->hKeepActiveTimer = pTimerCreate((HTIMEROWNER)hFilterInstance);
 
         if (((State *)hFilterInstance)->hKeepActiveTimer) {
           LARGE_INTEGER firstReportTime;
 
           firstReportTime.QuadPart = -10000000LL * ((Filter *)hFilter)->keepActive;
 
-          pTimerSet(((State *)hFilterInstance)->hKeepActiveTimer, ((State *)hFilterInstance)->hMasterPort, &firstReportTime, ((Filter *)hFilter)->keepActive * 1000L);
+          pTimerSet(
+              ((State *)hFilterInstance)->hKeepActiveTimer,
+              ((State *)hFilterInstance)->hMasterPort,
+              &firstReportTime,
+              ((Filter *)hFilter)->keepActive * 1000L,
+              (HTIMERPARAM)((State *)hFilterInstance)->hKeepActiveTimer);
         }
       }
 
@@ -630,12 +638,10 @@ static BOOL CALLBACK InMethod(
       break;
     }
     case HUB_MSG_T2N(HUB_MSG_TYPE_TICK): {
-      HMASTERTIMER hTimer = (HMASTERTIMER)pInMsg->u.hVal;
-
-      if (!hTimer)
+      if (pInMsg->u.hv2.hVal0 != hFilterInstance)
         break;
 
-      if (hTimer == ((State *)hFilterInstance)->hKeepActiveTimer) {
+      if (pInMsg->u.hv2.hVal1 == ((State *)hFilterInstance)->hKeepActiveTimer) {
         TelnetProtocol *pTelnetProtocol = ((State *)hFilterInstance)->pTelnetProtocol;
 
         if (pTelnetProtocol) {
