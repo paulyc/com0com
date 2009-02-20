@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2009/02/04 12:26:54  vfrolov
+ * Implemented --load option for filters
+ *
  * Revision 1.8  2009/02/02 15:21:42  vfrolov
  * Optimized filter's API
  *
@@ -108,7 +111,6 @@ BOOL Filters::CreateFilter(
     FreeArgsVector(argv);
 
     if (!hFilter) {
-      cerr << "Can't create filter " << pFilterName << endl;
       delete pFilter;
       return FALSE;
     }
