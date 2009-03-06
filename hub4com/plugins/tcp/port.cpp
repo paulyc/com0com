@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2009/01/23 16:55:05  vfrolov
+ * Utilized timer routines
+ *
  * Revision 1.11  2008/12/01 17:09:34  vfrolov
  * Improved write buffering
  *
@@ -183,7 +186,7 @@ static BOOL CALLBACK Config(
       reconnectTime = comParams.rtDisable;
     }
     else
-    if (isdigit(*pParam)) {
+    if (isdigit((unsigned char)*pParam)) {
       reconnectTime = atoi(pParam);
     }
     else {

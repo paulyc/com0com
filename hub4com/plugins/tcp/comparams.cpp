@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008 Vyacheslav Frolov
+ * Copyright (c) 2008-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2008/11/27 13:46:29  vfrolov
+ * Added --write-limit option
+ *
  * Revision 1.3  2008/11/13 07:41:09  vfrolov
  * Changed for staticaly linking
  *
@@ -61,7 +64,7 @@ void ComParams::SetIF(const char *_pIF)
 ///////////////////////////////////////////////////////////////
 BOOL ComParams::SetWriteQueueLimit(const char *pWriteQueueLimit)
 {
-  if (isdigit(*pWriteQueueLimit)) {
+  if (isdigit((unsigned char)*pWriteQueueLimit)) {
     writeQueueLimit = atol(pWriteQueueLimit);
     return writeQueueLimit > 0;
   }

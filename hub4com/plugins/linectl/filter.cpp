@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2009/02/02 15:21:42  vfrolov
+ * Optimized filter's API
+ *
  * Revision 1.10  2008/12/22 09:40:45  vfrolov
  * Optimized message switching
  *
@@ -133,7 +136,7 @@ void Filter::Parse(const char *pArg)
   if ((pParam = GetParam(pArg, "br=")) != NULL) {
     soOutMask |= SO_SET_BR;
 
-    switch (tolower(*pParam)) {
+    switch (tolower((unsigned char)*pParam)) {
       case 'l':
         goInMask[0] |= GO0_LBR_STATUS;
         break;
@@ -149,7 +152,7 @@ void Filter::Parse(const char *pArg)
   if ((pParam = GetParam(pArg, "lc=")) != NULL) {
     soOutMask |= SO_SET_LC;
 
-    switch (tolower(*pParam)) {
+    switch (tolower((unsigned char)*pParam)) {
       case 'l':
         goInMask[0] |= GO0_LLC_STATUS;
         break;
