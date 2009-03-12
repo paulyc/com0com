@@ -30,8 +30,11 @@ In this case the device emulation program uses one port of the pair and
 the other port can be used by Windows or DOS application that
 requires a COM port to communicate with the device.
 For example, to send/receive faxes over IP you can connect Windows
-Fax application to t38modem ("T38FAX Pseudo Modem", part of the
-<a href="http://openh323.sourceforge.net/"> OpenH323 project</a>
+Fax application to t38modem (
+<a href="http://t38modem.cvs.sourceforge.net/viewvc/*checkout*/t38modem/t38modem/ReadMe.txt">
+T38FAX Pseudo Modem </a>,
+part of the
+<a href="http://sourceforge.net/projects/t38modem/"> t38modem project </a>
 ) via virtual COM port pair.
 </p>
 <p>
@@ -40,17 +43,21 @@ For example, with the com2tcp (
 <a href="http://com0com.cvs.sourceforge.net/*checkout*/com0com/com2tcp/ReadMe.txt?revision=RELEASED">
 COM port to TCP redirector</a>,
 part of the
-<a href="http://sourceforge.net/projects/com0com/">com0com</a>
-project) you can communicate via serial interface with the TCP/IP servers.
+<a href="http://sourceforge.net/projects/com0com/"> com0com project </a>
+) you can communicate via serial interface with the TCP/IP servers.
+If you feel that com2tcp is what you need but can't find some required features (for example
+<a href="http://tools.ietf.org/html/rfc2217"> RFC 2217 </a>
+support) then try use hub4com instead.
 </p>
 <p>
 With the hub4com (
 <a href="http://com0com.cvs.sourceforge.net/*checkout*/com0com/hub4com/ReadMe.txt?revision=RELEASED">
-HUB for COM ports</a>,
+HUB for communications</a>,
 part of the
-<a href="http://sourceforge.net/projects/com0com/">com0com</a>
-project) it is possible to handle data from a single serial device by a number of different
-applications. For example, several applications can share data from one GPS device.
+<a href="http://sourceforge.net/projects/com0com/"> com0com project </a>
+) it is possible to handle data and signals from a single serial device by a number of different
+applications (for example, several applications can share data from one GPS device).
+It's also possible to use the real serial ports of remote computer like if they exist on a local computer.
 </p>
 <p>You can find more information in
 <a href="http://com0com.sourceforge.net/doc/UsingCom0com.pdf">
