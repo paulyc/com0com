@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2008 Vyacheslav Frolov
+ * Copyright (c) 2004-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.41  2008/12/02 16:10:08  vfrolov
+ * Separated tracing and debuging
+ *
  * Revision 1.40  2008/10/30 07:54:37  vfrolov
  * Improved BREAK emulation
  *
@@ -415,9 +418,14 @@ NTSTATUS FdoPortIoCtl(
       break;
     case IOCTL_SERIAL_GET_WAIT_MASK:
       status = FdoPortGetWaitMask(pIoPortLocal, pIrp, pIrpStack);
+      TraceIrp("FdoPortIoCtl", pIrp, &status, TRACE_FLAG_RESULTS);
       break;
     case IOCTL_SERIAL_WAIT_ON_MASK:
       status = FdoPortWaitOnMask(pIoPortLocal, pIrp, pIrpStack);
+#if ENABLE_TRACING
+      if (status == STATUS_SUCCESS)
+        TraceIrp("FdoPortIoCtl", pIrp, &status, TRACE_FLAG_RESULTS);
+#endif /* ENABLE_TRACING */
       break;
     case IOCTL_SERIAL_IMMEDIATE_CHAR:
       status = FdoPortImmediateChar(pIoPortLocal, pIrp, pIrpStack);
@@ -925,8 +933,10 @@ NTSTATUS FdoPortIoCtl(
                            pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
                            &size);
 
-      if (status == STATUS_SUCCESS)
+      if (status == STATUS_SUCCESS) {
         pIrp->IoStatus.Information = size;
+        TraceIrp("FdoPortIoCtl", pIrp, &status, TRACE_FLAG_RESULTS);
+      }
 
       break;
     }
