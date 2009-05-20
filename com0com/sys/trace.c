@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2008 Vyacheslav Frolov
+ * Copyright (c) 2004-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.32  2008/12/02 16:10:09  vfrolov
+ * Separated tracing and debuging
+ *
  * Revision 1.31  2008/06/10 11:24:20  vfrolov
  * Disabled tracing if traceFileName is empty
  *
@@ -1374,26 +1377,45 @@ VOID TraceIrp(
   pDestStr = pBuf->buf;
 
   pDestStr = AnsiStrCopyHead(pDestStr, &size, pDevExt, pHead);
+  pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
 
   switch (major) {
     case IRP_MJ_DEVICE_CONTROL:
+      pDestStr = AnsiStrCopyCode(pDestStr, &size,
+          pIrpStack->Parameters.DeviceIoControl.IoControlCode,
+          codeNameTableIoctl, "IOCTL_", 16);
+      break;
     case IRP_MJ_PNP:
+      pDestStr = AnsiStrCopyCode(pDestStr, &size,
+          pIrpStack->MinorFunction,
+          codeNameTablePnp, "PNP_", 10);
+      break;
     case IRP_MJ_POWER:
+      pDestStr = AnsiStrCopyCode(pDestStr, &size,
+          pIrpStack->MinorFunction,
+          codeNameTablePower, "POWER_", 10);
+      break;
     case IRP_MJ_SYSTEM_CONTROL:
+      pDestStr = AnsiStrCopyCode(pDestStr, &size,
+          pIrpStack->MinorFunction,
+          codeNameTableWmi, "WMI_", 10);
       break;
     default:
-      pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
       pDestStr = AnsiStrCopyCode(pDestStr, &size,
           major, codeNameTableIrpMj, "IRP_MJ_", 10);
   }
+
+  /*
+  if (pIrpStack->FileObject)
+    pDestStr = AnsiStrFormat(pDestStr, &size, "(%lx)", PtrToUlong(pIrpStack->FileObject));
+  */
 
   pSysBuf = pIrp->AssociatedIrp.SystemBuffer;
   inform = pIrp->IoStatus.Information;
 
   switch (major) {
     case IRP_MJ_CREATE:
-      if (flags & TRACE_FLAG_PARAMS)
-        pDestStr = AnsiStrFormat(pDestStr, &size, ", PID:%lu", PtrToUlong(PsGetCurrentProcessId()));
+      pDestStr = AnsiStrFormat(pDestStr, &size, ", PID:%lu", PtrToUlong(PsGetCurrentProcessId()));
       break;
     case IRP_MJ_WRITE:
     case IRP_MJ_READ:
@@ -1415,13 +1437,9 @@ VOID TraceIrp(
       }
       break;
     case IRP_MJ_DEVICE_CONTROL: {
-      ULONG code = pIrpStack->Parameters.DeviceIoControl.IoControlCode;
       ULONG inLength = pIrpStack->Parameters.DeviceIoControl.InputBufferLength;
 
-      pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
-      pDestStr = AnsiStrCopyCode(pDestStr, &size, code, codeNameTableIoctl, "IOCTL_", 16);
-
-      switch (code) {
+      switch (pIrpStack->Parameters.DeviceIoControl.IoControlCode) {
         case IOCTL_SERIAL_GET_MODEMSTATUS:
           if ((flags & TRACE_FLAG_RESULTS) && inform >= sizeof(ULONG)) {
             pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
@@ -1579,13 +1597,8 @@ VOID TraceIrp(
       }
       break;
     }
-    case IRP_MJ_PNP: {
-      ULONG code = pIrpStack->MinorFunction;
-
-      pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
-      pDestStr = AnsiStrCopyCode(pDestStr, &size, code, codeNameTablePnp, "PNP_", 10);
-
-      switch (code) {
+    case IRP_MJ_PNP:
+      switch (pIrpStack->MinorFunction) {
         case IRP_MN_QUERY_ID:
           pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
           pDestStr = AnsiStrCopyCode(pDestStr, &size,
@@ -1636,17 +1649,11 @@ VOID TraceIrp(
           break;
       }
       break;
-    }
-    case IRP_MJ_POWER: {
-      ULONG code = pIrpStack->MinorFunction;
-
-      pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
-      pDestStr = AnsiStrCopyCode(pDestStr, &size, code, codeNameTablePower, "POWER_", 10);
-
+    case IRP_MJ_POWER:
       if ((flags & TRACE_FLAG_PARAMS) == 0)
         break;
 
-      switch (code) {
+      switch (pIrpStack->MinorFunction) {
         case IRP_MN_SET_POWER:
         case IRP_MN_QUERY_POWER: {
           POWER_STATE_TYPE powerType = pIrpStack->Parameters.Power.Type;
@@ -1684,14 +1691,6 @@ VOID TraceIrp(
         }
       }
       break;
-    }
-    case IRP_MJ_SYSTEM_CONTROL: {
-      ULONG code = pIrpStack->MinorFunction;
-
-      pDestStr = AnsiStrCopyStr(pDestStr, &size, " ");
-      pDestStr = AnsiStrCopyCode(pDestStr, &size, code, codeNameTableWmi, "WMI_", 10);
-      break;
-    }
     case IRP_MJ_QUERY_INFORMATION: {
       ULONG code = pIrpStack->Parameters.QueryFile.FileInformationClass;
 
