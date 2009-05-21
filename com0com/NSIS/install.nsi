@@ -19,6 +19,11 @@
  *
  *
  * $Log$
+ * Revision 1.15  2009/05/20 13:02:18  vfrolov
+ * Changed MUI.nsh to MUI2.nsh
+ * Added .NET check and advise
+ * Disabled silent installing of linked ports
+ *
  * Revision 1.14  2009/01/12 13:16:20  vfrolov
  * Added driver updating
  *
@@ -251,6 +256,8 @@ Section "com0com" sec_com0com
   File "..\${TARGET_CPU}\setupc.exe"
   File "..\setupg\Release\setupg.exe"
 
+  WriteUninstaller "uninstall.exe"
+
   ; Write the installation path into the registry
   WriteRegStr HKLM SOFTWARE\com0com "Install_Dir" "$INSTDIR"
 
@@ -260,12 +267,22 @@ Section "com0com" sec_com0com
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "HelpLink" "http://com0com.sourceforge.net/"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "URLUpdateInfo" "http://com0com.sourceforge.net/"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "Readme" "$INSTDIR\ReadMe.txt"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "DisplayIcon" "$INSTDIR\setupg.exe"
+
+  GetDLLVersionLocal "..\${TARGET_CPU}\com0com.sys" $R0 $R1
+  IntOp $R2 $R0 / 0x00010000
+  IntOp $R3 $R0 & 0x0000FFFF
+  IntOp $R4 $R1 / 0x00010000
+  IntOp $R5 $R1 & 0x0000FFFF
+
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "DisplayVersion" "$R2.$R3.$R4.$R5"
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "VersionMajor" $R2
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "VersionMinor" $R3
 
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "UninstallString" '"$INSTDIR\uninstall.exe"'
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "QuietUninstallString" '"$INSTDIR\uninstall.exe" /S'
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\com0com" "NoRepair" 1
-
-  WriteUninstaller "uninstall.exe"
 
   GetTempFileName $0
 
