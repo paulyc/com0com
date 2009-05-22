@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.33  2009/05/20 13:35:36  vfrolov
+ * United closely IRP function name printing code
+ *
  * Revision 1.32  2008/12/02 16:10:09  vfrolov
  * Separated tracing and debuging
  *
@@ -188,12 +191,9 @@ typedef struct _TRACE_DATA {
 
 } TRACE_DATA, *PTRACE_DATA;
 /********************************************************************/
-static PTRACE_DATA pTraceData = NULL;
+PTRACE_DATA pTraceData = NULL;
 static PDRIVER_OBJECT pDrvObj;
 /********************************************************************/
-#define TRACE_FILE_OK (pTraceData != NULL)
-/********************************************************************/
-
 VOID QueryRegistryTrace(IN PUNICODE_STRING pRegistryPath)
 {
   NTSTATUS status;
@@ -1134,6 +1134,8 @@ VOID TraceF(
   SIZE_T size;
   va_list va;
 
+  HALT_UNLESS(TRACE_FILE_OK);
+
   pBuf = AllocTraceBuf();
   if (!pBuf)
     return;
@@ -1221,28 +1223,28 @@ VOID TraceClose()
   TraceDisable();
 }
 
-VOID Trace0(
+VOID InternalTrace0(
     IN PC0C_COMMON_EXTENSION pDevExt,
     IN PWCHAR pStr)
 {
-  if (!TRACE_FILE_OK || !pStr)
+  if (!pStr)
     return;
 
   TraceF(pDevExt, "%S", pStr);
 }
 
-VOID Trace00(
+VOID InternalTrace00(
     IN PC0C_COMMON_EXTENSION pDevExt,
     IN PWCHAR pStr1,
     IN PWCHAR pStr2)
 {
-  if (!TRACE_FILE_OK || !pStr1 || !pStr2)
+  if (!pStr1 || !pStr2)
     return;
 
   TraceF(pDevExt, "%S%S", pStr1, pStr2);
 }
 
-VOID TraceCode(
+VOID InternalTraceCode(
     IN PC0C_COMMON_EXTENSION pDevExt,
     IN PCHAR pHead,
     IN PCODE2NAME pTable,
@@ -1253,8 +1255,7 @@ VOID TraceCode(
   PCHAR pDestStr;
   SIZE_T size;
 
-  if (!TRACE_FILE_OK)
-    return;
+  HALT_UNLESS(TRACE_FILE_OK);
 
   pBuf = AllocTraceBuf();
   if (!pBuf)
@@ -1274,7 +1275,7 @@ VOID TraceCode(
   FreeTraceBuf(pBuf);
 }
 
-VOID TraceMask(
+VOID InternalTraceMask(
     IN PC0C_COMMON_EXTENSION pDevExt,
     IN PCHAR pHead,
     IN PCODE2NAME pTable,
@@ -1284,8 +1285,7 @@ VOID TraceMask(
   PCHAR pDestStr;
   SIZE_T size;
 
-  if (!TRACE_FILE_OK)
-    return;
+  HALT_UNLESS(TRACE_FILE_OK);
 
   pBuf = AllocTraceBuf();
   if (!pBuf)
@@ -1300,10 +1300,9 @@ VOID TraceMask(
   FreeTraceBuf(pBuf);
 }
 
-VOID TraceModemStatus(IN PC0C_IO_PORT pIoPort)
+VOID InternalTraceModemStatus(IN PC0C_IO_PORT pIoPort)
 {
-  if (!TRACE_FILE_OK)
-    return;
+  HALT_UNLESS(TRACE_FILE_OK);
 
   if (!pTraceData->traceEnable.modemStatus)
     return;
@@ -1315,7 +1314,7 @@ VOID TraceModemStatus(IN PC0C_IO_PORT pIoPort)
       pIoPort->modemStatus);
 }
 
-VOID TraceIrp(
+VOID InternalTraceIrp(
     IN PCHAR pHead,
     IN PIRP pIrp,
     IN PNTSTATUS pStatus,
@@ -1331,8 +1330,7 @@ VOID TraceIrp(
   ULONG major;
   ULONG enableMask;
 
-  if (!TRACE_FILE_OK)
-    return;
+  HALT_UNLESS(TRACE_FILE_OK);
 
   pIrpStack = IoGetCurrentIrpStackLocation(pIrp);
   major = pIrpStack->MajorFunction;
