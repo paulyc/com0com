@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2009/02/17 14:17:37  vfrolov
+ * Redesigned timer's API
+ *
  * Revision 1.14  2009/01/23 16:55:05  vfrolov
  * Utilized timer routines
  *
@@ -118,6 +121,8 @@ BOOL Listener::OnEvent(ListenOverlapped * /*pOverlapped*/, long e, int /*err*/)
       pop();
 
       pPort->Accept();
+    } else {
+      cout << "OnEvent(" << hex << hSockListen << dec << ", FD_ACCEPT) - pending" << endl;
     }
   }
 
@@ -310,20 +315,21 @@ void ComPort::Accept()
   _ASSERTE(pListener);
   _ASSERTE(hSock == INVALID_SOCKET);
 
-  if (hSock != INVALID_SOCKET)
-    return;
+  for (;;) {
+    hSock = pListener->Accept();
 
-  hSock = pListener->Accept();
+    if (hSock == INVALID_SOCKET) {
+      pListener->push(this);
+      break;
+    }
 
-  if (hSock != INVALID_SOCKET) {
-    if (StartWaitEvent(hSock))
+    if (StartWaitEvent(hSock)) {
       OnConnect();
-    else
-      hSock = INVALID_SOCKET;
-  }
+      break;
+    }
 
-  if (hSock == INVALID_SOCKET)
-    pListener->push(this);
+    Close(hSock);
+  }
 }
 
 void ComPort::FlowControlUpdate()
@@ -566,7 +572,7 @@ void ComPort::OnDisconnect()
   }
 
   if (pListener) {
-    pListener->push(this);
+    Accept();
   }
   else
   if (CanConnect()) {
