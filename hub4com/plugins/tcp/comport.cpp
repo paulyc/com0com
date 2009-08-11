@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.17  2009/08/04 11:36:49  vfrolov
+ * Implemented priority and reject modifiers for <listen port>
+ *
  * Revision 1.16  2009/07/31 11:40:04  vfrolov
  * Fixed pending acception of incoming connections
  *
@@ -172,6 +175,7 @@ ComPort::ComPort(
     rejectZeroConnectionCounter(FALSE),
     priority(0),
     hSock(INVALID_SOCKET),
+    isValid(TRUE),
     isConnected(FALSE),
     isDisconnected(FALSE),
     connectionCounter(0),
@@ -213,9 +217,12 @@ ComPort::ComPort(
     string addrName = path.substr(0, iDelim);
     string portName = path.substr(iDelim + 1);
 
-    isValid =
-      SetAddr(snLocal, comParams.GetIF(), NULL) &&
-      SetAddr(snRemote, addrName.c_str(), portName.c_str());
+    if (!SetAddr(snLocal, comParams.GetIF(), NULL) ||
+        !SetAddr(snRemote, addrName.c_str(), portName.c_str()))
+    {
+      isValid = FALSE;
+      return;
+    }
 
     if (comParams.GetReconnectTime() == comParams.rtDefault) {
       if (permanent)
@@ -243,42 +250,47 @@ ComPort::ComPort(
       if (!rest.empty())
         isValid = FALSE;
 
-      if (!isValid)
+      if (!isValid) {
         cerr << "ERROR: Invalid priority in " << pPath << endl;
+        return;
+      }
     }
 
-    if (isValid)
-      isValid = SetAddr(snLocal, comParams.GetIF(), path.c_str());
+    if (!SetAddr(snLocal, comParams.GetIF(), path.c_str())) {
+      isValid = FALSE;
+      return;
+    }
 
-    if (isValid) {
-      for (vector<Listener *>::iterator i = listeners.begin() ; i != listeners.end() ; i++) {
-        if ((*i)->IsEqual(snLocal)) {
-          pListener = *i;
-          break;
-        }
+    for (vector<Listener *>::iterator i = listeners.begin() ; i != listeners.end() ; i++) {
+      if ((*i)->IsEqual(snLocal)) {
+        pListener = *i;
+        break;
       }
+    }
+
+    if (!pListener) {
+      pListener = new Listener(snLocal);
 
       if (!pListener) {
-        pListener = new Listener(snLocal);
-
-        if (pListener)
-          listeners.push_back(pListener);
+        cerr << "No enough memory." << endl;
+        exit(2);
       }
 
-      if (pListener)
-        pListener->Push(this);
-      else
-        isValid = FALSE;
+      listeners.push_back(pListener);
     }
+
+    pListener->Push(this);
   }
 
   for (int i = 0 ; i < 3 ; i++) {
     WriteOverlapped *pOverlapped = new WriteOverlapped(*this);
 
-    if (pOverlapped)
-      writeOverlappedBuf.push(pOverlapped);
-    else
-      isValid = FALSE;
+    if (!pOverlapped) {
+      cerr << "No enough memory." << endl;
+      exit(2);
+    }
+
+    writeOverlappedBuf.push(pOverlapped);
   }
 }
 
