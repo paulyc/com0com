@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.18  2009/08/11 06:12:45  vfrolov
+ * Added missing initialization of isValid
+ *
  * Revision 1.17  2009/08/04 11:36:49  vfrolov
  * Implemented priority and reject modifiers for <listen port>
  *
@@ -355,6 +358,10 @@ BOOL ComPort::FakeReadFilter(HUB_MSG *pInMsg)
         if (CanConnect())
           StartConnect();
       }
+
+      // discard owned tick
+      if (!pMsgReplaceNone(pInMsg, HUB_MSG_TYPE_EMPTY))
+        return FALSE;
 
       break;
     }

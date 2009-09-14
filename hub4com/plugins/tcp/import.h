@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2009/01/23 16:55:05  vfrolov
+ * Utilized timer routines
+ *
  * Revision 1.5  2008/12/01 17:09:34  vfrolov
  * Improved write buffering
  *
@@ -40,6 +43,7 @@
 #define _IMPORT_H
 
 ///////////////////////////////////////////////////////////////
+extern ROUTINE_MSG_REPLACE_NONE *pMsgReplaceNone;
 extern ROUTINE_BUF_ALLOC *pBufAlloc;
 extern ROUTINE_BUF_FREE *pBufFree;
 extern ROUTINE_BUF_APPEND *pBufAppend;

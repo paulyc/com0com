@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2009/08/04 11:36:49  vfrolov
+ * Implemented priority and reject modifiers for <listen port>
+ *
  * Revision 1.13  2009/03/06 07:56:28  vfrolov
  * Fixed assertion with non ascii chars
  *
@@ -357,6 +360,7 @@ static const PLUGIN_ROUTINES_A *const plugins[] = {
   NULL
 };
 ///////////////////////////////////////////////////////////////
+ROUTINE_MSG_REPLACE_NONE *pMsgReplaceNone;
 ROUTINE_BUF_ALLOC *pBufAlloc;
 ROUTINE_BUF_FREE *pBufFree;
 ROUTINE_BUF_APPEND *pBufAppend;
@@ -368,7 +372,8 @@ PLUGIN_INIT_A InitA;
 const PLUGIN_ROUTINES_A *const * CALLBACK InitA(
     const HUB_ROUTINES_A * pHubRoutines)
 {
-  if (!ROUTINE_IS_VALID(pHubRoutines, pBufAlloc) ||
+  if (!ROUTINE_IS_VALID(pHubRoutines, pMsgReplaceNone) ||
+      !ROUTINE_IS_VALID(pHubRoutines, pBufAlloc) ||
       !ROUTINE_IS_VALID(pHubRoutines, pBufFree) ||
       !ROUTINE_IS_VALID(pHubRoutines, pBufAppend) ||
       !ROUTINE_IS_VALID(pHubRoutines, pOnRead) ||
@@ -378,6 +383,7 @@ const PLUGIN_ROUTINES_A *const * CALLBACK InitA(
     return NULL;
   }
 
+  pMsgReplaceNone = pHubRoutines->pMsgReplaceNone;
   pBufAlloc = pHubRoutines->pBufAlloc;
   pBufFree = pHubRoutines->pBufFree;
   pBufAppend = pHubRoutines->pBufAppend;
