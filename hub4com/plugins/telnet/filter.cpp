@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.19  2009/03/06 07:56:28  vfrolov
+ * Fixed assertion with non ascii chars
+ *
  * Revision 1.18  2009/02/20 18:32:35  vfrolov
  * Added info about location of options
  *
@@ -685,6 +688,10 @@ static BOOL CALLBACK InMethod(
           pTelnetProtocol->FlushEncodedStream(ppEchoMsg);
         }
       }
+
+      // discard owned tick
+      if (!pMsgReplaceNone(pInMsg, HUB_MSG_TYPE_EMPTY))
+        return FALSE;
 
       break;
     }
