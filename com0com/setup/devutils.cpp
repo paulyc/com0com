@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2009/02/16 10:36:16  vfrolov
+ * Done --silent option more silent
+ *
  * Revision 1.10  2009/02/11 07:35:21  vfrolov
  * Added --no-update option
  *
@@ -243,7 +246,7 @@ static BOOL UpdateRebootRequired(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoDat
   ULONG status = 0;
   ULONG problem = 0;
 
-  *pRebootRequired = 
+  *pRebootRequired =
       CM_Get_DevNode_Status(&status, &problem, pDevInfoData->DevInst, 0) == CR_SUCCESS &&
       (status & DN_NEED_RESTART) != 0;
 
@@ -263,7 +266,7 @@ static BOOL UpdateRebootRequired(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoDat
     return FALSE;
   }
 
-  *pRebootRequired = (installParams.Flags & DI_NEEDREBOOT) ? TRUE : FALSE;
+  *pRebootRequired = (installParams.Flags & (DI_NEEDREBOOT|DI_NEEDRESTART)) ? TRUE : FALSE;
 
   //if (*pRebootRequired)
   //  Trace("Enumerated Flags=0x%lX\n", installParams.Flags);
