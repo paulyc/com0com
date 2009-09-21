@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2007 Vyacheslav Frolov
+ * Copyright (c) 2004-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.18  2007/06/20 10:37:47  vfrolov
+ * Fixed double decrementing of amountInWriteQueue on CANCEL
+ *
  * Revision 1.17  2007/06/04 15:24:33  vfrolov
  * Fixed open reject just after close in exclusiveMode
  *
@@ -422,6 +425,8 @@ NTSTATUS FdoPortStartIrp(
             pQueue->pCurrent->IoStatus.Information)
         {
           if (pIrpStack->MajorFunction == IRP_MJ_FLUSH_BUFFERS) {
+            RemoveEntryList(&pIrp->Tail.Overlay.ListEntry);
+            pState->flags &= ~C0C_IRP_FLAG_IN_QUEUE;
             status = NoPending(pIrp, STATUS_SUCCESS);
           } else {
             PIRP pIrpXoffCounter = pQueue->pCurrent;
