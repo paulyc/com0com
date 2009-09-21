@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2005-2007 Vyacheslav Frolov
+ * Copyright (c) 2005-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2007/11/09 15:51:18  vfrolov
+ * Added OutputBufferLength check
+ *
  * Revision 1.2  2006/06/21 16:23:57  vfrolov
  * Fixed possible BSOD after one port of pair removal
  *
@@ -38,8 +41,9 @@ NTSTATUS FdoPortQueryInformation(PC0C_IO_PORT pIoPortLocal, IN PIRP pIrp)
 {
   NTSTATUS status;
 
+  pIrp->IoStatus.Information = 0;
+
   if ((pIoPortLocal->handFlow.ControlHandShake & SERIAL_ERROR_ABORT) && pIoPortLocal->errors) {
-    pIrp->IoStatus.Information = 0;
     status = STATUS_CANCELLED;
   } else {
     PIO_STACK_LOCATION pIrpStack;
@@ -66,7 +70,6 @@ NTSTATUS FdoPortQueryInformation(PC0C_IO_PORT pIoPortLocal, IN PIRP pIrp)
       status = STATUS_SUCCESS;
       break;
     default:
-      pIrp->IoStatus.Information = 0;
       status = STATUS_INVALID_PARAMETER;
     }
   }
