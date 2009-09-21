@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2007 Vyacheslav Frolov
+ * Copyright (c) 2004-2009 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,12 @@
  *
  *
  * $Log$
+ * Revision 1.4  2007/01/11 14:50:29  vfrolov
+ * Pool functions replaced by
+ *   C0C_ALLOCATE_POOL()
+ *   C0C_ALLOCATE_POOL_WITH_QUOTA()
+ *   C0C_FREE_POOL()
+ *
  * Revision 1.3  2006/11/03 13:13:26  vfrolov
  * CopyStrW() now gets size in characters (not in bytes)
  *
@@ -105,7 +111,6 @@ BOOLEAN StrFreeBad(NTSTATUS status, IN OUT PUNICODE_STRING  pDest)
   return FALSE;
 }
 
-
 VOID StrAppendStr(
     PNTSTATUS pStatus,
     IN OUT PUNICODE_STRING  pDest,
@@ -114,6 +119,7 @@ VOID StrAppendStr(
 {
   UNICODE_STRING old;
   NTSTATUS status;
+  SIZE_T newLength;
 
   status = *pStatus;
 
@@ -124,10 +130,12 @@ VOID StrAppendStr(
 
   RtlZeroMemory(pDest, sizeof(*pDest));
 
-  pDest->MaximumLength = (USHORT)(old.Length + lenSrc);
+  newLength = (SIZE_T)old.Length + (SIZE_T)lenSrc;
 
-  if (pDest->MaximumLength == (old.Length + lenSrc))
+  if ((USHORT)newLength == newLength) {  /* checking for overflow */
+    pDest->MaximumLength = (USHORT)newLength;
     pDest->Buffer = C0C_ALLOCATE_POOL(PagedPool, pDest->MaximumLength + sizeof(WCHAR));
+  }
 
   if (pDest->Buffer) {
     RtlZeroMemory(pDest->Buffer, pDest->MaximumLength + sizeof(WCHAR));
