@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2009/02/16 10:32:56  vfrolov
+ * Added Silent() and PromptReboot()
+ *
  * Revision 1.6  2007/10/19 16:11:56  vfrolov
  * Added ability to redirect console output
  *
@@ -216,7 +219,11 @@ void Trace(const char *pFmt, ...)
 
   va_end(va);
 
+  DWORD err = GetLastError();
+
   pTrace(buf);
+
+  SetLastError(err);
 }
 ///////////////////////////////////////////////////////////////
 void ConsoleWriteRead(char *pReadBuf, int lenReadBuf, const char *pFmt, ...)
@@ -230,7 +237,11 @@ void ConsoleWriteRead(char *pReadBuf, int lenReadBuf, const char *pFmt, ...)
 
   va_end(va);
 
+  DWORD err = GetLastError();
+
   pConsole(pReadBuf, lenReadBuf, buf);
+
+  SetLastError(err);
 }
 ///////////////////////////////////////////////////////////////
 void ConsoleWrite(const char *pFmt, ...)
@@ -244,7 +255,11 @@ void ConsoleWrite(const char *pFmt, ...)
 
   va_end(va);
 
+  DWORD err = GetLastError();
+
   pConsole(NULL, 0, buf);
+
+  SetLastError(err);
 }
 ///////////////////////////////////////////////////////////////
 BOOL IsConsoleOpen()
