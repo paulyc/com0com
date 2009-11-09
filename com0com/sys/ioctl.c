@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.42  2009/05/20 13:45:35  vfrolov
+ * Added tracing the resulting event mask on nonpending successful
+ * completion of WAIT_ON_MASK
+ *
  * Revision 1.41  2008/12/02 16:10:08  vfrolov
  * Separated tracing and debuging
  *
@@ -309,6 +313,7 @@ NTSTATUS FdoPortIoCtl(
 
       if (code == IOCTL_SERIAL_GET_DTRRTS) {
         modemControl &= SERIAL_DTR_STATE | SERIAL_RTS_STATE;
+        pIrp->IoStatus.Information = sizeof(ULONG);
       } else {
         ULONG InputBufferLength;
 
