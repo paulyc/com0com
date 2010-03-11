@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2009 Vyacheslav Frolov
+ * Copyright (c) 2006-2010 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.33  2009/11/16 08:43:44  vfrolov
+ * Fixed endless loop if no ports logged in ComDB
+ *
  * Revision 1.32  2009/09/18 11:21:31  vfrolov
  * Added --wait option
  *
@@ -1118,7 +1121,7 @@ int ShowBusyNames(const char *pPattern)
           pNamesNew = (char *)LocalReAlloc(pNames, sizeNamesNew, LMEM_ZEROINIT|LMEM_MOVEABLE);
 
         if (!pNamesNew) {
-          if (ShowError(MB_OKCANCEL, ERROR_NOT_ENOUGH_MEMORY, "LocalAlloc(%lu)", (unsigned long)size) == IDCANCEL) {
+          if (ShowError(MB_OKCANCEL, ERROR_NOT_ENOUGH_MEMORY, "LocalAlloc(%lu)", (unsigned long)sizeNamesNew) == IDCANCEL) {
             if (pNames)
               LocalFree(pNames);
 
