@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2007 Vyacheslav Frolov
+ * Copyright (c) 2007-2010 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
  *
  *
  * $Log$
+ * Revision 1.1  2007/10/25 14:25:34  vfrolov
+ * Initial revision
  *
  */
 
@@ -28,7 +30,7 @@ int CALLBACK MainA(const char *pProgName, const char *pCmdLine);
 
 int _cdecl main(int argc, char *argv[])
 {
-  char cmd[200] = "";
+  char cmd[1024] = "";
 
   for (int i = 1 ; i < argc ; i++) {
     int lenCmd = lstrlen(cmd);

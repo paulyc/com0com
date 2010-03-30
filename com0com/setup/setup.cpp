@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.34  2010/03/11 13:40:57  vfrolov
+ * Fixed size typo, bug #2968585
+ * Thanks Xlnt (xlnt9568)
+ *
  * Revision 1.33  2009/11/16 08:43:44  vfrolov
  * Fixed endless loop if no ports logged in ComDB
  *
@@ -1441,7 +1445,7 @@ int CALLBACK MainA(const char *pProgName, const char *pCmdLine)
 {
   SetTitle(C0C_SETUP_TITLE);
 
-  char cmd[200];
+  char cmd[1024];
 
   SNPRINTF(cmd, sizeof(cmd)/sizeof(cmd[0]), "%s", pCmdLine);
 
