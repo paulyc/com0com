@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2009 Vyacheslav Frolov
+ * Copyright (c) 2006-2010 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2009/09/21 08:54:05  vfrolov
+ * Added DI_NEEDRESTART check
+ *
  * Revision 1.11  2009/02/16 10:36:16  vfrolov
  * Done --silent option more silent
  *
@@ -59,7 +62,6 @@
  */
 
 #include "precomp.h"
-#include "inffile.h"
 #include "msg.h"
 #include "devutils.h"
 #include "utils.h"
@@ -133,7 +135,7 @@ const char *DevProperties::Location(const char *_pLocation)
 }
 ///////////////////////////////////////////////////////////////
 static int EnumDevices(
-    InfFile &infFile,
+    C0C_ENUM_FILTER pFilter,
     DWORD flags,
     BOOL (* pFunk)(HDEVINFO, PSP_DEVINFO_DATA, PDevParams),
     PEnumParams pEnumParams)
@@ -154,31 +156,21 @@ static int EnumDevices(
   int res = IDCONTINUE;
 
   for (int i = 0 ; SetupDiEnumDeviceInfo(hDevInfo, i, &devInfoData) ; i++) {
-    char classGUID[100];
+    char hardwareId[40];
 
-    if (!SetupDiGetDeviceRegistryProperty(hDevInfo, &devInfoData, SPDRP_CLASSGUID, NULL, (PBYTE)classGUID, sizeof(classGUID), NULL))
-      continue;
-
-    if (lstrcmpi(classGUID, infFile.ClassGUID()))
-      continue;
-
-    char provider[100];
-
-    if (SetupDiGetDeviceRegistryProperty(hDevInfo, &devInfoData, SPDRP_MFG, NULL, (PBYTE)provider, sizeof(provider), NULL)) {
-      // check provider if exists
-      if (lstrcmpi(provider, infFile.Provider()))
-        continue;
+    if (!SetupDiGetDeviceRegistryProperty(hDevInfo, &devInfoData, SPDRP_HARDWAREID, NULL, (PBYTE)hardwareId, sizeof(hardwareId), NULL)) {
+      memset(hardwareId, 0, sizeof(hardwareId));
+      SNPRINTF(hardwareId, sizeof(hardwareId)/sizeof(hardwareId[0]), "UNKNOWN HARDWAREID");
     }
+
+    if (!pFilter(hardwareId))
+      continue;
 
     DevParams devParams(pEnumParams);
 
-    char hwid[40];
-
-    if (SetupDiGetDeviceRegistryProperty(hDevInfo, &devInfoData, SPDRP_HARDWAREID, NULL, (PBYTE)hwid, sizeof(hwid), NULL)) {
-      if (!devParams.devProperties.DevId(hwid)) {
-        res = IDCANCEL;
-        break;
-      }
+    if (!devParams.devProperties.DevId(hardwareId)) {
+      res = IDCANCEL;
+      break;
     }
 
     if (pEnumParams->pDevProperties &&
@@ -348,7 +340,7 @@ static int EnumDevice(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, PDevPara
 }
 
 int EnumDevices(
-    InfFile &infFile,
+    C0C_ENUM_FILTER pFilter,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired,
     PDEVCALLBACK pDevCallBack,
@@ -361,7 +353,7 @@ int EnumDevices(
   enumParams.pParam1 = pDevCallBack;
   enumParams.pParam2 = pCallBackParam;
 
-  if (EnumDevices(infFile, DIGCF_PRESENT, EnumDevice, &enumParams) != IDCONTINUE)
+  if (EnumDevices(pFilter, DIGCF_PRESENT, EnumDevice, &enumParams) != IDCONTINUE)
     return -1;
 
   return enumParams.count;
@@ -465,7 +457,7 @@ static int DisableDevice(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, PDevP
 }
 
 BOOL DisableDevices(
-    InfFile &infFile,
+    C0C_ENUM_FILTER pFilter,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired,
     Stack *pDevPropertiesStack)
@@ -479,7 +471,7 @@ BOOL DisableDevices(
   enumParams.pParam1 = pDevPropertiesStack;
 
   do {
-    res = EnumDevices(infFile, DIGCF_PRESENT, DisableDevice, &enumParams);
+    res = EnumDevices(pFilter, DIGCF_PRESENT, DisableDevice, &enumParams);
   } while (res == IDTRYAGAIN);
 
   if (res != IDCONTINUE)
@@ -508,7 +500,7 @@ static int EnableDevice(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, PDevPa
 }
 
 BOOL EnableDevices(
-    InfFile &infFile,
+    C0C_ENUM_FILTER pFilter,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired)
 {
@@ -520,7 +512,7 @@ BOOL EnableDevices(
   enumParams.pDevProperties = pDevProperties;
 
   do {
-    res = EnumDevices(infFile, DIGCF_PRESENT, EnableDevice, &enumParams);
+    res = EnumDevices(pFilter, DIGCF_PRESENT, EnableDevice, &enumParams);
   } while (res == IDTRYAGAIN);
 
   if (res != IDCONTINUE)
@@ -582,7 +574,7 @@ static int RestartDevice(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, PDevP
 }
 
 BOOL RestartDevices(
-    InfFile &infFile,
+    C0C_ENUM_FILTER pFilter,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired)
 {
@@ -594,7 +586,7 @@ BOOL RestartDevices(
   enumParams.pDevProperties = pDevProperties;
 
   do {
-    res = EnumDevices(infFile, DIGCF_PRESENT, RestartDevice, &enumParams);
+    res = EnumDevices(pFilter, DIGCF_PRESENT, RestartDevice, &enumParams);
   } while (res == IDTRYAGAIN);
 
   if (res != IDCONTINUE)
@@ -631,7 +623,7 @@ static int RemoveDevice(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDevInfoData, PDevPa
 }
 
 BOOL RemoveDevices(
-    InfFile &infFile,
+    C0C_ENUM_FILTER pFilter,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired)
 {
@@ -643,7 +635,7 @@ BOOL RemoveDevices(
   enumParams.pDevProperties = pDevProperties;
 
   do {
-    res = EnumDevices(infFile, 0, RemoveDevice, &enumParams);
+    res = EnumDevices(pFilter, 0, RemoveDevice, &enumParams);
   } while (res == IDTRYAGAIN);
 
   if (res != IDCONTINUE)
@@ -655,8 +647,13 @@ BOOL RemoveDevices(
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
+BOOL ReenumerateDeviceNode(PSP_DEVINFO_DATA pDevInfoData)
+{
+  return CM_Reenumerate_DevNode(pDevInfoData->DevInst, 0) == CR_SUCCESS;
+}
+///////////////////////////////////////////////////////////////
 static int TryInstallDevice(
-    InfFile &infFile,
+    const char *pInfFilePath,
     const char *pDevId,
     const char *pDevInstID,
     PDEVCALLBACK pDevCallBack,
@@ -669,8 +666,8 @@ static int TryInstallDevice(
 
   updateErr = ERROR_SUCCESS;
 
-  if (!SetupDiGetINFClass(infFile.Path(), &classGUID, className, sizeof(className)/sizeof(className[0]), 0)) {
-    ShowLastError(MB_OK|MB_ICONSTOP, "SetupDiGetINFClass(%s)", infFile.Path());
+  if (!SetupDiGetINFClass(pInfFilePath, &classGUID, className, sizeof(className)/sizeof(className[0]), 0)) {
+    ShowLastError(MB_OK|MB_ICONSTOP, "SetupDiGetINFClass(%s)", pInfFilePath);
     return IDCANCEL;
   }
 
@@ -690,6 +687,19 @@ static int TryInstallDevice(
 
   devInfoData.cbSize = sizeof(devInfoData);
 
+  if (!pDevInstID) {
+    if (StrCmpNI(pDevId, "root\\", 5) == 0) {
+      /*
+       * root\<enumerator-specific-device-ID>
+       */
+
+      res = SetupDiCreateDeviceInfo(hDevInfo, pDevId + 5, &classGUID, NULL, 0, DICD_GENERATE_ID, &devInfoData);
+    } else {
+      SetLastError(ERROR_INVALID_DEVINST_NAME);
+      res = FALSE;
+    }
+  }
+  else
   if (StrChr(pDevInstID, '\\')) {
     /*
      * <enumerator>\<enumerator-specific-device-ID>\<instance-specific-ID>
@@ -773,7 +783,7 @@ static int TryInstallDevice(
     if (update) {
       BOOL rebootRequired;
 
-      res = UpdateDriverForPlugAndPlayDevices(0, pDevId, infFile.Path(), 0, &rebootRequired);
+      res = UpdateDriverForPlugAndPlayDevices(0, pDevId, pInfFilePath, 0, &rebootRequired);
     } else {
       res = TRUE;
     }
@@ -849,7 +859,7 @@ err:
 }
 
 BOOL InstallDevice(
-    InfFile &infFile,
+    const char *pInfFilePath,
     const char *pDevId,
     const char *pDevInstID,
     PDEVCALLBACK pDevCallBack,
@@ -859,7 +869,7 @@ BOOL InstallDevice(
   int res;
 
   do {
-    res = TryInstallDevice(infFile, pDevId, pDevInstID, pDevCallBack, pCallBackParam, update);
+    res = TryInstallDevice(pInfFilePath, pDevId, pDevInstID, pDevCallBack, pCallBackParam, update);
   } while (res == IDTRYAGAIN);
 
   return res == IDCONTINUE;

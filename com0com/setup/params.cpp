@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2008 Vyacheslav Frolov
+ * Copyright (c) 2006-2010 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2008/12/25 16:55:23  vfrolov
+ * Added converting portnames to uppercase
+ *
  * Revision 1.14  2008/12/02 11:54:28  vfrolov
  * Fixed typo
  *
@@ -852,8 +855,8 @@ const char *PortParameters::GetHelp()
     "  <par>=<val>[,...]       - set value <val> for each parameter <par>\n"
     "\n"
     "Parameters:\n"
-    "  PortName=<name>         - set port name to <name>\n"
-    "                            (port identifier by default)\n"
+    "  PortName=<portname>     - set port name to <portname>\n"
+    "                            (port identifier by default).\n"
     "  EmuBR={yes|no}          - enable/disable baud rate emulation in the direction\n"
     "                            to the paired port (disabled by default)\n"
     "  EmuOverrun={yes|no}     - enable/disable buffer overrun (disabled by default)\n"
@@ -882,6 +885,10 @@ const char *PortParameters::GetHelp()
     "rout2, lout2 (remote/local RTS/DTR/OUT1/OUT2), ropen, lopen (logical ON if\n"
     "remote/local port is open) or on (logical ON). The exclamation sign (!) can be\n"
     "used to invert the value.\n"
+    "\n"
+    "If <portname> above is '" C0C_PORT_NAME_COMCLASS "' then the Ports class installer will be used to\n"
+    "manage port name. The Ports class installer selects the COM port number and\n"
+    "sets the port name to COM<n>, where <n> is the selected port number.\n"
     "\n"
     "Special values:\n"
     "  -                       - use driver's default value\n"

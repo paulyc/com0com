@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2008 Vyacheslav Frolov
+ * Copyright (c) 2004-2010 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2008/12/02 16:10:09  vfrolov
+ * Separated tracing and debuging
+ *
  * Revision 1.14  2008/05/04 09:51:45  vfrolov
  * Implemented HiddenMode option
  *
@@ -442,7 +445,7 @@ CODE2NAME codeNameTableFileInformationClass[] = {
 };
 
 CODE2NAME codeNameTableShowPort[] = {
-  TOCODE2NAME(C0C_SHOW_, SETNAME),
+  TOCODE2NAME(C0C_SHOW_, PORTNAME),
   TOCODE2NAME(C0C_SHOW_, SYMLINK),
   TOCODE2NAME(C0C_SHOW_, DEVICEMAP),
   TOCODE2NAME(C0C_SHOW_, INTERFACE),

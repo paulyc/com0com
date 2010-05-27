@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2007 Vyacheslav Frolov
+ * Copyright (c) 2004-2010 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2007/11/23 08:58:48  vfrolov
+ * Added UniqueID capability
+ *
  * Revision 1.8  2007/06/04 15:24:33  vfrolov
  * Fixed open reject just after close in exclusiveMode
  *
@@ -88,6 +91,7 @@ NTSTATUS FdoBusPnp(
         if (pDevExt->childs[i].pDevExt)
           countPdos++;
       }
+
       if (!countPdos)
         break;
 
@@ -107,9 +111,36 @@ NTSTATUS FdoBusPnp(
                                       countRelations * sizeof (PDEVICE_OBJECT));
 
       for (i = 0 ; i < 2 ; i++) {
-        if (pDevExt->childs[i].pDevExt) {
-          pRelations->Objects[countRelations++] = pDevExt->childs[i].pDevExt->pDevObj;
-          ObReferenceObject(pDevExt->childs[i].pDevExt->pDevObj);
+        PC0C_PDOPORT_EXTENSION  pPhDevExt;
+
+        pPhDevExt = pDevExt->childs[i].pDevExt;
+
+        if (pPhDevExt) {
+          if (!pDevExt->childs[i].ioPort.pDevExt) {
+            UNICODE_STRING portRegistryPath;
+            UNICODE_STRING portName;
+
+            RtlInitUnicodeString(&portRegistryPath, NULL);
+            StrAppendPortParametersRegistryPath(&status, &portRegistryPath, pPhDevExt->portName);
+
+            RtlInitUnicodeString(&portName, NULL);
+            StrAppendParameterPortName(&status, &portName, portRegistryPath.Buffer);
+
+            if (NT_SUCCESS(status) && portName.Length &&
+                _wcsicmp(C0C_PORT_NAME_COMCLASS, portName.Buffer) == 0)
+            {
+              pDevExt->childs[i].ioPort.isComClass = TRUE;
+              Trace0((PC0C_COMMON_EXTENSION)pPhDevExt, L"Port class set to COM");
+            } else {
+              pDevExt->childs[i].ioPort.isComClass = FALSE;
+              Trace0((PC0C_COMMON_EXTENSION)pPhDevExt, L"Port class set to CNC");
+            }
+
+            status = STATUS_SUCCESS;
+          }
+
+          pRelations->Objects[countRelations++] = pPhDevExt->pDevObj;
+          ObReferenceObject(pPhDevExt->pDevObj);
         }
       }
 
@@ -158,10 +189,15 @@ NTSTATUS PdoPortQueryId(
     status = DupStrW(&pIDs, C0C_PORT_DEVICE_ID, FALSE);
     break;
   case BusQueryHardwareIDs:
-    status = DupStrW(&pIDs, C0C_PORT_HARDWARE_IDS, TRUE);
+    status = DupStrW(
+        &pIDs,
+        (pDevExt->pIoPortLocal && pDevExt->pIoPortLocal->isComClass) ?
+            C0C_PORT_HARDWARE_IDS_COMCLASS :
+            C0C_PORT_HARDWARE_IDS_CNCCLASS,
+        TRUE);
     break;
   case BusQueryCompatibleIDs:
-    status = DupStrW(&pIDs, C0C_PORT_COMPATIBLE_IDS, TRUE);
+    status = DupStrW(&pIDs, L"\0", TRUE);
     break;
   case BusQueryInstanceID:
     status = DupStrW(&pIDs, pDevExt->portName, FALSE);
