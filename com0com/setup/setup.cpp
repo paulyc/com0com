@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.36  2010/05/27 11:16:46  vfrolov
+ * Added ability to put the port to the Ports class
+ *
  * Revision 1.35  2010/03/30 08:05:15  vfrolov
  * Fixed bugs item #2979007 "setupc command line limited to 200 chars"
  * Reported by Henrik Maier (hwmaier)
@@ -143,6 +146,8 @@
 #include "utils.h"
 #include "portnum.h"
 #include "comdb.h"
+#define SERIAL_ADVANCED_SETTINGS 1
+#include <msports.h>
 
 #define TEXT_PREF
 #include "../include/com0com.h"
@@ -431,6 +436,19 @@ struct ChangeDeviceParams {
   BOOL changed;
 };
 
+static BOOL ShowDialog(
+    HDEVINFO hDevInfo,
+    PSP_DEVINFO_DATA pDevInfoData,
+    PCDevProperties /*pDevProperties*/,
+    BOOL * /*pRebootRequired*/,
+    void * /*pParam*/)
+{
+  if (SerialDisplayAdvancedSettings(NULL, hDevInfo, pDevInfoData) != ERROR_SUCCESS)
+    return FALSE;
+
+  return TRUE;
+}
+
 static BOOL ChangeDevice(
     HDEVINFO hDevInfo,
     PSP_DEVINFO_DATA pDevInfoData,
@@ -460,7 +478,7 @@ static BOOL ChangeDevice(
       Trace("       %s %s\n", phPortName, buf);
 
       if (err == ERROR_SUCCESS) {
-        if (pPhPortName && !lstrcmpi(pPhPortName, phPortName)) {
+        if (pPhPortName && lstrcmpi(pPhPortName, phPortName) == 0 && pParameters) {
           char portNameOld[20];
 
           portParameters.FillPortName(portNameOld, sizeof(portNameOld)/sizeof(portNameOld[0]));
@@ -475,6 +493,24 @@ static BOOL ChangeDevice(
           char portName[20];
 
           portParameters.FillPortName(portName, sizeof(portName)/sizeof(portName[0]));
+
+          if (!Silent() && portParameters.DialogRequested()) {
+            if (lstrcmpi(C0C_PORT_NAME_COMCLASS, portName) == 0) {
+              if (!portParameters.ClassChanged()) {
+                DevProperties devProperties;
+                if (!devProperties.DevId(C0C_PORT_DEVICE_ID))
+                  return FALSE;
+                if (!devProperties.PhObjName(phDevName))
+                  return FALSE;
+
+                EnumDevices(EnumFilter, &devProperties, pRebootRequired, ShowDialog, NULL);
+              } else {
+                ShowMsg(MB_OK|MB_ICONWARNING, "Can't display the dialog while changing the class of port");
+              }
+            } else {
+              ShowMsg(MB_OK|MB_ICONWARNING, "Can't display the dialog for non Ports class port");
+            }
+          }
 
           if (portParameters.Changed() &&
               (!lstrcmpi(portName, portNameOld) || IsValidPortName(portName)))
@@ -495,11 +531,8 @@ static BOOL ChangeDevice(
               if (!devProperties.PhObjName(phDevName))
                 return FALSE;
 
-
-              if ((lstrcmpi(C0C_PORT_NAME_COMCLASS, portName) == 0 ? 1 : 0) ^
-                  (lstrcmpi(C0C_PORT_NAME_COMCLASS, portNameOld) == 0) ? 1 : 0)
-              {
-                Trace("Changed port class for %s PortName (%s -> %s)\n", phPortName, portNameOld, portName);
+              if (portParameters.ClassChanged()) {
+                Trace("Changed port class for %s (%s -> %s)\n", phPortName, portNameOld, portName);
                 DisableDevices(EnumFilter, &devProperties, pRebootRequired, NULL);  // show msg if in use
                 RemoveDevices(EnumFilter, &devProperties, pRebootRequired);
                 ReenumerateDeviceNode(pDevInfoData);
@@ -847,6 +880,9 @@ int Install(const char *pInfFilePath, const char *pParametersA, const char *pPar
 
       if (!IsValidPortName(portName[j]))
         goto err;
+
+      if (!Silent() && portParameters.DialogRequested())
+        ShowMsg(MB_OK|MB_ICONWARNING, "Can't display the dialog while installing a pair of linked ports");
 
       if (portParameters.Changed()) {
         err = portParameters.Save();
