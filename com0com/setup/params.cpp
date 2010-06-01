@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.17  2010/05/31 07:58:14  vfrolov
+ * Added ability to invoke the system-supplied advanced settings dialog box
+ *
  * Revision 1.16  2010/05/27 11:16:46  vfrolov
  * Added ability to put the port to the Ports class
  *
@@ -466,10 +469,8 @@ BOOL PortParameters::SetBit(const char *pVal, const Bit &bit)
     return FALSE;
   }
 
-  if ((maskExplicit & bit.bit) == 0) {
+  if (maskChanged & bit.bit)
     maskExplicit |= bit.bit;
-    maskChanged |= bit.bit;
-  }
 
   return TRUE;
 }
