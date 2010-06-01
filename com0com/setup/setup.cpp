@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.37  2010/05/31 07:58:14  vfrolov
+ * Added ability to invoke the system-supplied advanced settings dialog box
+ *
  * Revision 1.36  2010/05/27 11:16:46  vfrolov
  * Added ability to put the port to the Ports class
  *
@@ -190,14 +193,16 @@ static const InfFile::InfFileField requiredFieldsInfCOMPortInstall[] = {
 struct InfFileInstall {
   const char *pInfName;
   const char *CopyDriversSection;
+  const char *pDeviceId;
+  const char *pHardwareId;
   BOOL preinstallClass;
   const InfFile::InfFileField *pRequiredFields;
 };
 
 static const InfFileInstall infFileInstallList[] = {
-  { C0C_INF_NAME,          C0C_COPY_DRIVERS_SECTION,  TRUE,  requiredFieldsInfBusInstall },
-  { C0C_INF_NAME_CNCPORT,  NULL,                      FALSE, requiredFieldsInfCNCPortInstall },
-  { C0C_INF_NAME_COMPORT,  NULL,                      FALSE, requiredFieldsInfCOMPortInstall },
+  { C0C_INF_NAME,          C0C_COPY_DRIVERS_SECTION,  C0C_BUS_DEVICE_ID,   C0C_BUS_DEVICE_ID,        TRUE,  requiredFieldsInfBusInstall },
+  { C0C_INF_NAME_CNCPORT,  NULL,                      C0C_PORT_DEVICE_ID,  C0C_PORT_HW_ID_CNCCLASS,  FALSE, requiredFieldsInfCNCPortInstall },
+  { C0C_INF_NAME_COMPORT,  NULL,                      C0C_PORT_DEVICE_ID,  C0C_PORT_HW_ID_COMCLASS,  FALSE, requiredFieldsInfCOMPortInstall },
   { NULL },
 };
 ///////////////////////////////////////////////////////////////
@@ -691,13 +696,17 @@ err:
   return  1;
 }
 ///////////////////////////////////////////////////////////////
-int Reload(const char *pInfFilePath)
+int Reload(
+    const char *pDeviceId,
+    const char *pHardwareId,
+    const char *pInfFilePath,
+    BOOL *pRebootRequired)
 {
   Stack stack;
   BOOL rebootRequired = FALSE;
 
   DevProperties devProperties;
-  if (!devProperties.DevId(C0C_BUS_DEVICE_ID))
+  if (!devProperties.DevId(pDeviceId))
     return 1;
 
   if (!DisableDevices(EnumFilter, &devProperties, &rebootRequired, &stack)) {
@@ -707,8 +716,8 @@ int Reload(const char *pInfFilePath)
 
   BOOL rr = FALSE;
 
-  if (pInfFilePath && !no_update) {
-    if (!UpdateDriverForPlugAndPlayDevices(0, C0C_BUS_DEVICE_ID, pInfFilePath, INSTALLFLAG_FORCE, &rr)) {
+  if (pHardwareId && pInfFilePath && !no_update) {
+    if (!UpdateDriverForPlugAndPlayDevices(0, pHardwareId, pInfFilePath, INSTALLFLAG_FORCE, &rr)) {
       CleanDevPropertiesStack(stack, TRUE, &rebootRequired);
       return 1;
     }
@@ -718,10 +727,41 @@ int Reload(const char *pInfFilePath)
 
   ComDbSync(EnumFilter);
 
-  if (rebootRequired || rr)
-    PromptReboot();
+  if (rebootRequired || rr) {
+    if (pRebootRequired != NULL)
+      *pRebootRequired = TRUE;
+    else
+      PromptReboot();
+  }
 
   return 0;
+}
+///////////////////////////////////////////////////////////////
+int Update(const InfFileInstall *pInfFileInstallList)
+{
+  int res = 0;
+  BOOL rebootRequired = FALSE;
+
+  for (
+      const InfFileInstall *pInfFileInstall = pInfFileInstallList ;
+      pInfFileInstall->pInfName != NULL ;
+      pInfFileInstall++)
+  {
+    InfFile infFile(pInfFileInstall->pInfName, pInfFileInstall->pInfName);
+
+    if (Reload(pInfFileInstall->pDeviceId, pInfFileInstall->pHardwareId, infFile.Path(), &rebootRequired) != 0)
+      res = 1;
+  }
+
+  if (res != 0) {
+    Trace("\nUpdate not completed!\n");
+  }
+  else
+  if (rebootRequired) {
+    PromptReboot();
+  }
+
+  return  res;
 }
 ///////////////////////////////////////////////////////////////
 int Disable()
@@ -1616,7 +1656,7 @@ int Main(int argc, const char* argv[])
   else
   if (argc == 2 && !lstrcmpi(argv[1], "reload")) {
     SetTitle(C0C_SETUP_TITLE " (RELOAD)");
-    return Reload(NULL);
+    return Reload(C0C_BUS_DEVICE_ID, NULL, NULL, NULL);
   }
 
   for (
@@ -1643,6 +1683,11 @@ int Main(int argc, const char* argv[])
     SetTitle(C0C_SETUP_TITLE " (INF CLEAN)");
     return InfClean(infFileInstallList, infFileUnnstallList);
   }
+  else
+  if (argc == 2 && !lstrcmpi(argv[1], "update")) {
+    SetTitle(C0C_SETUP_TITLE " (UPDATE)");
+    return Update(infFileInstallList);
+  }
 
   InfFile infFile(C0C_INF_NAME, C0C_INF_NAME);
 
@@ -1663,11 +1708,6 @@ int Main(int argc, const char* argv[])
 
     if (StrToInt(argv[2], &num) && num >= 0)
       return Install(pPath, argv[3], argv[4], num);
-  }
-  else
-  if (argc == 2 && !lstrcmpi(argv[1], "update")) {
-    SetTitle(C0C_SETUP_TITLE " (UPDATE)");
-    return Reload(pPath);
   }
 
   ConsoleWrite("Invalid command\n");
