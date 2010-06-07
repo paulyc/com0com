@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.38  2010/06/01 06:14:10  vfrolov
+ * Improved driver updating
+ *
  * Revision 1.37  2010/05/31 07:58:14  vfrolov
  * Added ability to invoke the system-supplied advanced settings dialog box
  *
@@ -714,10 +717,14 @@ int Reload(
     return 1;
   }
 
-  BOOL rr = FALSE;
-
   if (pHardwareId && pInfFilePath && !no_update) {
-    if (!UpdateDriverForPlugAndPlayDevices(0, pHardwareId, pInfFilePath, INSTALLFLAG_FORCE, &rr)) {
+    int res;
+
+    do {
+      res = UpdateDriver(pInfFilePath, pHardwareId, INSTALLFLAG_FORCE, &rebootRequired);
+    } while (res == IDTRYAGAIN);
+
+    if (res != IDCONTINUE) {
       CleanDevPropertiesStack(stack, TRUE, &rebootRequired);
       return 1;
     }
@@ -727,7 +734,7 @@ int Reload(
 
   ComDbSync(EnumFilter);
 
-  if (rebootRequired || rr) {
+  if (rebootRequired) {
     if (pRebootRequired != NULL)
       *pRebootRequired = TRUE;
     else
@@ -833,7 +840,15 @@ static BOOL InstallDeviceCallBack(
 
 static BOOL InstallBusDevice(const char *pInfFilePath, int num)
 {
-  return InstallDevice(pInfFilePath, C0C_BUS_DEVICE_ID, NULL, InstallDeviceCallBack, &num, !no_update);
+  BOOL rebootRequired = FALSE;
+
+  if (!InstallDevice(pInfFilePath, C0C_BUS_DEVICE_ID, NULL, InstallDeviceCallBack, &num, !no_update, &rebootRequired))
+    return FALSE;
+
+  if (rebootRequired)
+    PromptReboot();
+
+  return TRUE;
 }
 
 static BOOL AddDeviceToBusyMask(
