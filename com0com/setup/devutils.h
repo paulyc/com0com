@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2010/06/07 07:03:31  vfrolov
+ * Added wrapper UpdateDriver() for UpdateDriverForPlugAndPlayDevices()
+ *
  * Revision 1.8  2010/05/27 11:16:46  vfrolov
  * Added ability to put the port to the Ports class
  *
@@ -148,6 +151,9 @@ BOOL InstallDevice(
     void *pCallBackParam,
     BOOL updateDriver,
     BOOL *pRebootRequired);
+
+int WaitNoPendingInstallEvents(
+    int timeLimit);
 ///////////////////////////////////////////////////////////////
 
 #endif /* _C0C_DEVUTILS_H_ */
