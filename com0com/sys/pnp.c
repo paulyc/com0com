@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2010/07/20 07:00:16  vfrolov
+ * Fixed memory leak
+ *
  * Revision 1.10  2010/05/27 11:16:46  vfrolov
  * Added ability to put the port to the Ports class
  *
@@ -163,6 +166,16 @@ NTSTATUS FdoBusPnp(
   case IRP_MN_REMOVE_DEVICE:
     RemoveFdoBus(pDevExt);
     pDevExt = NULL;
+    pIrp->IoStatus.Status = STATUS_SUCCESS;
+    break;
+  case IRP_MN_START_DEVICE:
+  case IRP_MN_STOP_DEVICE:
+  case IRP_MN_QUERY_STOP_DEVICE:
+  case IRP_MN_CANCEL_STOP_DEVICE:
+  case IRP_MN_QUERY_REMOVE_DEVICE:
+  case IRP_MN_CANCEL_REMOVE_DEVICE:
+  case IRP_MN_SURPRISE_REMOVAL:
+    pIrp->IoStatus.Status = STATUS_SUCCESS;
     break;
   }
 
@@ -395,10 +408,20 @@ NTSTATUS FdoPortPnp(
   case IRP_MN_QUERY_REMOVE_DEVICE:
     if (pDevExt->openCount)
       status = STATUS_DEVICE_BUSY;
+    else
+      pIrp->IoStatus.Status = STATUS_SUCCESS;
     break;
   case IRP_MN_REMOVE_DEVICE:
     RemoveFdoPort(pDevExt);
     pDevExt = NULL;
+    pIrp->IoStatus.Status = STATUS_SUCCESS;
+    break;
+  case IRP_MN_START_DEVICE:
+  case IRP_MN_STOP_DEVICE:
+  case IRP_MN_QUERY_STOP_DEVICE:
+  case IRP_MN_CANCEL_STOP_DEVICE:
+  case IRP_MN_SURPRISE_REMOVAL:
+    pIrp->IoStatus.Status = STATUS_SUCCESS;
     break;
   }
 
