@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.42  2010/07/19 11:23:54  vfrolov
+ * Added install command w/o prms to update driver
+ * Added ability to use --wait option with any command
+ *
  * Revision 1.41  2010/07/15 18:11:10  vfrolov
  * Fixed --wait option for Ports class
  *
@@ -379,12 +383,16 @@ static VOID SetFriendlyName(
                                   (LPBYTE)friendlyName, (lstrlen(friendlyName) + 1) * sizeof(*friendlyName));
 }
 ///////////////////////////////////////////////////////////////
+/*
 static int SleepTillPortNotFound(
     const char *pPortName,
     int timeLimit)
 {
   if (lstrcmpi(C0C_PORT_NAME_COMCLASS, pPortName) == 0)
     return 0;
+
+  if (int(DWORD(timeLimit * 1000)/1000) != timeLimit)
+    timeLimit = -1;
 
   DWORD startTime = GetTickCount();
   char path[40];
@@ -407,7 +415,7 @@ static int SleepTillPortNotFound(
 
     Trace(".");
 
-    if (GetTickCount() - startTime >= DWORD(timeLimit * 1000)) {
+    if (timeLimit != -1 && GetTickCount() - startTime >= DWORD(timeLimit * 1000)) {
       Trace(" timeout\n");
       return -1;
     }
@@ -419,6 +427,7 @@ static int SleepTillPortNotFound(
 
   return int((GetTickCount() - startTime) / 1000);
 }
+*/
 ///////////////////////////////////////////////////////////////
 static VOID CleanDevPropertiesStack(
     Stack &stack,
@@ -1003,28 +1012,24 @@ BOOL Install(const char *pInfFilePath, const char *pParametersA, const char *pPa
 
   ComDbSync(EnumFilter);
 
-  if (timeout > 0) {
-    int timeElapsed = WaitNoPendingInstallEvents(timeout);
-
-    if (!no_update) {
+  /*
+  if (timeout > 0 && !no_update) {
+    if (WaitNoPendingInstallEvents(timeout)) {
+      timeout = 0;
+    } else {
       for (int j = 0 ; j < 2 ; j++) {
-        if (timeElapsed < 0)
+        int timeElapsed = SleepTillPortNotFound(portName[j], timeout);
+
+        if (timeElapsed < 0 || timeout < timeElapsed) {
+          timeout = 0;
           break;
+        }
 
         timeout -= timeElapsed;
-
-        if (timeout < 0)
-          timeout = 0;
-
-        timeElapsed = SleepTillPortNotFound(portName[j], timeout);
       }
     }
-
-    if (timeElapsed < 0 || timeout < timeElapsed)
-      timeout = 0;
-    else
-      timeout -= timeElapsed;
   }
+  */
 
   return TRUE;
 

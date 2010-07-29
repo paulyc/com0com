@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2010/07/15 18:11:10  vfrolov
+ * Fixed --wait option for Ports class
+ *
  * Revision 1.9  2010/06/07 07:03:31  vfrolov
  * Added wrapper UpdateDriver() for UpdateDriverForPlugAndPlayDevices()
  *
@@ -152,7 +155,7 @@ BOOL InstallDevice(
     BOOL updateDriver,
     BOOL *pRebootRequired);
 
-int WaitNoPendingInstallEvents(
+BOOL WaitNoPendingInstallEvents(
     int timeLimit);
 ///////////////////////////////////////////////////////////////
 
