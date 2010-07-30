@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.43  2010/07/29 12:18:43  vfrolov
+ * Fixed waiting stuff
+ *
  * Revision 1.42  2010/07/19 11:23:54  vfrolov
  * Added install command w/o prms to update driver
  * Added ability to use --wait option with any command
@@ -208,7 +211,7 @@ static const InfFile::InfFileField requiredFieldsInfCOMPortInstall[] = {
 
 struct InfFileInstall {
   const char *pInfName;
-  const char *CopyDriversSection;
+  const char *pCopyDriversSection;
   const char *pHardwareId;
   BOOL preinstallClass;
   const InfFile::InfFileField *pRequiredFields;
@@ -1258,8 +1261,8 @@ BOOL Uninstall(
     if (!infFile.UninstallOEMInf())
       goto err;
 
-    if (pInfFileInstall->CopyDriversSection != NULL) {
-      if (!infFile.UninstallFiles(pInfFileInstall->CopyDriversSection))
+    if (pInfFileInstall->pCopyDriversSection != NULL) {
+      if (!infFile.UninstallFiles(pInfFileInstall->pCopyDriversSection))
         goto err;
     }
   }
@@ -1355,18 +1358,12 @@ end:
 BOOL ShowBusyNames(const char *pPattern)
 {
   char *pPatternUp;
-  SIZE_T sizePattern;
 
-  sizePattern = (lstrlen(pPattern) + 1) * sizeof(pPatternUp[0]);
+  pPatternUp = STRDUP(pPattern);
 
-  pPatternUp = (char *)LocalAlloc(LPTR, sizePattern);
-
-  if (!pPatternUp) {
-    ShowError(MB_OK|MB_ICONSTOP, ERROR_NOT_ENOUGH_MEMORY, "LocalAlloc(%lu)", (unsigned long)sizePattern);
+  if (!pPatternUp)
     return FALSE;
-  }
 
-  lstrcpy(pPatternUp, pPattern);
   CharUpper(pPatternUp);
 
   char *pNames = NULL;

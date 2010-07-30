@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2008/12/25 16:56:25  vfrolov
+ * Added MatchPattern()
+ *
  * Revision 1.6  2008/12/24 15:22:44  vfrolov
  * Added BusyMask::Clear() and BusyMask::DelNum()
  *
@@ -43,12 +46,14 @@
 #ifndef _C0C_UTILS_H_
 #define _C0C_UTILS_H_
 
+///////////////////////////////////////////////////////////////
 int VSNPRINTF(char *pBuf, int size, const char *pFmt, va_list va);
 int SNPRINTF(char *pBuf, int size, const char *pFmt, ...);
 char *STRTOK_R(char *pStr, const char *pDelims, char **ppSave);
 BOOL StrToInt(const char *pStr, int *pNum);
 BOOL MatchPattern(const char *pPattern, const char *pStr);
-
+char *STRDUP(const char *pSrcStr, BOOL showErrors = TRUE);
+///////////////////////////////////////////////////////////////
 class BusyMask {
 public:
   BusyMask() : pBusyMask(NULL), busyMaskLen(0) {}
@@ -97,5 +102,6 @@ public:
 private:
   StackEl *pFirst;
 };
+///////////////////////////////////////////////////////////////
 
 #endif /* _C0C_UTILS_H_ */
