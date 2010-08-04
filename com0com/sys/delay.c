@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2005-2008 Vyacheslav Frolov
+ * Copyright (c) 2005-2010 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2008/06/26 13:37:10  vfrolov
+ * Implemented noise emulation
+ *
  * Revision 1.10  2008/03/14 15:28:39  vfrolov
  * Implemented ability to get paired port settings with
  * extended IOCTL_SERIAL_LSRMST_INSERT
@@ -67,6 +70,7 @@
  */
 #define FILE_ID 7
 
+KDEFERRED_ROUTINE WriteDelayRoutine;
 VOID WriteDelayRoutine(
     IN PKDPC pDpc,
     IN PVOID deferredContext,
@@ -79,6 +83,8 @@ VOID WriteDelayRoutine(
   UNREFERENCED_PARAMETER(pDpc);
   UNREFERENCED_PARAMETER(systemArgument1);
   UNREFERENCED_PARAMETER(systemArgument2);
+
+  HALT_UNLESS(deferredContext != NULL);
 
   pIoPort = (PC0C_IO_PORT)deferredContext;
   pWriteDelay = pIoPort->pWriteDelay;
