@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.17  2010/08/09 16:08:37  vfrolov
+ * Added STATUS_NOT_IMPLEMENTED
+ *
  * Revision 1.16  2010/05/27 11:16:46  vfrolov
  * Added ability to put the port to the Ports class
  *
@@ -318,6 +321,9 @@ CODE2NAME codeNameTableStatus[] = {
   TOCODE2NAME(STATUS_, SUCCESS),
   TOCODE2NAME(STATUS_, TIMEOUT),
   TOCODE2NAME(STATUS_, UNSUCCESSFUL),
+  TOCODE2NAME(STATUS_, WAIT_1),
+  TOCODE2NAME(STATUS_, WAIT_2),
+  TOCODE2NAME(STATUS_, WAIT_3),
   TOCODE2NAME(STATUS_, WMI_GUID_NOT_FOUND),
   {0, NULL}
 };
