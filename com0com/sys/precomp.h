@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2010/08/04 10:38:56  vfrolov
+ * Minimized PREfast noise
+ *
  * Revision 1.3  2008/12/02 16:10:09  vfrolov
  * Separated tracing and debuging
  *
@@ -41,9 +44,18 @@
 
 #pragma warning(pop)
 
-#ifndef NTDDI_VERSION
+#ifndef NTDDI_WIN7
 
 /* Declare stuff missing in old DDKs */
+
+
+typedef VOID KDEFERRED_ROUTINE(
+    IN PKDPC pDpc,
+    IN PVOID deferredContext,
+    IN PVOID systemArgument1,
+    IN PVOID systemArgument2);
+
+#ifndef NTDDI_VERSION
 
 #define __drv_dispatchType(type)
 #define __drv_aliasesMem
@@ -67,17 +79,12 @@ typedef VOID DRIVER_CANCEL(
     IN PDEVICE_OBJECT pDevObj,
     IN PIRP pIrp);
 
-typedef VOID KDEFERRED_ROUTINE(
-    IN PKDPC pDpc,
-    IN PVOID deferredContext,
-    IN PVOID systemArgument1,
-    IN PVOID systemArgument2);
-
 NTSYSAPI NTSTATUS NTAPI ZwDeleteValueKey(
     IN HANDLE KeyHandle,
     IN PUNICODE_STRING ValueName);
 
 #endif /* NTDDI_VERSION */
+#endif /* NTDDI_WIN7 */
 
 #define ENABLE_TRACING 1
 
