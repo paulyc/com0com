@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008-2009 Vyacheslav Frolov
+ * Copyright (c) 2008-2010 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2009/02/20 18:32:35  vfrolov
+ * Added info about location of options
+ *
  * Revision 1.13  2008/11/27 16:25:08  vfrolov
  * Improved write buffering
  *
@@ -165,8 +168,9 @@ static void CALLBACK Help(const char *pProgPath)
   << "  --ito=<t>                - set read interval timeout to <t> (" << ComParams().IntervalTimeoutStr() << " by default)," << endl
   << "                             where <t> is " << ComParams::IntervalTimeoutLst() << "." << endl
   << "  --write-limit=<s>        - set write queue limit to <s> (" << ComParams().WriteQueueLimitStr() << " by default)," << endl
-  << "                             where <s> is " << ComParams::WriteQueueLimitLst() << ". The queue will be" << endl
-  << "                             purged with data lost on overruning." << endl
+  << "                             where <s> is " << ComParams::WriteQueueLimitLst() << ". The queue" << endl
+  << "                             will be purged with data lost on overruning." << endl
+  << "                             The value 0 will disable writing to the port." << endl
   << endl
   << "  The value c[urrent] above means to use current COM port settings." << endl
   << endl

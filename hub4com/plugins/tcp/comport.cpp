@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.20  2010/06/07 14:54:48  vfrolov
+ * Added "Connected" and "Disconnected" messages (feature request #3010158)
+ *
  * Revision 1.19  2009/09/14 09:08:48  vfrolov
  * Added discarding owned tick (for optimization)
  *
@@ -447,11 +450,15 @@ BOOL ComPort::Write(HUB_MSG *pMsg)
 
   switch (HUB_MSG_T2N(pMsg->type)) {
   case HUB_MSG_T2N(HUB_MSG_TYPE_LINE_DATA): {
-    BYTE *pBuf = pMsg->u.buf.pBuf;
+    if (!writeQueueLimit)
+      return TRUE;
+
     DWORD len = pMsg->u.buf.size;
 
     if (!len)
       return TRUE;
+
+    BYTE *pBuf = pMsg->u.buf.pBuf;
 
     if (!pBuf) {
       writeLost += len;
