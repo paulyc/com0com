@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008-2009 Vyacheslav Frolov
+ * Copyright (c) 2008-2010 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2009/09/14 09:05:28  vfrolov
+ * Fixed data loss on disconnect.
+ *
  * Revision 1.9  2009/08/04 11:36:49  vfrolov
  * Implemented priority and reject modifiers for <listen port>
  *
@@ -486,9 +489,6 @@ VOID CALLBACK WaitEventOverlapped::OnEvent(ULONG_PTR pOverlapped)
   }
 
   if ((events.lNetworkEvents & FD_CONNECT) != 0) {
-    if (!pOver->port.OnEvent(pOver, FD_CONNECT))
-      return;
-
     if (events.iErrorCode[FD_CONNECT_BIT] != ERROR_SUCCESS) {
       TraceError(
           events.iErrorCode[FD_CONNECT_BIT],
@@ -499,6 +499,9 @@ VOID CALLBACK WaitEventOverlapped::OnEvent(ULONG_PTR pOverlapped)
       if (!pOver->port.OnEvent(pOver, FD_CLOSE))
         return;
     }
+    else
+    if (!pOver->port.OnEvent(pOver, FD_CONNECT))
+      return;
   }
 
   if ((events.lNetworkEvents & FD_CLOSE) != 0) {
