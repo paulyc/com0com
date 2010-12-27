@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2008/10/30 07:54:37  vfrolov
+ * Improved BREAK emulation
+ *
  * Revision 1.11  2008/08/25 14:18:58  vfrolov
  * Fixed SERIAL_TRANSMIT_TOGGLE
  *
@@ -92,6 +95,9 @@ NTSTATUS SetHandFlow(
   }
 
   // Set local side
+  if (!pHandFlow)
+    pIoPort->writeHolding &= ~SERIAL_TX_WAITING_FOR_XON;
+
   if (pHandFlow &&
       ((pIoPort->handFlow.FlowReplace & SERIAL_AUTO_TRANSMIT) != 0) &&
       ((pHandFlow->FlowReplace & SERIAL_AUTO_TRANSMIT) == 0))
