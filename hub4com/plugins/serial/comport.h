@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2008 Vyacheslav Frolov
+ * Copyright (c) 2006-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.17  2008/12/18 16:50:52  vfrolov
+ * Extended the number of possible IN options
+ *
  * Revision 1.16  2008/12/17 11:52:35  vfrolov
  * Replaced ComIo::dcb by serialBaudRate, serialLineControl,
  * serialHandFlow and serialChars
@@ -142,6 +145,9 @@ class ComPort
     DWORD intercepted_options[2];
     DWORD inOptions[2];
     DWORD outOptions;
+#ifdef _DEBUG
+    DWORD outOptionsRequested;
+#endif
 
     DWORD writeQueueLimit;
     DWORD writeQueueLimitSendXoff;
