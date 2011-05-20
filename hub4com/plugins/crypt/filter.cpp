@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008-2009 Vyacheslav Frolov
+ * Copyright (c) 2008-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2009/02/02 15:21:42  vfrolov
+ * Optimized filter's API
+ *
  * Revision 1.3  2008/12/22 09:40:45  vfrolov
  * Optimized message switching
  *
@@ -120,7 +123,7 @@ Filter::Filter(int argc, const char *const argv[])
       if (!*pParam)
         cerr << "WARNING: The secret is empty" << endl;
 
-      if (!CryptAcquireContext(&hProv, NULL, MS_ENHANCED_PROV, PROV_RSA_FULL, 0)) {
+      if (!CryptAcquireContext(&hProv, NULL, MS_ENHANCED_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) {
         DWORD err = GetLastError();
         cerr << "CryptAcquireContext() - error=" << err << endl;
         Invalidate();
