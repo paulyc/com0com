@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2010 Vyacheslav Frolov
+ * Copyright (c) 2004-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2010/09/03 13:32:14  vfrolov
+ * Fixed incompatibility with WDK 6001.18002
+ *
  * Revision 1.4  2010/08/04 10:38:56  vfrolov
  * Minimized PREfast noise
  *
@@ -39,7 +42,6 @@
 #pragma warning(push, 3)
 
 #include <ntddk.h>
-//#include <wdm.h>
 #include <ntddser.h>
 
 #pragma warning(pop)
