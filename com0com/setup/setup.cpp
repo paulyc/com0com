@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2010 Vyacheslav Frolov
+ * Copyright (c) 2006-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.44  2010/07/30 09:19:29  vfrolov
+ * Added STRDUP()
+ *
  * Revision 1.43  2010/07/29 12:18:43  vfrolov
  * Fixed waiting stuff
  *
@@ -323,7 +326,7 @@ static BOOL IsValidPortName(
     }
 
     res = ShowMsg(MB_CANCELTRYCONTINUE,
-                  "The port name %s is already used for other device %s.",
+                  "The port name %s is already used for other device %s.\n",
                   pPortName, phDevName);
 
   } while (res == IDTRYAGAIN);
@@ -344,7 +347,7 @@ static BOOL IsValidPortName(
     if (inUse) {
       res = ShowMsg(MB_CANCELTRYCONTINUE,
                     "The port name %s is already logged as \"in use\"\n"
-                    "in the COM port database.",
+                    "in the COM port database.\n",
                     pPortName);
     }
   } while (res == IDTRYAGAIN);
@@ -536,10 +539,10 @@ static BOOL ChangeDevice(
 
                 EnumDevices(EnumFilter, &devProperties, pRebootRequired, ShowDialog, NULL);
               } else {
-                ShowMsg(MB_OK|MB_ICONWARNING, "Can't display the dialog while changing the class of port");
+                ShowMsg(MB_OK|MB_ICONWARNING, "Can't display the dialog while changing the class of port.\n");
               }
             } else {
-              ShowMsg(MB_OK|MB_ICONWARNING, "Can't display the dialog for non Ports class port");
+              ShowMsg(MB_OK|MB_ICONWARNING, "Can't display the dialog for non Ports class port.\n");
             }
           }
 
@@ -741,7 +744,7 @@ BOOL Reload(
     int res;
 
     do {
-      res = UpdateDriver(pInfFilePath, pHardwareId, INSTALLFLAG_FORCE, &rebootRequired);
+      res = UpdateDriver(pInfFilePath, pHardwareId, INSTALLFLAG_FORCE, FALSE, &rebootRequired);
     } while (res == IDTRYAGAIN);
 
     if (res != IDCONTINUE) {
@@ -836,7 +839,7 @@ BOOL Install(const char *pInfFilePath)
   int res;
 
   do {
-    res = UpdateDriver(pInfFilePath, C0C_BUS_DEVICE_ID, 0, &rebootRequired);
+    res = UpdateDriver(pInfFilePath, C0C_BUS_DEVICE_ID, 0, FALSE, &rebootRequired);
   } while (res == IDTRYAGAIN);
 
   if (res != IDCONTINUE)
@@ -981,7 +984,7 @@ BOOL Install(const char *pInfFilePath, const char *pParametersA, const char *pPa
         goto err;
 
       if (!Silent() && portParameters.DialogRequested())
-        ShowMsg(MB_OK|MB_ICONWARNING, "Can't display the dialog while installing a pair of linked ports");
+        ShowMsg(MB_OK|MB_ICONWARNING, "Can't display the dialog while installing a pair of linked ports.\n");
 
       if (portParameters.Changed()) {
         err = portParameters.Save();
@@ -1004,7 +1007,7 @@ BOOL Install(const char *pInfFilePath, const char *pParametersA, const char *pPa
   if (lstrcmpi(portName[0], portName[1]) == 0 &&
       lstrcmpi(portName[0], C0C_PORT_NAME_COMCLASS) != 0 &&
       ShowMsg(MB_OKCANCEL|MB_ICONWARNING,
-              "The same port name %s is used for both ports.",
+              "The same port name %s is used for both ports.\n",
               portName[0]) == IDCANCEL)
   {
     goto err;
@@ -1118,7 +1121,7 @@ BOOL Uninstall(
               }
             } else {
               res = ShowMsg(MB_CANCELTRYCONTINUE,
-                            "Service %s is not stopped (state %ld).",
+                            "Service %s is not stopped (state %ld).\n",
                             C0C_SERVICE, (long)srvStatus.dwCurrentState);
             }
           } else {
