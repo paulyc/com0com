@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2011/07/21 09:20:47  vfrolov
+ * Fixed printing not supported input options
+ *
  * Revision 1.14  2008/12/18 16:50:51  vfrolov
  * Extended the number of possible IN options
  *
@@ -227,8 +230,19 @@ void ComHub::OnRead(Port *pFromPort, HubMsg *pMsg) const
       }
     }
 
-    for (HubMsg *pCurMsg = pOutMsg ; pCurMsg ; pCurMsg = pCurMsg->Next())
+    for (HubMsg *pCurMsg = pOutMsg ; pCurMsg ; pCurMsg = pCurMsg->Next()) {
       i->second->Write(pCurMsg);
+
+      switch (HUB_MSG_T2N(pCurMsg->type)) {
+        case HUB_MSG_T2N(HUB_MSG_TYPE_SET_OUT_OPTS):
+          if (pCurMsg->u.val) {
+            cerr << i->second->Name() << " WARNING: Requested output option(s) SO_0x"
+                 << hex << pCurMsg->u.val << dec
+                 << " not supported" << endl;
+          }
+          break;
+      }
+    }
 
     if (pOutMsg)
       delete pOutMsg;
