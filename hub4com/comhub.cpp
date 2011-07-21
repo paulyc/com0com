@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2008 Vyacheslav Frolov
+ * Copyright (c) 2006-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.14  2008/12/18 16:50:51  vfrolov
+ * Extended the number of possible IN options
+ *
  * Revision 1.13  2008/11/24 16:30:56  vfrolov
  * Removed pOnXoffXon
  *
@@ -153,8 +156,8 @@ BOOL ComHub::StartAll() const
       _ASSERTE((fail_options[iGo] & GO_I2O(-1)) == 0);
 
       if (fail_options[iGo]) {
-        cerr << (*i)->Name() << " WARNING: Requested option(s) GO" << iGo << "_0x"
-             << hex << fail_options << dec << " not supported" << endl;
+        cerr << (*i)->Name() << " WARNING: Requested input option(s) GO" << iGo << "_0x"
+             << hex << fail_options[iGo] << dec << " not supported" << endl;
       }
 
       HubMsg msg;
