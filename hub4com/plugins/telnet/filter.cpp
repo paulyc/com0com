@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008-2009 Vyacheslav Frolov
+ * Copyright (c) 2008-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.20  2009/09/14 11:22:46  vfrolov
+ * Added discarding owned tick (for optimization)
+ *
  * Revision 1.19  2009/03/06 07:56:28  vfrolov
  * Fixed assertion with non ascii chars
  *
@@ -554,6 +557,9 @@ static BOOL CALLBACK InMethod(
 
       DWORD interceptable_options = (pInMsg->u.pv.val & ((Filter *)hFilter)->goMask[iGo == 0 ? 0 : 1]);
 
+      _ASSERTE((interceptable_options & GO_I2O(-1)) == 0);
+      interceptable_options &= ~GO_I2O(-1);
+
       pInMsg->u.pv.val &= ~interceptable_options;
 
       pInMsg = pMsgInsertNone(pInMsg, HUB_MSG_TYPE_EMPTY);
@@ -563,7 +569,6 @@ static BOOL CALLBACK InMethod(
 
       pInMsg->type = HUB_MSG_TYPE_GET_IN_OPTS;
       pInMsg->u.pv.pVal = &((State *)hFilterInstance)->goMask[iGo == 0 ? 0 : 1];
-      _ASSERTE((interceptable_options & GO_I2O(-1)) == 0);
       pInMsg->u.pv.val = interceptable_options | GO_I2O(iGo);
 
       break;

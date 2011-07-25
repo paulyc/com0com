@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008-2009 Vyacheslav Frolov
+ * Copyright (c) 2008-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2009/02/02 15:21:42  vfrolov
+ * Optimized filter's API
+ *
  * Revision 1.10  2008/12/22 09:40:45  vfrolov
  * Optimized message switching
  *
@@ -522,6 +525,9 @@ static BOOL CALLBACK InMethod(
 
         DWORD interceptable_options = (pInMsg->u.pv.val & ((Filter *)hFilter)->acceptableOptions);
 
+        _ASSERTE((interceptable_options & GO_I2O(-1)) == 0);
+        interceptable_options &= ~GO_I2O(-1);
+
         pInMsg->u.pv.val &= ~interceptable_options;
 
         pInMsg = pMsgInsertNone(pInMsg, HUB_MSG_TYPE_EMPTY);
@@ -531,7 +537,6 @@ static BOOL CALLBACK InMethod(
 
         pInMsg->type = HUB_MSG_TYPE_GET_IN_OPTS;
         pInMsg->u.pv.pVal = &((State *)hFilterInstance)->intercepted_options;
-        _ASSERTE((interceptable_options & GO_I2O(-1)) == 0);
         pInMsg->u.pv.val = interceptable_options | GO_I2O(iGo);
       }
 
