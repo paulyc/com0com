@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.38  2011/07/12 18:22:02  vfrolov
+ * Discarded WDM garbage (fixed timestamp localization)
+ * Added IOCTL_SERIAL_SET_FIFO_CONTROL value tracing
+ *
  * Revision 1.37  2010/08/09 05:51:16  vfrolov
  * Fixed BSOD on tracing broken IRP_MN_QUERY_DEVICE_RELATIONS
  *
@@ -1438,6 +1442,7 @@ VOID InternalTraceIrp(
 
   switch (major) {
     case IRP_MJ_CREATE:
+    case IRP_MJ_CLOSE:
       pDestStr = AnsiStrFormat(pDestStr, &size, ", PID:%lu", PtrToUlong(PsGetCurrentProcessId()));
       break;
     case IRP_MJ_WRITE:
