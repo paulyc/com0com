@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2008 Vyacheslav Frolov
+ * Copyright (c) 2006-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2008/11/27 13:44:52  vfrolov
+ * Added --write-limit option
+ *
  * Revision 1.2  2008/04/07 12:28:03  vfrolov
  * Replaced --rt-events option by SET_RT_EVENTS message
  *
@@ -60,6 +63,7 @@ class ComParams
     BOOL SetInDsr(const char *pInDsr) { return SetFlag(pInDsr, &inDsr); }
     BOOL SetIntervalTimeout(const char *pIntervalTimeout);
     BOOL SetWriteQueueLimit(const char *pWriteQueueLimit);
+    BOOL SetShareMode(const char *pShareMode) { return SetFlag(pShareMode, &shareMode, FALSE); }
 
     static string BaudRateStr(long baudRate);
     static string ByteSizeStr(int byteSize);
@@ -72,6 +76,7 @@ class ComParams
     static string InDsrStr(int inDsr) { return FlagStr(inDsr); }
     static string IntervalTimeoutStr(long intervalTimeout);
     static string WriteQueueLimitStr(long writeQueueLimit);
+    static string ShareModeStr(int shareMode) { return FlagStr(shareMode, FALSE); }
 
     string BaudRateStr() const { return BaudRateStr(baudRate); }
     string ByteSizeStr() const { return ByteSizeStr(byteSize); }
@@ -84,6 +89,7 @@ class ComParams
     string InDsrStr() const { return InDsrStr(inDsr); }
     string IntervalTimeoutStr() const { return IntervalTimeoutStr(intervalTimeout); }
     string WriteQueueLimitStr() const { return WriteQueueLimitStr(writeQueueLimit); }
+    string ShareModeStr() const { return ShareModeStr(shareMode); }
 
     static const char *BaudRateLst();
     static const char *ByteSizeLst();
@@ -96,6 +102,7 @@ class ComParams
     static const char *InDsrLst() { return FlagLst(); }
     static const char *IntervalTimeoutLst();
     static const char *WriteQueueLimitLst();
+    static const char *ShareModeLst() { return FlagLst(FALSE); }
 
     long BaudRate() const { return baudRate; }
     int ByteSize() const { return byteSize; }
@@ -108,11 +115,12 @@ class ComParams
     int InDsr() const { return inDsr; }
     long IntervalTimeout() const { return intervalTimeout; }
     long WriteQueueLimit() const { return writeQueueLimit; }
+    int ShareMode() const { return shareMode; }
 
   private:
-    BOOL SetFlag(const char *pFlagStr, int *pFlag);
-    static string FlagStr(int flag);
-    static const char *FlagLst();
+    BOOL SetFlag(const char *pFlagStr, int *pFlag, BOOL withCurrent = TRUE);
+    static string FlagStr(int flag, BOOL withCurrent = TRUE);
+    static const char *FlagLst(BOOL withCurrent = TRUE);
 
     long baudRate;
     int byteSize;
@@ -125,6 +133,7 @@ class ComParams
     int inDsr;
     long intervalTimeout;
     long writeQueueLimit;
+    int shareMode;
 };
 ///////////////////////////////////////////////////////////////
 

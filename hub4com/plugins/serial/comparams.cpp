@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2010 Vyacheslav Frolov
+ * Copyright (c) 2006-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2010/09/14 16:31:50  vfrolov
+ * Implemented --write-limit=0 to disable writing to the port
+ *
  * Revision 1.7  2009/03/06 07:56:28  vfrolov
  * Fixed assertion with non ascii chars
  *
@@ -62,17 +65,18 @@ namespace PortSerial {
 #include "comparams.h"
 ///////////////////////////////////////////////////////////////
 ComParams::ComParams()
-  : baudRate(CBR_19200),
-    byteSize(8),
-    parity(NOPARITY),
-    stopBits(ONESTOPBIT),
-    outCts(1),
-    outDsr(0),
-    outX(0),
-    inX(0),
-    inDsr(0),
-    intervalTimeout(0),
-    writeQueueLimit(256)
+  : baudRate(CBR_19200)
+  , byteSize(8)
+  , parity(NOPARITY)
+  , stopBits(ONESTOPBIT)
+  , outCts(1)
+  , outDsr(0)
+  , outX(0)
+  , inX(0)
+  , inDsr(0)
+  , intervalTimeout(0)
+  , writeQueueLimit(256)
+  , shareMode(0)
 {
 }
 
@@ -156,7 +160,7 @@ BOOL ComParams::SetWriteQueueLimit(const char *pWriteQueueLimit)
   return FALSE;
 }
 
-BOOL ComParams::SetFlag(const char *pFlagStr, int *pFlag)
+BOOL ComParams::SetFlag(const char *pFlagStr, int *pFlag, BOOL withCurrent)
 {
   if (_stricmp(pFlagStr, "on") == 0) {
     *pFlag = 1;
@@ -166,7 +170,7 @@ BOOL ComParams::SetFlag(const char *pFlagStr, int *pFlag)
     *pFlag = 0;
   }
   else
-  if (tolower((unsigned char)*pFlagStr) == 'c') {
+  if (withCurrent && tolower((unsigned char)*pFlagStr) == 'c') {
     *pFlag = -1;
   }
   else
@@ -243,12 +247,12 @@ string ComParams::WriteQueueLimitStr(long writeQueueLimit)
   return "?";
 }
 
-string ComParams::FlagStr(int flag)
+string ComParams::FlagStr(int flag, BOOL withCurrent)
 {
   switch (flag) {
     case 1: return "on";
     case 0: return "off";
-    case -1: return "current";
+    case -1: return withCurrent ? "current" : "?";
   }
   return "?";
 }
@@ -283,9 +287,9 @@ const char *ComParams::WriteQueueLimitLst()
   return "a positive number or 0";
 }
 
-const char *ComParams::FlagLst()
+const char *ComParams::FlagLst(BOOL withCurrent)
 {
-  return "on, off or c[urrent]";
+  return withCurrent ? "on, off or c[urrent]" : "on or off";
 }
 ///////////////////////////////////////////////////////////////
 } // end namespace
