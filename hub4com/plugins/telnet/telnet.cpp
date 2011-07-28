@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2005-2009 Vyacheslav Frolov
+ * Copyright (c) 2005-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2009/01/26 15:07:52  vfrolov
+ * Implemented --keep-active option
+ *
  * Revision 1.5  2008/11/13 07:44:12  vfrolov
  * Changed for staticaly linking
  *
@@ -156,6 +159,11 @@ HUB_MSG *TelnetProtocol::Encode(HUB_MSG *pMsg)
       streamEncoded += ch;
 
     streamEncoded += ch;
+
+    if (ch == 13 /*CR*/ && ascii_cr_padding.size()) {
+      if (options[0 /*TRANSMIT-BINARY*/] == NULL || options[0 /*TRANSMIT-BINARY*/]->stateLocal != TelnetOption::osYes)
+        streamEncoded += ascii_cr_padding;
+    }
   }
 
   return FlushEncodedStream(pMsg);

@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2005-2009 Vyacheslav Frolov
+ * Copyright (c) 2005-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2009/01/26 15:07:52  vfrolov
+ * Implemented --keep-active option
+ *
  * Revision 1.4  2008/11/13 07:44:12  vfrolov
  * Changed for staticaly linking
  *
@@ -49,6 +52,7 @@ class TelnetProtocol
     ~TelnetProtocol();
 
     void Start();
+    void SetAsciiCrPadding(const BYTE_string &padding) { ascii_cr_padding = padding; }
 
     HUB_MSG *Decode(HUB_MSG *pMsg);
     void FlushEncodedStream(HUB_MSG **ppEchoMsg);
@@ -88,6 +92,8 @@ class TelnetProtocol
     BYTE_vector params;
 
     TelnetOption *options[BYTE(-1)];
+
+    BYTE_string ascii_cr_padding;
 
     BYTE_string streamEncoded;
     BYTE_string streamDecoded;
