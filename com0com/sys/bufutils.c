@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2010 Vyacheslav Frolov
+ * Copyright (c) 2004-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.18  2010/08/04 10:38:55  vfrolov
+ * Minimized PREfast noise
+ *
  * Revision 1.17  2008/10/30 07:54:37  vfrolov
  * Improved BREAK emulation
  *
@@ -221,6 +224,20 @@ VOID CopyCharsWithEscape(
   else {
     PC0C_IO_PORT pIoPort = pFlowFilter->pIoPort;
     PC0C_IO_PORT pIoPortRemote = pIoPort->pIoPortRemote;
+    UCHAR dataMask;
+
+    {
+      static const UCHAR masks[] = {0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF};
+      UCHAR wordLength = 8;
+
+      if (!pIoPort->allDataBits && wordLength > pIoPort->lineControl.WordLength)
+        wordLength = pIoPort->lineControl.WordLength;
+
+      if (!pIoPortRemote->allDataBits && wordLength > pIoPortRemote->lineControl.WordLength)
+        wordLength = pIoPortRemote->lineControl.WordLength;
+
+      dataMask = masks[wordLength];
+    }
 
     for (writeDone = 0 ; writeDone < writeLength && (readLength || pReadBuf == NULL) ; writeDone++) {
       UCHAR curChar;
@@ -293,6 +310,7 @@ VOID CopyCharsWithEscape(
         }
       }
 
+      curChar &= dataMask;
       pFlowFilter->rxCount++;
 
       if (lsr) {

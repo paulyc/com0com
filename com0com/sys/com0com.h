@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2010 Vyacheslav Frolov
+ * Copyright (c) 2004-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.51  2010/08/09 06:02:40  vfrolov
+ * Eliminated accessing undocumented structure members
+ *
  * Revision 1.50  2010/08/04 10:38:55  vfrolov
  * Minimized PREfast noise
  *
@@ -368,6 +371,7 @@ typedef struct _C0C_IO_PORT {
   BOOLEAN                 emuOverrun;
   BOOLEAN                 plugInMode;
   BOOLEAN                 exclusiveMode;
+  BOOLEAN                 allDataBits;
   BOOLEAN                 isComClass;
 } C0C_IO_PORT, *PC0C_IO_PORT;
 
