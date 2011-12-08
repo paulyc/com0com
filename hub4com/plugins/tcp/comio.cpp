@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2011/07/26 11:59:14  vfrolov
+ * Replaced strerror() by FormatMessage()
+ *
  * Revision 1.11  2010/09/14 18:34:30  vfrolov
  * Fixed rejected connections handling
  *
@@ -213,9 +216,7 @@ static int CALLBACK ConditionProc(
     OUT GROUP FAR * /*g*/,
     IN DWORD_PTR dwCallbackData)
 {
-  ConditionProcData *pCpd = (ConditionProcData *)dwCallbackData;
-
-  _ASSERTE(pCpd != NULL);
+  _ASSERTE((ConditionProcData *)dwCallbackData != NULL);
 
   if (lpCallerId)
     ((ConditionProcData *)dwCallbackData)->SetSN(lpCallerId->buf, lpCallerId->len);
