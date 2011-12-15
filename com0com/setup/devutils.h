@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2011/07/13 17:39:56  vfrolov
+ * Fixed result treatment of UpdateDriverForPlugAndPlayDevices()
+ *
  * Revision 1.11  2010/07/29 12:18:43  vfrolov
  * Fixed waiting stuff
  *
@@ -90,21 +93,25 @@ typedef const DevProperties *PCDevProperties;
 
 class Stack;
 
-typedef BOOL (* PDEVCALLBACK)(
+///////////////////////////////////////////////////////////////
+typedef bool CNC_DEV_CALLBACK(
     HDEVINFO hDevInfo,
     PSP_DEVINFO_DATA pDevInfoData,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired,
     void *pParam);
+
+typedef CNC_DEV_CALLBACK *PCNC_DEV_CALLBACK;
 ///////////////////////////////////////////////////////////////
-typedef BOOL (* C0C_ENUM_FILTER)(const char *pHardwareId);
+typedef bool CNC_ENUM_FILTER(const char *pHardwareId);
+typedef CNC_ENUM_FILTER *PCNC_ENUM_FILTER;
 ///////////////////////////////////////////////////////////////
 int EnumDevices(
-    C0C_ENUM_FILTER pFilter,
+    PCNC_ENUM_FILTER pFilter,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired,
-    PDEVCALLBACK pDevCallBack,
-    void *pCallBackParam);
+    PCNC_DEV_CALLBACK pDevCallBack,
+    void *pDevCallBackParam);
 
 int DisableDevice(
     HDEVINFO hDevInfo,
@@ -113,53 +120,53 @@ int DisableDevice(
     BOOL *pRebootRequired,
     Stack *pDevPropertiesStack);
 
-BOOL DisableDevices(
-    C0C_ENUM_FILTER pFilter,
+bool DisableDevices(
+    PCNC_ENUM_FILTER pFilter,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired,
     Stack *pDevPropertiesStack);
 
-BOOL EnableDevices(
-    C0C_ENUM_FILTER pFilter,
+bool EnableDevices(
+    PCNC_ENUM_FILTER pFilter,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired);
 
-BOOL RestartDevices(
-    C0C_ENUM_FILTER pFilter,
+bool RestartDevices(
+    PCNC_ENUM_FILTER pFilter,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired);
 
-BOOL RemoveDevice(
+bool RemoveDevice(
     HDEVINFO hDevInfo,
     PSP_DEVINFO_DATA pDevInfoData,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired);
 
-BOOL RemoveDevices(
-    C0C_ENUM_FILTER pFilter,
+bool RemoveDevices(
+    PCNC_ENUM_FILTER pFilter,
     PCDevProperties pDevProperties,
     BOOL *pRebootRequired);
 
-BOOL ReenumerateDeviceNode(
+bool ReenumerateDeviceNode(
     PSP_DEVINFO_DATA pDevInfoData);
 
 int UpdateDriver(
     const char *pInfFilePath,
     const char *pHardwareId,
     DWORD flags,
-    BOOL mandatory,
+    bool mandatory,
     BOOL *pRebootRequired);
 
-BOOL InstallDevice(
+bool InstallDevice(
     const char *pInfFilePath,
     const char *pDevId,
     const char *pDevInstID,
-    PDEVCALLBACK pDevCallBack,
-    void *pCallBackParam,
-    BOOL updateDriver,
+    PCNC_DEV_CALLBACK pDevCallBack,
+    void *pDevCallBackParam,
+    bool updateDriver,
     BOOL *pRebootRequired);
 
-BOOL WaitNoPendingInstallEvents(
+bool WaitNoPendingInstallEvents(
     int timeLimit);
 ///////////////////////////////////////////////////////////////
 

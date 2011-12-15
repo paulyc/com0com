@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2011/07/15 16:09:05  vfrolov
+ * Disabled MessageBox() for silent mode and added default processing
+ *
  * Revision 1.10  2010/07/30 09:27:18  vfrolov
  * Added STRDUP()
  * Fixed updating the source location information by OemPath() and InstallOEMInf()
@@ -59,7 +62,7 @@
 #include "utils.h"
 
 ///////////////////////////////////////////////////////////////
-static BOOL GetVersionInfo(const char *pInfPath, const char *pKey, char **ppValue, BOOL showErrors)
+static bool GetVersionInfo(const char *pInfPath, const char *pKey, char **ppValue, bool showErrors)
 {
   if (!pInfPath)
     return FALSE;
@@ -120,7 +123,7 @@ static BOOL GetVersionInfo(const char *pInfPath, const char *pKey, char **ppValu
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-static BOOL Open(const char *pInfPath, HINF *phInf, BOOL showErrors)
+static bool Open(const char *pInfPath, HINF *phInf, bool showErrors)
 {
   if (*phInf != INVALID_HANDLE_VALUE)
     return TRUE;
@@ -146,7 +149,7 @@ static BOOL Open(const char *pInfPath, HINF *phInf, BOOL showErrors)
   return *phInf != INVALID_HANDLE_VALUE;
 }
 ///////////////////////////////////////////////////////////////
-static BOOL IsPathInList(
+static bool IsPathInList(
     const char *pPath,
     const char *const *ppList)
 {
@@ -161,7 +164,7 @@ static BOOL IsPathInList(
   return FALSE;
 }
 ///////////////////////////////////////////////////////////////
-static BOOL GetFilePath(
+static bool GetFilePath(
     const char *pFileName,
     const char *pNearPath,
     char *pFilePath,
@@ -247,7 +250,7 @@ InfFile::~InfFile()
     SetupCloseInfFile(hInf);
 }
 ///////////////////////////////////////////////////////////////
-BOOL InfFile::Test(const InfFileField *pFields, BOOL showErrors) const
+bool InfFile::Test(const InfFileField *pFields, bool showErrors) const
 {
   if (!Open(pPath, &hInf, showErrors))
     return FALSE;
@@ -292,7 +295,7 @@ BOOL InfFile::Test(const InfFileField *pFields, BOOL showErrors) const
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-const char *InfFile::OemPath(BOOL showErrors) const
+const char *InfFile::OemPath(bool showErrors) const
 {
   if (!pOemPath) {
     char path[MAX_PATH + 1];
@@ -308,35 +311,35 @@ const char *InfFile::OemPath(BOOL showErrors) const
   return pOemPath;
 }
 ///////////////////////////////////////////////////////////////
-const char *InfFile::ClassGUID(BOOL showErrors) const
+const char *InfFile::ClassGUID(bool showErrors) const
 {
   GetVersionInfo(pPath, "ClassGUID", &pClassGUID, showErrors);
 
   return pClassGUID;
 }
 ///////////////////////////////////////////////////////////////
-const char *InfFile::Class(BOOL showErrors) const
+const char *InfFile::Class(bool showErrors) const
 {
   GetVersionInfo(pPath, "Class", &pClass, showErrors);
 
   return pClass;
 }
 ///////////////////////////////////////////////////////////////
-const char *InfFile::Provider(BOOL showErrors) const
+const char *InfFile::Provider(bool showErrors) const
 {
   GetVersionInfo(pPath, "Provider", &pProvider, showErrors);
 
   return pProvider;
 }
 ///////////////////////////////////////////////////////////////
-const char *InfFile::DriverVer(BOOL showErrors) const
+const char *InfFile::DriverVer(bool showErrors) const
 {
   GetVersionInfo(pPath, "DriverVer", &pDriverVer, showErrors);
 
   return pDriverVer;
 }
 ///////////////////////////////////////////////////////////////
-const char *InfFile::UninstallInfTag(BOOL showErrors) const
+const char *InfFile::UninstallInfTag(bool showErrors) const
 {
   GetVersionInfo(pPath, "UninstallInfTag", &pUninstallInfTag, showErrors);
 
@@ -367,7 +370,7 @@ static UINT FileCallback(
   return SetupDefaultQueueCallback(Context, Notification, Param1, Param2);
 }
 
-BOOL InfFile::UninstallFiles(const char *pFilesSection) const
+bool InfFile::UninstallFiles(const char *pFilesSection) const
 {
   if (!pPath)
     return FALSE;
@@ -410,12 +413,12 @@ BOOL InfFile::UninstallFiles(const char *pFilesSection) const
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-BOOL InfFile::InstallOEMInf() const
+bool InfFile::InstallOEMInf() const
 {
   if (!pPath)
     return FALSE;
 
-  BOOL wasInstalled = (OemPath() != NULL);
+  bool wasInstalled = (OemPath() != NULL);
 
   if (!SetupCopyOEMInf(pPath, NULL, SPOST_PATH, 0, NULL, 0, NULL, NULL)) {
     ShowLastError(MB_OK|MB_ICONSTOP, "SetupCopyOEMInf(%s)", pPath);
@@ -430,7 +433,7 @@ BOOL InfFile::InstallOEMInf() const
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-static BOOL UninstallFile(const char *pPath)
+static bool UninstallFile(const char *pPath)
 {
   int res;
 
@@ -455,7 +458,7 @@ static BOOL UninstallFile(const char *pPath)
   return TRUE;
 }
 
-static BOOL UninstallInf(const char *pPath)
+static bool UninstallInf(const char *pPath)
 {
   if (pPath == NULL)
     return FALSE;
@@ -519,10 +522,10 @@ static BOOL UninstallInf(const char *pPath)
   if (res != IDCONTINUE)
     return FALSE;
 
-  return res;
+  return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-BOOL InfFile::UninstallOEMInf() const
+bool InfFile::UninstallOEMInf() const
 {
   if (!pPath)
     return FALSE;
@@ -549,10 +552,10 @@ BOOL InfFile::UninstallOEMInf() const
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-static BOOL TestUninstall(
+static bool TestUninstall(
     const InfFile &infFile,
     const InfFile::InfFileUninstall *pInfFileUninstallList,
-    BOOL queryConfirmation)
+    bool queryConfirmation)
 {
   for (
       const InfFile::InfFileUninstall *pInfFileUninstall = pInfFileUninstallList ;
@@ -569,7 +572,7 @@ static BOOL TestUninstall(
   return FALSE;
 }
 
-BOOL InfFile::UninstallAllInfFiles(
+bool InfFile::UninstallAllInfFiles(
     const InfFileUninstall *pInfFileUninstallList,
     const char *const *ppOemPathExcludeList)
 {
@@ -653,7 +656,7 @@ BOOL InfFile::UninstallAllInfFiles(
         SNPRINTF(infPath, sizeof(infPath)/sizeof(infPath[0]), "%s\\inf\\%s", windir, p) > 0)
     {
       InfFile infFile(infPath, NULL);
-      BOOL doUninstall;
+      bool doUninstall;
 
       if (IsPathInList(infFile.Path(), ppOemPathExcludeList)) {
         //Trace("\nSkipped %s\n", infFile.Path());

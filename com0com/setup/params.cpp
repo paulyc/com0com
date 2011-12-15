@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.19  2011/12/06 16:03:22  vfrolov
+ * Added cleaning high data bits for less then 8 bit data
+ * Added AllDataBits option to force 8 bit data
+ *
  * Revision 1.18  2010/06/01 12:54:12  vfrolov
  * Fixed bit settings
  *
@@ -162,7 +166,7 @@ void PortParameters::Init()
   maskExplicit = 0;
 }
 ///////////////////////////////////////////////////////////////
-BOOL PortParameters::SetPortName(const char *pNewPortName)
+bool PortParameters::SetPortName(const char *pNewPortName)
 {
   if (lstrcmpi(pNewPortName, "?") == 0) {
     dialogRequested = TRUE;
@@ -257,7 +261,7 @@ static const char *GetBitName(DWORD bit)
   return NULL;
 }
 ///////////////////////////////////////////////////////////////
-BOOL PortParameters::SetFlag(const char *pNewVal, DWORD bit)
+bool PortParameters::SetFlag(const char *pNewVal, DWORD bit)
 {
   DWORD newFlag;
 
@@ -286,7 +290,7 @@ BOOL PortParameters::SetFlag(const char *pNewVal, DWORD bit)
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-BOOL PortParameters::SetPin(const char *pNewVal, DWORD bit)
+bool PortParameters::SetPin(const char *pNewVal, DWORD bit)
 {
   DWORD newPin;
 
@@ -358,7 +362,7 @@ BOOL PortParameters::SetPin(const char *pNewVal, DWORD bit)
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-BOOL PortParameters::SetProbability(const char *pNewVal, DWORD bit)
+bool PortParameters::SetProbability(const char *pNewVal, DWORD bit)
 {
   DWORD newVal = 0;
 
@@ -408,7 +412,7 @@ BOOL PortParameters::SetProbability(const char *pNewVal, DWORD bit)
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-BOOL PortParameters::SetUnsigned(const char *pNewVal, DWORD bit)
+bool PortParameters::SetUnsigned(const char *pNewVal, DWORD bit)
 {
   DWORD newVal = 0;
 
@@ -433,7 +437,7 @@ BOOL PortParameters::SetUnsigned(const char *pNewVal, DWORD bit)
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-BOOL PortParameters::SetBit(const char *pVal, const Bit &bit)
+bool PortParameters::SetBit(const char *pVal, const Bit &bit)
 {
   if (!lstrcmpi(pVal, "*"))
     return TRUE;
@@ -485,7 +489,7 @@ BOOL PortParameters::SetBit(const char *pVal, const Bit &bit)
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-BOOL PortParameters::FillParametersKey(char *pRegKey, int size)
+bool PortParameters::FillParametersKey(char *pRegKey, int size)
 {
   int len;
 
@@ -679,7 +683,7 @@ err:
   return err;
 }
 ///////////////////////////////////////////////////////////////
-BOOL PortParameters::ParseParametersStr(const char *pParameters)
+bool PortParameters::ParseParametersStr(const char *pParameters)
 {
   PortParameters tmp = *this;
 
@@ -740,7 +744,7 @@ BOOL PortParameters::ParseParametersStr(const char *pParameters)
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-BOOL PortParameters::FillParametersStr(char *pParameters, int size, BOOL detail)
+bool PortParameters::FillParametersStr(char *pParameters, int size, bool detail)
 {
   int len;
 
@@ -858,7 +862,7 @@ BOOL PortParameters::FillParametersStr(char *pParameters, int size, BOOL detail)
   return TRUE;
 }
 ///////////////////////////////////////////////////////////////
-BOOL PortParameters::FillPortName(char *pPortName, int size)
+bool PortParameters::FillPortName(char *pPortName, int size)
 {
   int len;
 

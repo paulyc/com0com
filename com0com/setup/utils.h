@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2008 Vyacheslav Frolov
+ * Copyright (c) 2006-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2010/07/30 09:15:04  vfrolov
+ * Added STRDUP()
+ *
  * Revision 1.7  2008/12/25 16:56:25  vfrolov
  * Added MatchPattern()
  *
@@ -50,9 +53,9 @@
 int VSNPRINTF(char *pBuf, int size, const char *pFmt, va_list va);
 int SNPRINTF(char *pBuf, int size, const char *pFmt, ...);
 char *STRTOK_R(char *pStr, const char *pDelims, char **ppSave);
-BOOL StrToInt(const char *pStr, int *pNum);
-BOOL MatchPattern(const char *pPattern, const char *pStr);
-char *STRDUP(const char *pSrcStr, BOOL showErrors = TRUE);
+bool StrToInt(const char *pStr, int *pNum);
+bool MatchPattern(const char *pPattern, const char *pStr);
+char *STRDUP(const char *pSrcStr, bool showErrors = TRUE);
 ///////////////////////////////////////////////////////////////
 class BusyMask {
 public:
@@ -60,9 +63,9 @@ public:
   ~BusyMask() { Clear(); }
 
   void Clear();
-  BOOL AddNum(int num);
+  bool AddNum(int num);
   void DelNum(int num);
-  BOOL IsFreeNum(int num) const;
+  bool IsFreeNum(int num) const;
   int GetFirstFreeNum() const;
 private:
   PBYTE pBusyMask;
@@ -82,7 +85,7 @@ private:
 class Stack {
 public:
   Stack() : pFirst(NULL) {}
-  BOOL Push(StackEl *pElem)
+  bool Push(StackEl *pElem)
   {
     if (!pElem)
       return FALSE;
