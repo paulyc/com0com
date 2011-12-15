@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2011/07/12 18:15:37  vfrolov
+ * Discarded WDM garbage
+ *
  * Revision 1.5  2010/09/03 13:32:14  vfrolov
  * Fixed incompatibility with WDK 6001.18002
  *
@@ -48,8 +51,7 @@
 
 #ifndef NTDDI_WIN7
 
-/* Declare stuff missing in old DDKs */
-
+/* Declarations missing in old DDKs */
 
 typedef VOID KDEFERRED_ROUTINE(
     IN PKDPC pDpc,
@@ -88,7 +90,9 @@ NTSYSAPI NTSTATUS NTAPI ZwDeleteValueKey(
 #endif /* NTDDI_VERSION */
 #endif /* NTDDI_WIN7 */
 
-#define ENABLE_TRACING 1
+#ifndef ENABLE_TRACING
+  #define ENABLE_TRACING 1
+#endif
 
 #include "com0com.h"
 #include "trace.h"
