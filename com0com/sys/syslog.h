@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2004-2005 Vyacheslav Frolov
+ * Copyright (c) 2004-2011 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,14 +19,22 @@
  *
  *
  * $Log$
+ * Revision 1.1  2005/01/26 12:18:54  vfrolov
+ * Initial revision
+ *
  *
  */
 
 #ifndef _C0C_SYSLOG_H_
 #define _C0C_SYSLOG_H_
 
-VOID SysLog(
-    IN PVOID pIoObject,
+VOID SysLogDrv(
+    IN PDRIVER_OBJECT pDrvObj,
+    IN NTSTATUS status,
+    IN PWCHAR pStr);
+
+VOID SysLogDev(
+    IN PDEVICE_OBJECT pDevObj,
     IN NTSTATUS status,
     IN PWCHAR pStr);
 
