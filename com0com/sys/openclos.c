@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.26  2011/07/26 16:07:42  vfrolov
+ * Fixed double closing
+ *
  * Revision 1.25  2008/12/02 16:10:09  vfrolov
  * Separated tracing and debuging
  *
@@ -190,6 +193,11 @@ NTSTATUS FdoPortOpen(IN PC0C_FDOPORT_EXTENSION pDevExt)
 
   SetHandFlow(pIoPort, NULL, &queueToComplete);
   SetModemControl(pIoPort, C0C_MCR_OPEN, C0C_MCR_OPEN, &queueToComplete);
+
+  ReadWrite(
+      pIoPort, FALSE,
+      pIoPort->pIoPortRemote, FALSE,
+      &queueToComplete);
 
   if (pIoPort->pIoPortRemote->pWriteDelay && pIoPort->pIoPortRemote->brokeCharsProbability > 0)
     StartWriteDelayTimer(pIoPort->pIoPortRemote->pWriteDelay);
