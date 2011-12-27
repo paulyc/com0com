@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2011/12/15 15:51:48  vfrolov
+ * Fixed types
+ *
  * Revision 1.10  2011/12/06 16:03:22  vfrolov
  * Added cleaning high data bits for less then 8 bit data
  * Added AllDataBits option to force 8 bit data
@@ -68,7 +71,6 @@ class PortParameters {
     bool FillParametersStr(char *pParameters, int size, bool detail);
     bool FillPortName(char *pPortName, int size);
     bool Changed() const { return maskChanged != 0; }
-    bool ClassChanged() const { return classChanged; }
     bool DialogRequested() const { return dialogRequested; }
 
     static const char *PortParameters::GetHelp();
@@ -86,7 +88,6 @@ class PortParameters {
     bool SetUnsigned(const char *pNewVal, DWORD bit);
     bool SetBit(const char *pVal, const Bit &bit);
 
-    bool classChanged;
     bool dialogRequested;
     DWORD maskChanged;
     DWORD maskExplicit;
