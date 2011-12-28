@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.51  2011/12/27 11:38:13  vfrolov
+ * Superseded incorrect PortParameters::ClassChanged()
+ *
  * Revision 1.50  2011/12/23 05:37:21  vfrolov
  * Implemented setting friendly names for ports
  * Added options -no-update-fnames and --show-fnames
@@ -724,6 +727,7 @@ static bool ChangeDevice(
                 DisableDevices(EnumFilter, &devProperties, pRebootRequired, NULL);  // show msg if in use
                 RemoveDevices(EnumFilter, &devProperties, pRebootRequired);
                 ReenumerateDeviceNode(pDevInfoData);
+                EnumDevices(EnumFilter, &devProperties, pRebootRequired, UpdateFriendlyNamePort, NULL);
               } else {
                 if (lstrcmpi(portName, portNameOld) != 0)
                   EnumDevices(EnumFilter, &devProperties, pRebootRequired, UpdateFriendlyNamePort, NULL);
