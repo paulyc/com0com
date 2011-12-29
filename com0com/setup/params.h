@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2011/12/27 11:38:13  vfrolov
+ * Superseded incorrect PortParameters::ClassChanged()
+ *
  * Revision 1.11  2011/12/15 15:51:48  vfrolov
  * Fixed types
  *
@@ -67,9 +70,11 @@ class PortParameters {
     void Init();
     LONG Load();
     LONG Save();
+    bool InitRealPortName(const char *pRealPortName = "");
     bool ParseParametersStr(const char *pParameters);
     bool FillParametersStr(char *pParameters, int size, bool detail);
     bool FillPortName(char *pPortName, int size);
+    bool FillRealPortName(char *pRealPortName, int size);
     bool Changed() const { return maskChanged != 0; }
     bool DialogRequested() const { return dialogRequested; }
 
@@ -82,6 +87,7 @@ class PortParameters {
     LONG SaveDw(HKEY hKey, DWORD bit);
 
     bool SetPortName(const char *pNewPortName);
+    bool SetRealPortName(const char *pNewRealPortName);
     bool SetFlag(const char *pNewVal, DWORD bit);
     bool SetPin(const char *pNewVal, DWORD bit);
     bool SetProbability(const char *pNewVal, DWORD bit);
@@ -92,6 +98,7 @@ class PortParameters {
     DWORD maskChanged;
     DWORD maskExplicit;
     char portName[20];
+    char realPortName[20];
     DWORD emuBR;
     DWORD emuOverrun;
     DWORD plugInMode;

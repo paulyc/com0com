@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2011/12/15 15:51:48  vfrolov
+ * Fixed types
+ *
  * Revision 1.3  2010/05/27 11:16:46  vfrolov
  * Added ability to put the port to the Ports class
  *
@@ -37,6 +40,9 @@
 bool ComDbGetInUse(const char *pPortName, bool &inUse);
 void ComDbSync(PCNC_ENUM_FILTER pFilter);
 DWORD ComDbQueryNames(char *pBuf, DWORD maxChars);
+bool ComDbClaim(const char *pPortName);
+bool ComDbRelease(const char *pPortName);
+bool ComDbIsValidName(const char *pPortName);
 ///////////////////////////////////////////////////////////////
 
 #endif /* _C0C_COMDB_H_ */
