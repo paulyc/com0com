@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2011 Vyacheslav Frolov
+ * Copyright (c) 2006-2012 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2011/12/15 15:51:48  vfrolov
+ * Fixed types
+ *
  * Revision 1.12  2011/07/13 17:39:56  vfrolov
  * Fixed result treatment of UpdateDriverForPlugAndPlayDevices()
  *
@@ -167,7 +170,8 @@ bool InstallDevice(
     BOOL *pRebootRequired);
 
 bool WaitNoPendingInstallEvents(
-    int timeLimit);
+    int timeLimit,
+    bool repeate = FALSE);
 ///////////////////////////////////////////////////////////////
 
 #endif /* _C0C_DEVUTILS_H_ */
