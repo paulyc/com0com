@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2006-2011 Vyacheslav Frolov
+ * Copyright (c) 2006-2012 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2011/12/29 14:34:23  vfrolov
+ * Implemented RealPortName=COM<n> for PortName=COM#
+ *
  * Revision 1.12  2011/12/27 11:38:13  vfrolov
  * Superseded incorrect PortParameters::ClassChanged()
  *
@@ -76,7 +79,6 @@ class PortParameters {
     bool FillPortName(char *pPortName, int size);
     bool FillRealPortName(char *pRealPortName, int size);
     bool Changed() const { return maskChanged != 0; }
-    bool DialogRequested() const { return dialogRequested; }
 
     static const char *PortParameters::GetHelp();
 
@@ -94,7 +96,6 @@ class PortParameters {
     bool SetUnsigned(const char *pNewVal, DWORD bit);
     bool SetBit(const char *pVal, const Bit &bit);
 
-    bool dialogRequested;
     DWORD maskChanged;
     DWORD maskExplicit;
     char portName[20];
