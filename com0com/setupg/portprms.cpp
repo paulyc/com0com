@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2007-2009 Vyacheslav Frolov
+ * Copyright (c) 2007-2012 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2009/01/12 13:04:07  vfrolov
+ * Added red painting InUse portnames
+ *
  * Revision 1.1  2007/10/31 10:16:55  vfrolov
  * Initial revision
  *
@@ -108,7 +111,9 @@ String ^PortPairs::AddPair()
       res = keyPair;
   }
 
-  LoadBusyNames();
+  ExecCommand::ExecCommand(parent, "--wait +30");
+
+  Init();
 
   return res;
 }
@@ -136,6 +141,8 @@ void PortPairs::ChangePair(String ^keyPair, PortPair ^pairChanges)
 
     ExecCommand::ExecCommand(parent, cmd);
   }
+
+  ExecCommand::ExecCommand(parent, "--wait +30");
 
   Init();
 }
