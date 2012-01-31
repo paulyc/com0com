@@ -19,6 +19,10 @@
  *
  *
  * $Log$
+ * Revision 1.7  2012/01/31 05:34:34  vfrolov
+ * Added "use Ports class" option
+ * Added waiting install completion
+ *
  * Revision 1.6  2010/05/27 11:16:46  vfrolov
  * Added ability to put the port to the Ports class
  *
@@ -799,7 +803,17 @@ namespace SetupApp {
               TreeNode ^port;
 
               try {
-                port = pair->Nodes->Add(kvpPair.Value[i]["portname"]);
+                String ^name = kvpPair.Value[i][(gcnew String("PortName"))->ToLower()];
+
+                if (name == "COM#") {
+                  try {
+                    name = kvpPair.Value[i][(gcnew String("RealPortName"))->ToLower()];
+                  }
+                  catch (Exception^ /*e*/) {
+                  }
+                }
+
+                port = pair->Nodes->Add(name);
               }
               catch (Exception^ /*e*/) {
                 port = pair->Nodes->Add(String::Format("CNC{0}{1}", (i == 0) ? "A" : "B", kvpPair.Key));
