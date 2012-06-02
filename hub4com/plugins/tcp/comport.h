@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright (c) 2008-2009 Vyacheslav Frolov
+ * Copyright (c) 2008-2012 Vyacheslav Frolov
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2009/08/04 11:36:49  vfrolov
+ * Implemented priority and reject modifiers for <listen port>
+ *
  * Revision 1.9  2009/01/23 16:55:05  vfrolov
  * Utilized timer routines
  *
@@ -114,11 +117,11 @@ class ComPort
     const string &Name() const { return name; }
     void Name(const char *pName) { name = pName; }
     HANDLE Handle() const { return (HANDLE)hSock; }
-    BOOL CanConnect() const { return (permanent || connectionCounter > 0); }
-    void StartConnect();
 
   private:
     void FlowControlUpdate();
+    BOOL CanConnect() const { return (permanent || connectionCounter > 0); }
+    void StartConnect();
     BOOL StartRead();
     BOOL StartWaitEvent(SOCKET hSockWait);
     void OnConnect();
@@ -128,6 +131,7 @@ class ComPort
     struct sockaddr_in snRemote;
     Listener *pListener;
     BOOL rejectZeroConnectionCounter;
+    BOOL busyTillZeroConnectionCounter;
     int priority;
 
     BOOL isValid;
@@ -135,6 +139,7 @@ class ComPort
     SOCKET hSock;
     BOOL isConnected;
     BOOL isDisconnected;
+    BOOL pendingListenerOnDisconnect;
     int connectionCounter;
     BOOL permanent;
 
